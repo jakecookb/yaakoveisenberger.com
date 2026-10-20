@@ -59,6 +59,15 @@ export function SeparatorTool() {
 
   const caps = useSyncExternalStore(noopSubscribe, getCaps, () => SERVER_CAPS);
 
+  // Multi-threaded WebAssembly needs the page to be cross-origin isolated, which the browser only applies on a full page
+  // load. If we got here by in-app navigation (so we're not isolated), reload once. After a reload that still isn't isolated
+  // (an unsupported browser) we stop and simply run on one thread.
+  useEffect(() => {
+    if (window.crossOriginIsolated) return;
+    const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+    if (nav?.type !== 'reload') window.location.reload();
+  }, []);
+
   const revokeAll = useCallback(() => { urls.current.forEach(URL.revokeObjectURL); urls.current = []; }, []);
   useEffect(() => () => { worker.current?.terminate(); revokeAll(); }, [revokeAll]);
   useEffect(() => {

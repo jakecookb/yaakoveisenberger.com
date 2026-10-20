@@ -51,7 +51,7 @@ export const categories: NavCategory[] = [
   { id: 'fishboards', gallery: true, lockable: true, title: 'Fish Boards', teaser: 'Beautifully arranged boards for the Shabbos table.', href: '/fishboards', icon: Fish, accent: '#22d3ee', status: 'soon' },
   { id: 'meatboards', gallery: true, lockable: true, title: 'Meat Boards', teaser: 'Showstopping grazing boards, made to order.', href: '/meatboards', icon: Beef, accent: '#ef4444', status: 'soon' },
   { id: 'music', gallery: true, lockable: true, title: 'Music & DJ', teaser: 'Sound and sets for simchas and events.', href: '/music', icon: Music, accent: '#e879f9', status: 'soon' },
-  { id: 'separator', lockable: true, title: 'Audio Separator', teaser: 'Split any song into vocals and instrumental — free, private, right in your browser.', href: '/separator', icon: AudioLines, accent: '#a3e635', badge: 'new' },
+  { id: 'separator', lockable: true, title: 'Audio Separator', teaser: 'Split any song into vocals and instrumental — free, private, right in your browser.', href: '/separator', icon: AudioLines, accent: '#a3e635', badge: 'new', external: true /* needs a full page load so the browser applies the cross-origin isolation headers (multi-threaded WebAssembly) */ },
   { id: 'contact', lockable: true, title: 'Contact & Booking', teaser: 'Start a project or check availability.', href: '/contact', icon: CalendarCheck, accent: '#fbbf24' },
 ];
 
