@@ -5,6 +5,7 @@ import { loadSettings } from '@/lib/site/load';
 import { mediaUrl, resolveCards } from '@/lib/site/settings';
 import { LockedGate } from './locked-gate';
 import { PhotoGallery } from './photo-gallery';
+import { RichText } from './rich-text';
 
 /**
  * A category's own page: heading and text (editable in the admin), its photo gallery, and — if the admin
@@ -28,7 +29,7 @@ export async function CategoryPage({ id }: { id: string }) {
         </span>
         <h1 className="mt-8 text-3xl font-semibold tracking-tight text-white sm:text-4xl">{page?.heading || card.title}</h1>
         <p className="mx-auto mt-3 max-w-xl text-neutral-400">{card.teaser}</p>
-        {!card.locked && page?.body && <p className="mx-auto mt-6 max-w-2xl whitespace-pre-line text-neutral-300">{page.body}</p>}
+        {!card.locked && page?.body && <RichText text={page.body} className="mx-auto mt-8 max-w-2xl" />}
         {showSoon && <p className="mx-auto mt-6 w-fit rounded-full bg-white/5 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-neutral-300 ring-1 ring-white/10">Coming soon</p>}
 
         {card.locked ? <LockedGate categoryId={id} accent={card.accent} /> : photos.length > 0 && <div className="mt-10 text-left"><PhotoGallery photos={photos} /></div>}

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Check, Clock, Lock, ShieldX } from 'lucide-react';
 import { requestAccess } from '@/app/access-actions';
 import { PhotoGallery, type GalleryPhoto } from './photo-gallery';
+import { RichText } from './rich-text';
 
 type State = 'loading' | 'none' | 'pending' | 'approved' | 'denied';
 interface Status {
@@ -86,7 +87,7 @@ export function LockedGate({ categoryId, accent, continueHref, className = 'mt-1
   if (state === 'approved') {
     return (
       <div className="mt-10 text-left">
-        {content?.body && <p className="mb-8 whitespace-pre-line text-neutral-300">{content.body}</p>}
+        {content?.body && <RichText text={content.body} className="mb-8" />}
         {content ? content.photos.length ? <PhotoGallery photos={content.photos} /> : <p className="text-center text-neutral-500">Nothing here yet.</p> : <p className="text-center text-neutral-500">Loading…</p>}
       </div>
     );

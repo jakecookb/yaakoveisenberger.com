@@ -56,7 +56,7 @@ export const settingsSchema = z.object({
   order: z.array(z.string().max(40)).max(80),
   custom: z.array(customBox).max(40).default([]),
   cards: z.record(z.string().max(40), cardOverride),
-  pages: z.record(z.string().max(40), z.object({ heading: z.string().trim().max(80).optional(), body: z.string().trim().max(4000).optional() })),
+  pages: z.record(z.string().max(40), z.object({ heading: z.string().trim().max(80).optional(), body: z.string().trim().max(20000).optional() })),
   photos: z.record(z.string().max(40), z.array(photo).max(500)),
 });
 
