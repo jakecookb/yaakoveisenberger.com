@@ -3,6 +3,7 @@ import { ExternalLink, Play } from 'lucide-react';
 import { featuredWork, theZoneVideos } from '@/lib/site/content';
 import { YouTubeLite } from '@/components/site/youtube-lite';
 import { PhotoGallery } from '@/components/hub/photo-gallery';
+import { RichText } from '@/components/hub/rich-text';
 import { loadSettings } from '@/lib/site/load';
 import { mediaUrl } from '@/lib/site/settings';
 
@@ -13,8 +14,15 @@ export const metadata = { title: 'Video & Media' };
 export default async function VideoPage() {
   const settings = await loadSettings();
   const photos = (settings.photos.video ?? []).map((p) => ({ id: p.id, src: mediaUrl(p.pathname), caption: p.caption }));
+  const intro = settings.pages.video;
   return (
     <>
+      {(intro?.heading || intro?.body) && (
+        <section className="mx-auto max-w-3xl px-4 pt-16 sm:px-6 sm:pt-20">
+          {intro.heading && <h2 className="text-3xl font-semibold tracking-tight text-white">{intro.heading}</h2>}
+          {intro.body && <RichText text={intro.body} className="mt-4" />}
+        </section>
+      )}
       <section id="work" className="scroll-mt-20">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
           <h1 className="text-sm font-semibold uppercase tracking-[0.3em] text-[#c8a96a]">Featured work</h1>

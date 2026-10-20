@@ -3,11 +3,12 @@
 import { useActionState, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { upload } from '@vercel/blob/client';
-import { ArrowDown, ArrowUp, Eye, EyeOff, ExternalLink, FileText, ImagePlus, Link2, Lock, LogOut, Plus, RotateCcw, Save, Trash2, Unlock, Users } from 'lucide-react';
+import { ArrowDown, ArrowUp, Eye, EyeOff, ExternalLink, FileText, ImagePlus, Images, Link2, Lock, LogOut, Plus, RotateCcw, Save, Trash2, Unlock, Users } from 'lucide-react';
 import { categories } from '@/data/navigation';
 import { ICON_KEYS, ICONS } from '@/data/icons';
 import { changePassword, logoutAction, saveSettings, type FormState } from '@/app/admin/actions';
 import { CategoryCard } from '@/components/hub/category-card';
+import { RichText } from '@/components/hub/rich-text';
 import {
   BOX_HEIGHTS, BOX_WIDTHS, ICON_SIZES, mediaUrl, resolveCards, type BoxHeight, type BoxWidth, type CardOverride, type CardView, type IconSize, type SiteSettings,
 } from '@/lib/site/settings';
@@ -46,6 +47,7 @@ export function AdminEditor({ initial, blobReady, pending, email }: { initial: S
   const [s, setS] = useState<SiteSettings>(initial);
   const [saved, setSaved] = useState(JSON.stringify(initial));
   const [tab, setTab] = useState<Tab>('cards');
+  const [photoCat, setPhotoCat] = useState('');
   const [status, setStatus] = useState<{ ok?: boolean; msg: string }>();
   const [saving, startSave] = useTransition();
   const dirty = JSON.stringify(s) !== saved;
@@ -71,6 +73,8 @@ export function AdminEditor({ initial, blobReady, pending, email }: { initial: S
       const rest = <T,>(r: Record<string, T>) => Object.fromEntries(Object.entries(r).filter(([k]) => k !== id));
       return { ...p, custom: p.custom.filter((c) => c.id !== id), order: p.order.filter((x) => x !== id), cards: rest(p.cards), pages: rest(p.pages), photos: rest(p.photos) };
     });
+  const setPage = (id: string, k: 'heading' | 'body', v: string) =>
+    setS((p) => ({ ...p, pages: { ...p.pages, [id]: clean({ ...p.pages[id], [k]: v }) } }));
   const setUrl = (id: string, url: string) => setS((p) => ({ ...p, custom: p.custom.map((c) => (c.id === id ? { ...c, url } : c)) }));
   const resetCard = (id: string) => setS((p) => { const c = { ...p.cards }; delete c[id]; return { ...p, cards: c }; });
   const move = (id: string, d: -1 | 1) =>
@@ -117,9 +121,9 @@ export function AdminEditor({ initial, blobReady, pending, email }: { initial: S
         {tabs.map(([k, l]) => <button key={k} onClick={() => setTab(k)} className={chip(tab === k)} aria-pressed={tab === k}>{l}</button>)}
       </nav>
 
-      {tab === 'cards' && <CardsTab cards={cards} custom={s.custom} setCard={setCard} resetCard={resetCard} move={move} addBox={addBox} removeBox={removeBox} setUrl={setUrl} />}
+      {tab === 'cards' && <CardsTab cards={cards} custom={s.custom} pages={s.pages} photoCounts={Object.fromEntries(Object.entries(s.photos).map(([k, v]) => [k, v.length]))} setPage={setPage} goPhotos={(id) => { setPhotoCat(id); setTab('photos'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} setCard={setCard} resetCard={resetCard} move={move} addBox={addBox} removeBox={removeBox} setUrl={setUrl} />}
       {tab === 'text' && <TextTab s={s} setS={setS} blobReady={blobReady} />}
-      {tab === 'photos' && <PhotosTab s={s} setS={setS} cards={cards} blobReady={blobReady} />}
+      {tab === 'photos' && <PhotosTab s={s} setS={setS} cards={cards} blobReady={blobReady} cat={photoCat} setCat={setPhotoCat} />}
       {tab === 'account' && <AccountTab email={email} />}
     </div>
   );
@@ -127,18 +131,29 @@ export function AdminEditor({ initial, blobReady, pending, email }: { initial: S
 
 // ------------------------------------------------------------------ boxes
 
-function CardsTab({ cards, custom, setCard, resetCard, move, addBox, removeBox, setUrl }: { cards: CardView[]; custom: SiteSettings['custom']; setCard: (id: string, p: Partial<Record<keyof CardOverride, CardOverride[keyof CardOverride] | undefined>>) => void; resetCard: (id: string) => void; move: (id: string, d: -1 | 1) => void; addBox: (kind: 'page' | 'link') => string; removeBox: (id: string) => void; setUrl: (id: string, url: string) => void }) {
+function CardsTab({ cards, custom, pages, photoCounts, setPage, goPhotos, setCard, resetCard, move, addBox, removeBox, setUrl }: { cards: CardView[]; custom: SiteSettings['custom']; pages: SiteSettings['pages']; photoCounts: Record<string, number>; setPage: (id: string, k: 'heading' | 'body', v: string) => void; goPhotos: (id: string) => void; setCard: (id: string, p: Partial<Record<keyof CardOverride, CardOverride[keyof CardOverride] | undefined>>) => void; resetCard: (id: string) => void; move: (id: string, d: -1 | 1) => void; addBox: (kind: 'page' | 'link') => string; removeBox: (id: string) => void; setUrl: (id: string, url: string) => void }) {
   const [open, setOpen] = useState<string | null>(null);
   const [device, setDevice] = useState<1 | 2 | 4>(4);
   const gridCols = { 1: 'grid-cols-1', 2: 'grid-cols-2', 4: 'grid-cols-4' }[device];
+  // A new tile is added at the end of a long list: scroll to it so you can start writing straight away.
+  const reveal = (id: string) => setTimeout(() => document.getElementById(`tile-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
   return (
-    <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
+    <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
       <div>
       <p className="mb-3 text-sm text-neutral-400">Click a box to edit it. Use the <Lock className="inline size-3.5" /> button to make a box private — visitors must type their name and you approve them first.</p>
-      <div className="mb-4 flex flex-wrap items-center gap-2 rounded-2xl bg-neutral-900/60 p-3 ring-1 ring-white/10">
-        <span className="mr-1 inline-flex items-center gap-1.5 text-sm font-medium text-white"><Plus className="size-4" /> Add a box</span>
-        <button onClick={() => setOpen(addBox('page'))} className={chip(false)}><FileText className="size-3.5" /> Page (text &amp; photos)</button>
-        <button onClick={() => setOpen(addBox('link'))} className={chip(false)}><Link2 className="size-3.5" /> Link to another website</button>
+      <div className="mb-5 rounded-2xl bg-gradient-to-br from-[#c8a96a]/15 to-transparent p-4 ring-1 ring-[#c8a96a]/40">
+        <p className="flex items-center gap-2 font-semibold text-white"><Plus className="size-4 text-[#c8a96a]" /> Add a new tile</p>
+        <p className="mt-1 text-xs text-neutral-400">It shows up on your home page right away (after you press Save). Choose what happens when someone clicks it:</p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <button onClick={() => { const id = addBox('page'); setOpen(id); reveal(id); }} className="rounded-xl bg-white/5 p-4 text-left ring-1 ring-white/10 transition hover:bg-white/10 hover:ring-[#c8a96a]">
+            <span className="flex items-center gap-2 font-semibold text-white"><FileText className="size-4 text-[#c8a96a]" /> A page you write</span>
+            <span className="mt-1 block text-xs text-neutral-400">Opens its own page with your heading, your text and your photos.</span>
+          </button>
+          <button onClick={() => { const id = addBox('link'); setOpen(id); reveal(id); }} className="rounded-xl bg-white/5 p-4 text-left ring-1 ring-white/10 transition hover:bg-white/10 hover:ring-[#c8a96a]">
+            <span className="flex items-center gap-2 font-semibold text-white"><Link2 className="size-4 text-[#c8a96a]" /> A link to another website</span>
+            <span className="mt-1 block text-xs text-neutral-400">Sends people to any web address you choose.</span>
+          </button>
+        </div>
       </div>
       <ul className="space-y-3">
         {cards.map((c, i) => {
@@ -147,7 +162,7 @@ function CardsTab({ cards, custom, setCard, resetCard, move, addBox, removeBox, 
           const def = categories.find((x) => x.id === c.id);
           const url = custom.find((x) => x.id === c.id)?.url ?? '';
           return (
-            <li key={c.id} className={`rounded-2xl bg-neutral-900/60 ring-1 ring-white/10 ${c.hidden ? 'opacity-60' : ''}`}>
+            <li key={c.id} id={`tile-${c.id}`} className={`scroll-mt-24 rounded-2xl bg-neutral-900/60 ring-1 ring-white/10 ${c.hidden ? 'opacity-60' : ''}`}>
               <div className="flex items-center gap-3 p-3">
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-xl text-neutral-950" style={{ background: c.accent }}><Icon className="size-5" /></span>
                 <button onClick={() => setOpen(isOpen ? null : c.id)} className="min-w-0 flex-1 text-left" aria-expanded={isOpen}>
@@ -172,6 +187,40 @@ function CardsTab({ cards, custom, setCard, resetCard, move, addBox, removeBox, 
                       <label className={label} htmlFor={`url-${c.id}`}>Website address</label>
                       <input id={`url-${c.id}`} type="url" inputMode="url" placeholder="https://example.com" className={input} value={url} maxLength={500} onChange={(e) => setUrl(c.id, e.target.value)} />
                       <p className="mt-1 text-xs text-neutral-500">{c.locked ? 'Locked: visitors never see this address until you approve them.' : 'Opens in a new tab. Lock this box to hide the address until you approve someone.'} The box stays hidden until an address is set.</p>
+                    </div>
+                  )}
+                  {c.gallery && c.id !== 'fund' && (
+                    <div className="space-y-3 rounded-xl bg-white/[0.04] p-4 ring-1 ring-[#c8a96a]/30">
+                      <p className="text-sm font-semibold text-white">What’s inside this tile</p>
+                      <p className="-mt-2 text-xs text-neutral-400">This is the page people see when they click the tile{c.locked ? ' (after you approve them)' : ''}.</p>
+                      <div>
+                        <label className={label} htmlFor={`heading-${c.id}`}>Page heading</label>
+                        <input id={`heading-${c.id}`} className={input} maxLength={80} placeholder={`Same as the tile title: ${c.title}`} value={pages[c.id]?.heading ?? ''} onChange={(e) => setPage(c.id, 'heading', e.target.value)} />
+                      </div>
+                      <div>
+                        <label className={label} htmlFor={`body-${c.id}`}>Your text</label>
+                        <textarea id={`body-${c.id}`} className={`${area} min-h-48 leading-relaxed`} rows={9} maxLength={20000} placeholder={'Write anything here.\n\nLeave a blank line to start a new paragraph.'} value={pages[c.id]?.body ?? ''} onChange={(e) => setPage(c.id, 'body', e.target.value)} />
+                        <details className="mt-2 text-xs text-neutral-400">
+                          <summary className="cursor-pointer text-neutral-300">Formatting tips</summary>
+                          <ul className="mt-2 space-y-1 pl-4">
+                            <li>Blank line = new paragraph</li>
+                            <li><code className="text-neutral-200">## Big heading</code> and <code className="text-neutral-200">### Smaller heading</code></li>
+                            <li><code className="text-neutral-200">- item</code> on each line = bullet list</li>
+                            <li><code className="text-neutral-200">**bold**</code> and <code className="text-neutral-200">*italic*</code></li>
+                            <li><code className="text-neutral-200">[link text](https://example.com)</code> = a link</li>
+                          </ul>
+                        </details>
+                      </div>
+                      {pages[c.id]?.body && (
+                        <div>
+                          <span className={label}>Preview</span>
+                          <div className="rounded-xl bg-neutral-950 p-4 ring-1 ring-white/10"><RichText text={pages[c.id]!.body!} /></div>
+                        </div>
+                      )}
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-3">
+                        <span className="text-xs text-neutral-400">{photoCounts[c.id] ? `${photoCounts[c.id]} photo${photoCounts[c.id] === 1 ? '' : 's'} in this tile` : 'No photos yet'}</span>
+                        <button onClick={() => goPhotos(c.id)} className={chip(false)}><Images className="size-3.5" /> Add or manage photos</button>
+                      </div>
                     </div>
                   )}
                   <div><label className={label}>Title</label><input className={input} value={c.title} maxLength={60} onChange={(e) => setCard(c.id, { title: e.target.value || undefined })} /></div>
@@ -240,7 +289,6 @@ function CardsTab({ cards, custom, setCard, resetCard, move, addBox, removeBox, 
 function TextTab({ s, setS, blobReady }: { s: SiteSettings; setS: React.Dispatch<React.SetStateAction<SiteSettings>>; blobReady: boolean }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string>();
-  const cards = resolveCards(s, { includeHidden: true }).filter((c) => c.gallery);
 
   async function logo(file?: File) {
     if (!file) return;
@@ -249,11 +297,9 @@ function TextTab({ s, setS, blobReady }: { s: SiteSettings; setS: React.Dispatch
     catch (e) { setErr(e instanceof Error ? e.message : 'Upload failed'); }
     setBusy(false);
   }
-  const setPage = (id: string, k: 'heading' | 'body', v: string) =>
-    setS((p) => ({ ...p, pages: { ...p.pages, [id]: clean({ ...p.pages[id], [k]: v }) } }));
 
   return (
-    <div className="mt-6 grid gap-8 lg:grid-cols-2">
+    <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-2">
       <section className="space-y-5 rounded-2xl bg-neutral-900/60 p-5 ring-1 ring-white/10">
         <h2 className="font-semibold text-white">Home page hero</h2>
         <div><label className={label} htmlFor="tagline">Tagline under your name</label><textarea id="tagline" className={area} rows={2} maxLength={160} value={s.hero.tagline} onChange={(e) => setS((p) => ({ ...p, hero: { ...p.hero, tagline: e.target.value } }))} /></div>
@@ -270,16 +316,9 @@ function TextTab({ s, setS, blobReady }: { s: SiteSettings; setS: React.Dispatch
         </div>
       </section>
 
-      <section className="space-y-5 rounded-2xl bg-neutral-900/60 p-5 ring-1 ring-white/10">
-        <h2 className="font-semibold text-white">Page headings & text</h2>
-        <p className="text-xs text-neutral-500">Shown at the top of each page. On locked pages the text is only shown after approval.</p>
-        {cards.map((c) => (
-          <div key={c.id} className="space-y-2 border-t border-white/10 pt-4">
-            <p className="text-sm font-medium text-white">{c.title}</p>
-            <input className={input} placeholder={`Heading (default: ${c.title})`} maxLength={80} value={s.pages[c.id]?.heading ?? ''} onChange={(e) => setPage(c.id, 'heading', e.target.value)} />
-            <textarea className={area} rows={3} placeholder="Text under the heading (optional)" maxLength={4000} value={s.pages[c.id]?.body ?? ''} onChange={(e) => setPage(c.id, 'body', e.target.value)} />
-          </div>
-        ))}
+      <section className="space-y-3 rounded-2xl bg-neutral-900/60 p-5 ring-1 ring-white/10">
+        <h2 className="font-semibold text-white">Writing the pages inside your tiles</h2>
+        <p className="text-sm text-neutral-400">Each tile now has its own writing area. Go to the <b className="text-neutral-200">Boxes</b> tab, click a tile, and write its heading and text under <b className="text-neutral-200">“What’s inside this tile”</b>. Photos for that tile are one click away from there.</p>
       </section>
     </div>
   );
@@ -287,9 +326,9 @@ function TextTab({ s, setS, blobReady }: { s: SiteSettings; setS: React.Dispatch
 
 // ------------------------------------------------------------------ photos
 
-function PhotosTab({ s, setS, cards, blobReady }: { s: SiteSettings; setS: React.Dispatch<React.SetStateAction<SiteSettings>>; cards: CardView[]; blobReady: boolean }) {
+function PhotosTab({ s, setS, cards, blobReady, cat: chosen, setCat }: { s: SiteSettings; setS: React.Dispatch<React.SetStateAction<SiteSettings>>; cards: CardView[]; blobReady: boolean; cat: string; setCat: (id: string) => void }) {
   const cats = cards.filter((c) => c.gallery);
-  const [cat, setCat] = useState(cats[0]?.id ?? '');
+  const cat = cats.some((c) => c.id === chosen) ? chosen : (cats[0]?.id ?? '');
   const [busy, setBusy] = useState<string>();
   const [err, setErr] = useState<string>();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -362,7 +401,7 @@ function PhotosTab({ s, setS, cards, blobReady }: { s: SiteSettings; setS: React
 function AccountTab({ email }: { email: string }) {
   const [state, action, pending] = useActionState<FormState, FormData>(changePassword, {});
   return (
-    <div className="mt-6 grid max-w-3xl gap-6 sm:grid-cols-2">
+    <div className="mt-6 grid max-w-3xl grid-cols-1 gap-6 sm:grid-cols-2">
       <form action={action} className="space-y-4 rounded-2xl bg-neutral-900/60 p-5 ring-1 ring-white/10">
         <h2 className="font-semibold text-white">Change password</h2>
         <p className="text-xs text-neutral-500">Signed in as {email || 'admin'}. Changing the password signs you out everywhere.</p>
