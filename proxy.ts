@@ -9,10 +9,11 @@ import { updateFundSession } from '@/lib/fund/supabase/proxy';
 // is ever reached. Keep `matcher` in sync with the lockable built-in pages in data/navigation.ts
 // (boxes created in the editor live under /p/<id> and /go/<id>, which are always matched).
 
+// Only these /fund paths need the Supabase session refresh; the rest of /fund is matched just for the lock.
+const needsFundSession = (p: string) => p.startsWith('/fund/admin') || p.startsWith('/fund/portal') || p === '/fund/login' || p.startsWith('/fund/auth');
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  if (pathname.startsWith('/fund')) return updateFundSession(request);
-
   let id: string | undefined;
   for (const [prefix, boxId] of await lockedPaths()) if (pathname === prefix || pathname.startsWith(prefix + '/')) id = boxId;
   if (id) {
@@ -26,12 +27,12 @@ export async function proxy(request: NextRequest) {
       return res;
     }
   }
-  return NextResponse.next();
+  return needsFundSession(pathname) ? updateFundSession(request) : NextResponse.next();
 }
 
 export const config = {
   matcher: [
-    '/fund/admin/:path*', '/fund/portal/:path*', '/fund/login', '/fund/auth/:path*',
+    '/fund', '/fund/:path*', '/fund/admin/:path*', '/fund/portal/:path*', '/fund/login', '/fund/auth/:path*',
     '/video/:path*', '/contact/:path*', '/cookbook/:path*', '/p/:path*', '/go/:path*',
     '/editing/:path*', '/photography/:path*', '/tech/:path*', '/bookbinding/:path*', '/fishboards/:path*', '/meatboards/:path*', '/music/:path*',
   ],

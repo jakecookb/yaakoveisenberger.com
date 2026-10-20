@@ -140,6 +140,7 @@ export async function approveAction(formData: FormData) {
       if (!r.granted.includes(cat)) r.granted.push(cat);
       r.requested = r.requested.filter((c) => c !== cat);
       r.denied = r.denied.filter((c) => c !== cat);
+      if (r.deniedAt) delete r.deniedAt[cat];
     }
     if (r.all) r.requested = [];
   });
@@ -153,6 +154,7 @@ export async function denyAction(formData: FormData) {
   await updateRequest(id, (r) => {
     r.requested = r.requested.filter((c) => c !== cat);
     if (!r.denied.includes(cat)) r.denied.push(cat);
+    r.deniedAt = { ...r.deniedAt, [cat]: new Date().toISOString() };
   });
   revalidatePath('/admin/access');
 }

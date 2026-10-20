@@ -164,6 +164,9 @@ function CardsTab({ cards, custom, setCard, resetCard, move, addBox, removeBox, 
               </div>
               {isOpen && (
                 <div className="space-y-4 border-t border-white/10 p-4">
+                  {c.id === 'fund' && c.locked && (
+                    <p className="rounded-xl bg-amber-400/10 p-3 text-xs text-amber-200 ring-1 ring-amber-400/30">Funding is locked: every fundraising page (donation pages and the big-screen display) is hidden from anyone you haven’t approved. The payment system itself keeps working for people already on a campaign page.</p>
+                  )}
                   {c.kind === 'link' && (
                     <div>
                       <label className={label} htmlFor={`url-${c.id}`}>Website address</label>
