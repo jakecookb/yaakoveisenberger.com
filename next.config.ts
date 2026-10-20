@@ -66,6 +66,30 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        // The audio separator runs a neural network in the browser. Cross-origin isolation lets WebAssembly use several
+        // CPU threads (about 3x faster). It only applies to this page, which loads nothing from other sites except the
+        // one-off model download (served with CORS).
+        source: '/separator',
+        headers: [
+          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+          { key: 'Cross-Origin-Embedder-Policy', value: 'require-corp' },
+        ],
+      },
+      {
+        // A worker started from a cross-origin-isolated page must itself carry the isolation header, otherwise the browser
+        // blocks it. This covers the page's own worker chunks and the ONNX Runtime files (which start threads of their own).
+        source: '/_next/static/:path*',
+        headers: [{ key: 'Cross-Origin-Embedder-Policy', value: 'require-corp' }, { key: 'Cross-Origin-Resource-Policy', value: 'same-origin' }],
+      },
+      {
+        source: '/ort/:path*',
+        headers: [
+          { key: 'Cross-Origin-Embedder-Policy', value: 'require-corp' },
+          { key: 'Cross-Origin-Resource-Policy', value: 'same-origin' },
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      {
         source: '/api/fund/:path*',
         headers: [...securityHeaders, { key: 'X-Robots-Tag', value: 'noindex' }],
       },

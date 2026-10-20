@@ -188,3 +188,15 @@ A private editor for the owner: change box titles, descriptions, icons, icon siz
 - **Your own boxes:** *Add a box* creates either a **page** (`/p/<id>`: text and photos) or a **link** to another website. A locked link never exposes its real address: it goes through `/go/<id>`, which only redirects approved visitors.
 - **Sizes:** each box has a width (normal / wide / full row), a height (compact → extra tall) and an icon size, with a phone / tablet / desktop preview.
 - **Approval feedback:** a visitor sees *Pending* → *Approved* (then they're let in) or *Declined*. After a decline they must wait **25 minutes** (`RETRY_MINUTES` in `lib/access/visitor.ts`, enforced by the server) before asking again. Each locked card on the home page shows the visitor's own status.
+
+---
+
+## Audio Separator (`/separator`)
+
+Free, private vocal / instrumental splitter. Visitors upload an MP3 or WAV and download two tracks (WAV, or 320 kbps MP3). **No server, API key or sign-up is involved**: the separation runs in the visitor's browser.
+
+- **Options** (defined in `lib/separator/models.ts`, shown with plain-English details): *Best overall* (Kim Vocal 2 — cleanest vocals), *Best backing track* (UVR Inst HQ 3 — cleanest instrumental), and *Instant preview* (no AI, centre-channel removal; rough, needs a stereo song).
+- **How it works:** [MDX-Net](https://github.com/Anjok07/ultimatevocalremovergui) ONNX models run through ONNX Runtime Web (WebAssembly; optional WebGPU) in a Web Worker. The STFT/iSTFT and chunking (`lib/separator/`) follow Ultimate Vocal Remover's method and were checked against a Python reference (matches to ~1e-7) and against a ground-truth mix (speech over music: vocals 18–19 dB SI-SDR).
+- **Models** (63 MB each) download once from Hugging Face (several byte-identical mirrors are tried in order), are checked against a pinned SHA-256 and cached in the browser (Cache API). To change a model, update `models.ts` — its settings (`dimF`, `dimTPow`, `nFft`, `compensate`) come from UVR's model table, keyed by the hash of the last 10 MB of the file.
+- **Speed:** about 3× the song's length on a 4-core laptop, longer on phones. The page is cross-origin isolated (`/separator` sends COOP/COEP headers, see `next.config.ts`) so WebAssembly can use several threads. The runtime files are copied to `public/ort` by `scripts/copy-ort.mjs` after `npm install` (git-ignored).
+- It's a normal hub box (`data/navigation.ts`), so it can be hidden, resized, re-titled or **locked** from the admin editor like any other.

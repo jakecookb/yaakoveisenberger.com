@@ -9,3 +9,6 @@ next-env.d.ts
 /screenshots
 AGENTS.md
 *.zip
+
+# copied from node_modules by scripts/copy-ort.mjs
+/public/ort
