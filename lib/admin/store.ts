@@ -17,6 +17,15 @@ export async function readJson<T>(pathname: string): Promise<T | null> {
   }
 }
 
+/** Like readJson, but only a missing file gives null — any other failure throws (so callers can fail closed). */
+export async function readJsonStrict<T>(pathname: string): Promise<T | null> {
+  if (!isBlobConfigured) return null;
+  const res = await get(pathname, { access: 'private', useCache: false });
+  if (!res) return null;
+  if (res.statusCode !== 200) throw new Error(`Unexpected status ${res.statusCode}`);
+  return JSON.parse(await new Response(res.stream).text()) as T;
+}
+
 export async function writeJson(pathname: string, data: unknown) {
   await put(pathname, JSON.stringify(data), {
     access: 'private',

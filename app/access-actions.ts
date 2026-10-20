@@ -1,15 +1,16 @@
 'use server';
 
-import { categories } from '@/data/navigation';
 import { clientIp } from '@/lib/admin/session';
 import { createOrUpdateRequest } from '@/lib/access/visitor';
+import { loadSettings } from '@/lib/site/load';
+import { resolveCards } from '@/lib/site/settings';
 
 const recent = new Map<string, { n: number; first: number }>();
 
 /** A visitor types their name to ask for access to one locked box. */
 export async function requestAccess(name: string, categoryId: string, website: string): Promise<{ ok: boolean; error?: string }> {
   if (website) return { ok: true }; // honeypot: bots fill hidden fields
-  if (!categories.some((c) => c.id === categoryId && c.lockable)) return { ok: false, error: 'That page can’t be requested.' };
+  if (!resolveCards(await loadSettings(), { includeHidden: true }).some((c) => c.id === categoryId && c.lockable)) return { ok: false, error: 'That page can’t be requested.' };
   const ip = await clientIp();
   const r = recent.get(ip);
   if (!r || Date.now() - r.first > 10 * 60_000) recent.set(ip, { n: 1, first: Date.now() });

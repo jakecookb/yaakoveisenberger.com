@@ -1,10 +1,19 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { motion, useReducedMotion, type Variants } from 'framer-motion';
 import { ArrowUpRight, Lock } from 'lucide-react';
 import { ICONS } from '@/data/icons';
-import type { CardView, IconSize } from '@/lib/site/settings';
+import type { BoxHeight, CardView, IconSize } from '@/lib/site/settings';
+import { AccessModal } from './access-modal';
+
+const HEIGHTS: Record<BoxHeight, { box: string; title: string; teaser: string }> = {
+  compact: { box: 'min-h-28 gap-3 p-4', title: 'text-base', teaser: 'line-clamp-2 text-xs' },
+  standard: { box: 'min-h-48 gap-8 p-6 sm:p-7', title: 'text-xl', teaser: 'text-sm' },
+  tall: { box: 'min-h-72 gap-10 p-7 sm:p-8', title: 'text-2xl', teaser: 'text-base' },
+  xl: { box: 'min-h-96 gap-12 p-8 sm:p-10', title: 'text-3xl', teaser: 'text-lg' },
+};
 
 const SIZES: Record<IconSize, { tile: string; icon: string }> = {
   sm: { tile: 'size-10 rounded-xl', icon: 'size-5' },
@@ -46,11 +55,17 @@ function Badge({ category, liveCount }: { category: CardView; liveCount?: number
   return null;
 }
 
-export function CategoryCard({ category, liveCount }: { category: CardView; liveCount?: number }) {
+/** `cols` forces a column count (used by the editor's phone/tablet/desktop preview); the live site uses breakpoints. */
+export function CategoryCard({ category, liveCount, cols }: { category: CardView; liveCount?: number; cols?: 1 | 2 | 4 }) {
   const reduce = useReducedMotion();
+  const [asking, setAsking] = useState(false);
   const Icon = ICONS[category.iconKey];
   const size = SIZES[category.iconSize];
-  const className = `group relative flex h-full min-h-48 flex-col justify-between gap-8 overflow-hidden rounded-3xl bg-neutral-900/70 p-6 ring-1 ring-white/10 outline-none transition-[box-shadow,--tw-ring-color] duration-300 hover:ring-[var(--accent)] hover:shadow-[0_0_0_1px_var(--accent),0_20px_60px_-20px_var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] sm:p-7 ${category.wide ? 'min-h-56' : ''}`;
+  const h = HEIGHTS[category.height];
+  const span = cols
+    ? cols === 1 || category.width === 'normal' ? '' : category.width === 'wide' ? 'col-span-2' : 'col-span-full'
+    : category.width === 'wide' ? 'sm:col-span-2' : category.width === 'full' ? 'sm:col-span-full' : '';
+  const className = `group relative flex h-full flex-col justify-between overflow-hidden rounded-3xl bg-neutral-900/70 ring-1 ring-white/10 outline-none transition-[box-shadow,--tw-ring-color] duration-300 hover:ring-[var(--accent)] hover:shadow-[0_0_0_1px_var(--accent),0_20px_60px_-20px_var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${h.box}`;
   const style = { '--accent': category.accent } as React.CSSProperties;
 
   const inner = (
@@ -72,16 +87,19 @@ export function CategoryCard({ category, liveCount }: { category: CardView; live
       </span>
       <span className="relative">
         <span className="flex items-center justify-between gap-3">
-          <span className="text-xl font-semibold tracking-tight text-white">{category.title}</span>
+          <span className={`${h.title} font-semibold tracking-tight text-white`}>{category.title}</span>
           <ArrowUpRight
             className="size-5 shrink-0 -translate-x-1 translate-y-1 text-neutral-500 opacity-60 transition duration-300 group-hover:translate-x-0 group-hover:translate-y-0 group-hover:text-[var(--accent)] group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:translate-y-0 group-focus-visible:opacity-100"
             aria-hidden
           />
         </span>
-        <span className="mt-2 block text-sm leading-relaxed text-neutral-400">{category.teaser}</span>
+        <span className={`mt-2 block ${h.teaser} leading-relaxed text-neutral-400`}>{category.teaser}</span>
       </span>
     </>
   );
+
+  // A locked box never navigates from the hub: clicking it opens the "type your name" pop-up instead.
+  const onClick = category.locked ? (e: React.MouseEvent) => { e.preventDefault(); setAsking(true); } : undefined;
 
   const onPointerMove = (e: React.PointerEvent<HTMLElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
@@ -95,13 +113,14 @@ export function CategoryCard({ category, liveCount }: { category: CardView; live
       whileHover={reduce ? undefined : { y: -6, scale: 1.02 }}
       whileTap={reduce ? undefined : { scale: 0.99 }}
       transition={{ type: 'spring', stiffness: 320, damping: 24 }}
-      className={category.wide ? 'sm:col-span-2' : undefined}
+      className={span || undefined}
     >
       {category.external ? (
-        <a href={category.href} className={className} style={style} onPointerMove={onPointerMove}>{inner}</a>
+        <a href={category.href} {...(/^https?:/.test(category.href) ? { target: '_blank', rel: 'noopener noreferrer' } : {})} className={className} style={style} onClick={onClick} onPointerMove={onPointerMove}>{inner}</a>
       ) : (
-        <Link href={category.href} className={className} style={style} onPointerMove={onPointerMove}>{inner}</Link>
+        <Link href={category.href} className={className} style={style} onClick={onClick} onPointerMove={onPointerMove}>{inner}</Link>
       )}
+      {category.locked && <AccessModal open={asking} onClose={() => setAsking(false)} title={category.title} accent={category.accent} categoryId={category.id} continueHref={category.href} />}
     </motion.li>
   );
 }

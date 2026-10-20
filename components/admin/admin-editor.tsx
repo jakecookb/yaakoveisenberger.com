@@ -3,13 +3,13 @@
 import { useActionState, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { upload } from '@vercel/blob/client';
-import { ArrowDown, ArrowUp, Eye, EyeOff, ExternalLink, ImagePlus, Lock, LogOut, RotateCcw, Save, Trash2, Unlock, Users } from 'lucide-react';
+import { ArrowDown, ArrowUp, Eye, EyeOff, ExternalLink, FileText, ImagePlus, Link2, Lock, LogOut, Plus, RotateCcw, Save, Trash2, Unlock, Users } from 'lucide-react';
 import { categories } from '@/data/navigation';
 import { ICON_KEYS, ICONS } from '@/data/icons';
 import { changePassword, logoutAction, saveSettings, type FormState } from '@/app/admin/actions';
 import { CategoryCard } from '@/components/hub/category-card';
 import {
-  ICON_SIZES, mediaUrl, resolveCards, type CardOverride, type CardView, type IconSize, type SiteSettings,
+  BOX_HEIGHTS, BOX_WIDTHS, ICON_SIZES, mediaUrl, resolveCards, type BoxHeight, type BoxWidth, type CardOverride, type CardView, type IconSize, type SiteSettings,
 } from '@/lib/site/settings';
 
 type Tab = 'cards' | 'text' | 'photos' | 'account';
@@ -61,6 +61,17 @@ export function AdminEditor({ initial, blobReady, pending, email }: { initial: S
 
   const setCard = (id: string, patch: Partial<Record<keyof CardOverride, CardOverride[keyof CardOverride] | undefined>>) =>
     setS((p) => ({ ...p, cards: { ...p.cards, [id]: clean({ ...p.cards[id], ...patch }) as CardOverride } }));
+  const addBox = (kind: 'page' | 'link') => {
+    const id = `c-${Math.random().toString(36).slice(2, 8).padEnd(6, 'x')}`;
+    setS((p) => ({ ...p, custom: [...p.custom, kind === 'link' ? { id, kind, url: '' } : { id, kind }], cards: { ...p.cards, [id]: { title: kind === 'link' ? 'New link' : 'New page' } } }));
+    return id;
+  };
+  const removeBox = (id: string) =>
+    setS((p) => {
+      const rest = <T,>(r: Record<string, T>) => Object.fromEntries(Object.entries(r).filter(([k]) => k !== id));
+      return { ...p, custom: p.custom.filter((c) => c.id !== id), order: p.order.filter((x) => x !== id), cards: rest(p.cards), pages: rest(p.pages), photos: rest(p.photos) };
+    });
+  const setUrl = (id: string, url: string) => setS((p) => ({ ...p, custom: p.custom.map((c) => (c.id === id ? { ...c, url } : c)) }));
   const resetCard = (id: string) => setS((p) => { const c = { ...p.cards }; delete c[id]; return { ...p, cards: c }; });
   const move = (id: string, d: -1 | 1) =>
     setS((p) => {
@@ -106,7 +117,7 @@ export function AdminEditor({ initial, blobReady, pending, email }: { initial: S
         {tabs.map(([k, l]) => <button key={k} onClick={() => setTab(k)} className={chip(tab === k)} aria-pressed={tab === k}>{l}</button>)}
       </nav>
 
-      {tab === 'cards' && <CardsTab cards={cards} setCard={setCard} resetCard={resetCard} move={move} />}
+      {tab === 'cards' && <CardsTab cards={cards} custom={s.custom} setCard={setCard} resetCard={resetCard} move={move} addBox={addBox} removeBox={removeBox} setUrl={setUrl} />}
       {tab === 'text' && <TextTab s={s} setS={setS} blobReady={blobReady} />}
       {tab === 'photos' && <PhotosTab s={s} setS={setS} cards={cards} blobReady={blobReady} />}
       {tab === 'account' && <AccountTab email={email} />}
@@ -116,28 +127,50 @@ export function AdminEditor({ initial, blobReady, pending, email }: { initial: S
 
 // ------------------------------------------------------------------ boxes
 
-function CardsTab({ cards, setCard, resetCard, move }: { cards: CardView[]; setCard: (id: string, p: Partial<Record<keyof CardOverride, CardOverride[keyof CardOverride] | undefined>>) => void; resetCard: (id: string) => void; move: (id: string, d: -1 | 1) => void }) {
+function CardsTab({ cards, custom, setCard, resetCard, move, addBox, removeBox, setUrl }: { cards: CardView[]; custom: SiteSettings['custom']; setCard: (id: string, p: Partial<Record<keyof CardOverride, CardOverride[keyof CardOverride] | undefined>>) => void; resetCard: (id: string) => void; move: (id: string, d: -1 | 1) => void; addBox: (kind: 'page' | 'link') => string; removeBox: (id: string) => void; setUrl: (id: string, url: string) => void }) {
   const [open, setOpen] = useState<string | null>(null);
+  const [device, setDevice] = useState<1 | 2 | 4>(4);
+  const gridCols = { 1: 'grid-cols-1', 2: 'grid-cols-2', 4: 'grid-cols-4' }[device];
   return (
-    <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+    <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
+      <div>
+      <p className="mb-3 text-sm text-neutral-400">Click a box to edit it. Use the <Lock className="inline size-3.5" /> button to make a box private — visitors must type their name and you approve them first.</p>
+      <div className="mb-4 flex flex-wrap items-center gap-2 rounded-2xl bg-neutral-900/60 p-3 ring-1 ring-white/10">
+        <span className="mr-1 inline-flex items-center gap-1.5 text-sm font-medium text-white"><Plus className="size-4" /> Add a box</span>
+        <button onClick={() => setOpen(addBox('page'))} className={chip(false)}><FileText className="size-3.5" /> Page (text &amp; photos)</button>
+        <button onClick={() => setOpen(addBox('link'))} className={chip(false)}><Link2 className="size-3.5" /> Link to another website</button>
+      </div>
       <ul className="space-y-3">
         {cards.map((c, i) => {
           const Icon = ICONS[c.iconKey];
           const isOpen = open === c.id;
-          const def = categories.find((x) => x.id === c.id)!;
+          const def = categories.find((x) => x.id === c.id);
+          const url = custom.find((x) => x.id === c.id)?.url ?? '';
           return (
             <li key={c.id} className={`rounded-2xl bg-neutral-900/60 ring-1 ring-white/10 ${c.hidden ? 'opacity-60' : ''}`}>
               <div className="flex items-center gap-3 p-3">
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-xl text-neutral-950" style={{ background: c.accent }}><Icon className="size-5" /></span>
                 <button onClick={() => setOpen(isOpen ? null : c.id)} className="min-w-0 flex-1 text-left" aria-expanded={isOpen}>
                   <span className="block truncate font-medium text-white">{c.title}</span>
-                  <span className="block truncate text-xs text-neutral-500">{c.locked ? 'Private · ' : ''}{c.hidden ? 'Hidden · ' : ''}{c.href}</span>
+                  <span className="block truncate text-xs text-neutral-500">{c.locked ? 'Private · ' : ''}{c.hidden ? 'Hidden · ' : ''}{{ normal: 'Normal', wide: 'Wide', full: 'Full row' }[c.width]} · {{ compact: 'Compact', standard: 'Standard', tall: 'Tall', xl: 'Extra tall' }[c.height]} · {c.kind === 'link' ? url || 'no web address yet' : c.href}</span>
                 </button>
+                {c.lockable ? (
+                  <button aria-label={c.locked ? `Unlock ${c.title}` : `Lock ${c.title}`} aria-pressed={c.locked} onClick={() => setCard(c.id, { locked: !c.locked })} className={`rounded-lg p-2 ring-1 ${c.locked ? 'bg-[#c8a96a] text-neutral-950 ring-[#c8a96a]' : 'text-neutral-400 ring-white/10 hover:bg-white/10'}`} title={c.locked ? 'Private — click to open to everyone' : 'Open to everyone — click to make private'}>{c.locked ? <Lock className="size-4" /> : <Unlock className="size-4" />}</button>
+                ) : (
+                  <span title="Can’t be locked — donors need the fundraising pages to stay public" className="rounded-lg p-2 text-neutral-700"><Lock className="size-4" /></span>
+                )}
                 <button aria-label="Move up" disabled={i === 0} onClick={() => move(c.id, -1)} className="rounded-lg p-2 text-neutral-400 hover:bg-white/10 disabled:opacity-30"><ArrowUp className="size-4" /></button>
                 <button aria-label="Move down" disabled={i === cards.length - 1} onClick={() => move(c.id, 1)} className="rounded-lg p-2 text-neutral-400 hover:bg-white/10 disabled:opacity-30"><ArrowDown className="size-4" /></button>
               </div>
               {isOpen && (
                 <div className="space-y-4 border-t border-white/10 p-4">
+                  {c.kind === 'link' && (
+                    <div>
+                      <label className={label} htmlFor={`url-${c.id}`}>Website address</label>
+                      <input id={`url-${c.id}`} type="url" inputMode="url" placeholder="https://example.com" className={input} value={url} maxLength={500} onChange={(e) => setUrl(c.id, e.target.value)} />
+                      <p className="mt-1 text-xs text-neutral-500">{c.locked ? 'Locked: visitors never see this address until you approve them.' : 'Opens in a new tab. Lock this box to hide the address until you approve someone.'} The box stays hidden until an address is set.</p>
+                    </div>
+                  )}
                   <div><label className={label}>Title</label><input className={input} value={c.title} maxLength={60} onChange={(e) => setCard(c.id, { title: e.target.value || undefined })} /></div>
                   <div><label className={label}>Short description</label><textarea className={area} rows={2} maxLength={200} value={c.teaser} onChange={(e) => setCard(c.id, { teaser: e.target.value || undefined })} /></div>
                   <div>
@@ -152,27 +185,47 @@ function CardsTab({ cards, setCard, resetCard, move }: { cards: CardView[]; setC
                       {ICON_SIZES.map((z: IconSize) => <button key={z} onClick={() => setCard(c.id, { iconSize: z })} aria-pressed={c.iconSize === z} className={chip(c.iconSize === z)}>{{ sm: 'Small', md: 'Medium', lg: 'Large', xl: 'Extra large' }[z]}</button>)}
                     </div>
                   </div>
+                  <div>
+                    <span className={label}>Box width</span>
+                    <div className="flex flex-wrap gap-2">
+                      {BOX_WIDTHS.map((w: BoxWidth) => <button key={w} onClick={() => setCard(c.id, { width: w, wide: undefined })} aria-pressed={c.width === w} className={chip(c.width === w)}>{{ normal: 'Normal', wide: 'Wide (2 boxes)', full: 'Full row' }[w]}</button>)}
+                    </div>
+                  </div>
+                  <div>
+                    <span className={label}>Box height</span>
+                    <div className="flex flex-wrap gap-2">
+                      {BOX_HEIGHTS.map((z: BoxHeight) => <button key={z} onClick={() => setCard(c.id, { height: z })} aria-pressed={c.height === z} className={chip(c.height === z)}>{{ compact: 'Compact', standard: 'Standard', tall: 'Tall', xl: 'Extra tall' }[z]}</button>)}
+                    </div>
+                  </div>
                   <div className="flex flex-wrap items-end gap-4">
                     <div><label className={label} htmlFor={`accent-${c.id}`}>Color</label><input id={`accent-${c.id}`} type="color" value={c.accent} onChange={(e) => setCard(c.id, { accent: e.target.value })} className="h-10 w-16 cursor-pointer rounded-lg bg-transparent" /></div>
-                    <button onClick={() => setCard(c.id, { wide: !c.wide })} aria-pressed={c.wide} className={chip(c.wide)}>Wide box</button>
                     <button onClick={() => setCard(c.id, { hidden: !c.hidden })} className={chip(c.hidden)}>{c.hidden ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />} {c.hidden ? 'Hidden' : 'Visible'}</button>
                     <button onClick={() => setCard(c.id, { status: c.status === 'soon' ? 'live' : 'soon' })} aria-pressed={c.status === 'soon'} className={chip(c.status === 'soon')}>“Soon” tag</button>
                     {c.lockable ? (
                       <button onClick={() => setCard(c.id, { locked: !c.locked })} aria-pressed={c.locked} className={chip(c.locked)}>{c.locked ? <Lock className="size-3.5" /> : <Unlock className="size-3.5" />} {c.locked ? 'Locked — approval needed' : 'Open to everyone'}</button>
-                    ) : <span className="text-xs text-neutral-600">This box can’t be locked (it opens another app or page).</span>}
+                    ) : <span className="text-xs text-neutral-600">Can’t be locked — donors need the fundraising pages to stay public.</span>}
                   </div>
-                  <button onClick={() => resetCard(c.id)} className="inline-flex items-center gap-1.5 text-xs text-neutral-400 hover:text-white"><RotateCcw className="size-3.5" /> Reset to default ({def.title})</button>
+                  <div className="flex flex-wrap items-center gap-4">
+                    {def && <button onClick={() => resetCard(c.id)} className="inline-flex items-center gap-1.5 text-xs text-neutral-400 hover:text-white"><RotateCcw className="size-3.5" /> Reset to default ({def.title})</button>}
+                    {c.custom && <button onClick={() => { if (window.confirm(`Delete “${c.title}”? Its photos and text are removed when you save.`)) { removeBox(c.id); setOpen(null); } }} className="inline-flex items-center gap-1.5 text-xs text-red-400 hover:text-red-300"><Trash2 className="size-3.5" /> Delete this box</button>}
+                  </div>
                 </div>
               )}
             </li>
           );
         })}
       </ul>
+      </div>
 
-      <div>
-        <p className="mb-3 text-xs font-medium uppercase tracking-wider text-neutral-500">Live preview</p>
-        <ul className="pointer-events-none grid select-none grid-cols-2 gap-3">
-          {cards.filter((c) => !c.hidden).map((c) => <CategoryCard key={c.id} category={{ ...c, wide: c.wide }} />)}
+      <div className="lg:sticky lg:top-24 lg:self-start">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs font-medium uppercase tracking-wider text-neutral-500">Live preview</p>
+          <div className="flex gap-1.5" role="group" aria-label="Preview size">
+            {([[1, 'Phone'], [2, 'Tablet'], [4, 'Desktop']] as const).map(([n, l]) => <button key={n} onClick={() => setDevice(n)} aria-pressed={device === n} className={chip(device === n)}>{l}</button>)}
+          </div>
+        </div>
+        <ul className={`pointer-events-none grid select-none grid-flow-dense ${gridCols} gap-3 lg:max-h-[75vh] lg:overflow-y-auto`}>
+          {cards.filter((c) => !c.hidden).map((c) => <CategoryCard key={c.id} category={c} cols={device} />)}
         </ul>
       </div>
     </div>
