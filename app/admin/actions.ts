@@ -11,7 +11,7 @@ import {
 } from '@/lib/admin/session';
 import { isBlobConfigured, readJson, writeJson } from '@/lib/admin/store';
 import { deleteRequest, updateRequest } from '@/lib/access/visitor';
-import { loadSettings, SETTINGS_PATH } from '@/lib/site/load';
+import { forgetSettingsMemo, loadSettings, SETTINGS_PATH } from '@/lib/site/load';
 import { sanitizeSettings, settingsSchema } from '@/lib/site/settings';
 
 export interface FormState {
@@ -109,6 +109,7 @@ export async function saveSettings(input: unknown): Promise<FormState> {
   }
 
   await writeJson(SETTINGS_PATH, next);
+  forgetSettingsMemo();
   if (removed.length) await del(removed).catch(() => {});
   revalidatePath('/', 'layout');
   return { ok: true };

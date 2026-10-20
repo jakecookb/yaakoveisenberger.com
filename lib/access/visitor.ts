@@ -10,6 +10,22 @@ import { isAdmin } from '@/lib/admin/session';
 // hash of the secret is stored. The admin approves per category or for everything.
 
 export const VISITOR_COOKIE = 've_visitor';
+/** About 13 months: the longest a browser will keep a cookie (Chrome caps it at 400 days). Renewed on every visit. */
+export const VISITOR_MAX_AGE = 60 * 60 * 24 * 400;
+export const visitorCookieOptions = () => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax' as const,
+  path: '/',
+  maxAge: VISITOR_MAX_AGE,
+});
+
+/** An approved visitor's access never expires on our side; this keeps their browser's copy of it alive too. */
+export async function renewVisitorCookie() {
+  const store = await cookies();
+  const value = store.get(VISITOR_COOKIE)?.value;
+  if (value) store.set(VISITOR_COOKIE, value, visitorCookieOptions());
+}
 const PREFIX = 'site/access/';
 const MAX_REQUESTS = 500;
 /** After a decline, the same visitor has to wait this long before asking for that box again. */
@@ -113,13 +129,7 @@ export async function createOrUpdateRequest(name: string | null, categoryId: str
   const secret = randomBytes(24).toString('base64url');
   const rec: AccessRequest = { id, name: clean, secretHash: sha(secret), requested: [categoryId], granted: [], denied: [], all: false, createdAt: now, updatedAt: now };
   await writeJson(recordPath(id), rec);
-  (await cookies()).set(VISITOR_COOKIE, `${id}.${secret}`, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 60 * 60 * 24 * 180,
-  });
+  (await cookies()).set(VISITOR_COOKIE, `${id}.${secret}`, visitorCookieOptions());
   return { ok: true };
 }
 

@@ -10,11 +10,12 @@ import type { FromWorker, Mp3Request, SeparateRequest, ToWorker } from './protoc
 const post = (m: FromWorker, transfer: Transferable[] = []) => (self as unknown as Worker).postMessage(m, transfer);
 let cancelled = false;
 
-// ONNX Runtime Web is served from this site (/ort/*, copied at install time) and loaded at run time, not bundled.
+// ONNX Runtime Web is served from this site (/ort/<version>/*, copied at install time) and loaded at run time, not bundled.
 async function loadOrt(gpu: boolean, threads: number): Promise<any> {
-  const url = gpu ? '/ort/ort.webgpu.min.mjs' : '/ort/ort.wasm.min.mjs';
+  const base = `/ort/${process.env.NEXT_PUBLIC_ORT_VERSION}/`;
+  const url = base + (gpu ? 'ort.webgpu.min.mjs' : 'ort.wasm.min.mjs');
   const ort: any = await import(/* webpackIgnore: true */ /* turbopackIgnore: true */ url);
-  ort.env.wasm.wasmPaths = '/ort/';
+  ort.env.wasm.wasmPaths = base;
   ort.env.wasm.numThreads = threads;
   ort.env.wasm.simd = true;
   return ort;

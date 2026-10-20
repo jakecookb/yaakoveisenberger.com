@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { accessState, accessStates } from '@/lib/access/visitor';
+import { accessState, accessStates, renewVisitorCookie } from '@/lib/access/visitor';
+import { isAdmin } from '@/lib/admin/session';
 import { loadSettings } from '@/lib/site/load';
 import { resolveCards } from '@/lib/site/settings';
 
@@ -11,7 +12,10 @@ export async function GET(request: Request) {
   let body: unknown;
   if (params.get('all')) {
     const locked = resolveCards(await loadSettings(), { includeHidden: true }).filter((c) => c.locked).map((c) => c.id);
-    body = { states: await accessStates(locked) };
+    const states = await accessStates(locked);
+    body = { states };
+    // An approved visitor who comes back keeps their access: extend the cookie's life.
+    if (Object.values(states).some((x) => x.state === 'approved') && !(await isAdmin())) await renewVisitorCookie();
   } else {
     body = await accessState(params.get('cat') ?? '');
   }
