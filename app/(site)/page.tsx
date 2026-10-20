@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, ExternalLink, HandHeart, Mail, Phone, Play } from 'lucide-react';
+import { ArrowRight, ChefHat, ExternalLink, HandHeart, Mail, Phone, Play } from 'lucide-react';
 import logo from '@/public/images/home/logo.png';
 import wordmark from '@/public/images/home/wordmark-white.png';
 import { featuredWork, site, theZoneVideos } from '@/lib/site/content';
@@ -84,10 +84,22 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ------------------------------------------------------------ fundraising */}
+      {/* ------------------------------------------------------------ apps */}
       <section className="border-t border-white/5">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-          <Link href="/fund" className="group flex flex-col gap-5 rounded-3xl bg-gradient-to-br from-[#c8a96a]/20 to-transparent p-8 ring-1 ring-[#c8a96a]/30 transition hover:ring-[#c8a96a]/60 sm:flex-row sm:items-center sm:justify-between sm:p-10">
+        <div className="mx-auto grid max-w-6xl gap-5 px-4 py-16 sm:px-6 md:grid-cols-2">
+          <a href="/cookbook" className="group flex flex-col justify-between gap-6 rounded-3xl bg-gradient-to-br from-orange-500/20 to-transparent p-8 ring-1 ring-orange-400/30 transition hover:ring-orange-400/60">
+            <span className="flex items-start gap-4">
+              <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-orange-500 text-white"><ChefHat className="size-6" /></span>
+              <span>
+                <span className="block text-xl font-semibold text-white">Cookbook</span>
+                <span className="mt-1 block text-neutral-400">Family recipes — scanned, scaled, saved and shared.</span>
+              </span>
+            </span>
+            <span className="inline-flex items-center gap-2 font-semibold text-orange-300">
+              Open Cookbook <ArrowRight className="size-4 transition group-hover:translate-x-1" />
+            </span>
+          </a>
+          <Link href="/fund" className="group flex flex-col justify-between gap-6 rounded-3xl bg-gradient-to-br from-[#c8a96a]/20 to-transparent p-8 ring-1 ring-[#c8a96a]/30 transition hover:ring-[#c8a96a]/60">
             <span className="flex items-start gap-4">
               <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-[#c8a96a] text-neutral-950"><HandHeart className="size-6" /></span>
               <span>

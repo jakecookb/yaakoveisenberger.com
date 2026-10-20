@@ -33,8 +33,18 @@ const securityHeaders = [
   { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
 ];
 
+// The Cookbook app (separate repo + Vercel project, built with base '/cookbook/') is served
+// under this site at /cookbook — Vercel proxies the requests, so it shares this domain.
+const cookbookOrigin = (process.env.COOKBOOK_ORIGIN ?? 'https://cookbook-roan-ten.vercel.app').replace(/\/$/, '');
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  async rewrites() {
+    return [
+      { source: '/cookbook', destination: `${cookbookOrigin}/cookbook/` },
+      { source: '/cookbook/:path*', destination: `${cookbookOrigin}/cookbook/:path*` },
+    ];
+  },
   async headers() {
     return [
       {

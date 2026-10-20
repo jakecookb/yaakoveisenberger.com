@@ -3,8 +3,9 @@ import Link from 'next/link';
 import wordmark from '@/public/images/home/wordmark-white.png';
 
 const NAV = [
-  { href: '/#work', label: 'Work' },
+  { href: '/#work', label: 'Work', desktopOnly: true },
   { href: '/#videos', label: 'Videos', desktopOnly: true },
+  { href: '/cookbook', label: 'Cookbook', external: true },
   { href: '/fund', label: 'Fundraising' },
   { href: '/#contact', label: 'Contact' },
 ];
@@ -17,15 +18,15 @@ export function SiteHeader() {
           <Image src={wordmark} alt="Yaakov Eisenberger" className="h-2 w-auto sm:h-3" priority />
         </Link>
         <nav className="flex items-center text-[13px] sm:gap-2 sm:text-sm" aria-label="Main">
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`rounded-lg px-1.5 py-1.5 text-neutral-300 transition hover:bg-white/5 hover:text-white sm:px-3 ${item.desktopOnly ? 'hidden sm:block' : ''}`}
-            >
-              {item.label}
-            </Link>
-          ))}
+          {NAV.map((item) => {
+            const className = `rounded-lg px-1.5 py-1.5 text-neutral-300 transition hover:bg-white/5 hover:text-white sm:px-3 ${item.desktopOnly ? 'hidden sm:block' : ''}`;
+            // Cookbook is a separate app served under /cookbook, so it needs a full page load.
+            return item.external ? (
+              <a key={item.href} href={item.href} className={className}>{item.label}</a>
+            ) : (
+              <Link key={item.href} href={item.href} className={className}>{item.label}</Link>
+            );
+          })}
         </nav>
       </div>
     </header>
