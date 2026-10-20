@@ -4,8 +4,10 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { del } from '@vercel/blob';
 import { hashPassword, verifyPassword } from '@/lib/admin/password';
+import { checkCode, startChallenge } from '@/lib/admin/otp';
+import { isTwoFactorRequired } from '@/lib/admin/whatsapp';
 import {
-  checkCredentials, clientIp, CREDENTIAL_PATH, endAdminSession, isAdminConfigured, loginBlocked, recordLogin, requireAdmin, startAdminSession,
+  checkCredentials, clientIp, CREDENTIAL_PATH, endAdminSession, isAdminConfigured, isAdminEmail, loginBlocked, recordLogin, requireAdmin, startAdminSession,
 } from '@/lib/admin/session';
 import { isBlobConfigured, readJson, writeJson } from '@/lib/admin/store';
 import { deleteRequest, updateRequest } from '@/lib/access/visitor';
@@ -29,8 +31,59 @@ export async function loginAction(_prev: FormState, formData: FormData): Promise
     await new Promise((r) => setTimeout(r, 600));
     return { error: 'Wrong email or password.' };
   }
+  if (isTwoFactorRequired) {
+    const sent = await startChallenge('login', email.trim().toLowerCase());
+    if (sent !== 'sent') return { error: challengeError(sent) };
+    redirect('/admin/login/verify');
+  }
   await startAdminSession();
   redirect('/admin');
+}
+
+function challengeError(r: 'busy' | 'send-failed' | 'no-storage') {
+  return r === 'busy'
+    ? 'Too many codes requested. Wait 10 minutes and try again.'
+    : r === 'no-storage'
+      ? 'Storage is not connected, so a code can’t be created.'
+      : 'Could not send the WhatsApp code. Check the WhatsApp settings and try again.';
+}
+
+/** Step 2 of sign-in: the code sent to WhatsApp. */
+export async function verifyLoginAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const ip = await clientIp();
+  if (loginBlocked(ip)) return { error: 'Too many attempts. Try again in a few minutes.' };
+  const res = await checkCode('login', String(formData.get('code') ?? ''));
+  recordLogin(ip, res.ok);
+  if (!res.ok) return { error: res.error };
+  await startAdminSession();
+  redirect('/admin');
+}
+
+/** "Forgot password": sends a code to the owner's WhatsApp (the answer never reveals whether the email matched). */
+export async function forgotAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  if (!isAdminConfigured || !isTwoFactorRequired) return { error: 'Password reset by WhatsApp is not set up yet.' };
+  const ip = await clientIp();
+  if (loginBlocked(ip)) return { error: 'Too many attempts. Try again in a few minutes.' };
+  recordLogin(ip, false); // every request counts toward the limit
+  const email = String(formData.get('email') ?? '');
+  if (isAdminEmail(email)) {
+    const sent = await startChallenge('reset', email.trim().toLowerCase());
+    if (sent === 'busy' || sent === 'no-storage') return { error: challengeError(sent) };
+  }
+  redirect('/admin/login/reset');
+}
+
+export async function resetPasswordAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const next = String(formData.get('next') ?? '');
+  if (next.length < 10) return { error: 'New password must be at least 10 characters.' };
+  const ip = await clientIp();
+  if (loginBlocked(ip)) return { error: 'Too many attempts. Try again in a few minutes.' };
+  const res = await checkCode('reset', String(formData.get('code') ?? ''));
+  recordLogin(ip, false);
+  if (!res.ok) return { error: res.error };
+  await writeJson(CREDENTIAL_PATH, { hash: await hashPassword(next), updatedAt: new Date().toISOString() });
+  await endAdminSession();
+  redirect('/admin/login?changed=1');
 }
 
 export async function logoutAction() {

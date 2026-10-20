@@ -12,7 +12,10 @@ const MAX_AGE = 60 * 60 * 24 * 7;
 
 export const CREDENTIAL_PATH = 'site/admin.json';
 
-export const isAdminConfigured = Boolean(process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD_HASH && SECRET.length >= 32);
+/** One or more admin emails, comma-separated in ADMIN_EMAIL. */
+export const adminEmails = (process.env.ADMIN_EMAIL ?? '').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean);
+
+export const isAdminConfigured = Boolean(adminEmails.length && process.env.ADMIN_PASSWORD_HASH && SECRET.length >= 32);
 
 /** Password hash in effect: one saved from the admin area wins over the env var. */
 async function currentHash(): Promise<string> {
@@ -26,9 +29,11 @@ export async function checkCredentials(email: string, password: string): Promise
   if (!isAdminConfigured) return false;
   const hash = await currentHash();
   const passwordOk = await verifyPassword(password, hash);
-  const emailOk = email.trim().toLowerCase() === (process.env.ADMIN_EMAIL ?? '').trim().toLowerCase();
+  const emailOk = adminEmails.includes(email.trim().toLowerCase());
   return passwordOk && emailOk;
 }
+
+export const isAdminEmail = (email: string) => adminEmails.includes(email.trim().toLowerCase());
 
 export async function startAdminSession() {
   const hash = await currentHash();

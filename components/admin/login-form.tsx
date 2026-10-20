@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
+import Link from 'next/link';
 import { loginAction, type FormState } from '@/app/admin/actions';
 
 export function LoginForm({ changed }: { changed?: boolean }) {
@@ -22,6 +23,7 @@ export function LoginForm({ changed }: { changed?: boolean }) {
       <button disabled={pending} className="h-11 w-full rounded-full bg-[#c8a96a] font-semibold text-neutral-950 transition hover:bg-[#d8bc82] disabled:opacity-60">
         {pending ? 'Signing in…' : 'Sign in'}
       </button>
+      <Link href="/admin/login/forgot" className="block text-center text-sm text-neutral-400 hover:text-white">Forgot password?</Link>
     </form>
   );
 }
