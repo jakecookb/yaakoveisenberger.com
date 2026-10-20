@@ -1,0 +1,10 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.yaakoveisenberger.cookbook",
+      "sha256_cert_fingerprints": ["C7:E5:1C:49:4E:CA:FD:38:E2:A1:E8:48:54:E8:38:D0:72:7A:2C:B0:3E:1F:A1:46:E1:7D:09:4D:8A:B7:C7:11"]
+    }
+  }
+]
