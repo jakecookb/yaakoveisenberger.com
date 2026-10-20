@@ -21,3 +21,9 @@ body {
 body:has(.site-dark) {
   background: #0a0a0a;
 }
+
+/* Site backdrop: a few squares of the faint grid slowly light up and fade. */
+@keyframes box-glow {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 1; }
+}

@@ -3,7 +3,7 @@
 import Image, { type StaticImageData } from 'next/image';
 import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } from 'framer-motion';
 
-const SIZE = 'size-52 sm:size-64 lg:size-80';
+const SIZE = 'size-40 sm:size-48 lg:size-52';
 
 /**
  * The logo on a floating slab of "liquid glass": frosted translucent pane with a bright rim, a specular
@@ -43,9 +43,9 @@ export function HeroLogo({ logo, customSrc }: { logo: StaticImageData; customSrc
         className="relative rounded-[2.75rem] border border-white/30 bg-gradient-to-br from-white/30 via-white/[0.07] to-white/20 p-3 backdrop-blur-2xl backdrop-saturate-150 sm:rounded-[3.25rem] sm:p-4 shadow-[0_40px_90px_-25px_rgba(0,0,0,0.85),0_0_60px_-10px_rgba(200,169,106,0.35),inset_0_1.5px_0_rgba(255,255,255,0.65),inset_0_-1.5px_0_rgba(255,255,255,0.18),inset_1.5px_0_0_rgba(255,255,255,0.22),inset_-1.5px_0_0_rgba(255,255,255,0.1)]"
       >
         {customSrc ? (
-          <img src={customSrc} alt="" className={`${SIZE} rounded-[2rem] object-cover ring-1 ring-white/25 sm:rounded-[2.5rem]`} />
+          <img src={customSrc} alt="" decoding="async" className={`${SIZE} rounded-[2rem] object-cover ring-1 ring-white/25 sm:rounded-[2.5rem]`} />
         ) : (
-          <Image src={logo} alt="" priority className={`${SIZE} rounded-[2rem] ring-1 ring-white/25 sm:rounded-[2.5rem]`} />
+          <Image src={logo} alt="" priority quality={95} sizes="(min-width: 1024px) 208px, (min-width: 640px) 192px, 160px" className={`${SIZE} rounded-[2rem] ring-1 ring-white/25 sm:rounded-[2.5rem]`} />
         )}
 
         {/* specular highlight + sweeping sheen, clipped to the pane */}

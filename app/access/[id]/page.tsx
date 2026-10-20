@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { SiteHeader } from '@/components/site/header';
 import { SiteFooter } from '@/components/site/footer';
+import { SiteBackdrop } from '@/components/site/backdrop';
 import { LockedGate } from '@/components/hub/locked-gate';
 import { ICONS } from '@/data/icons';
 import { loadSettings } from '@/lib/site/load';
@@ -19,7 +20,8 @@ export default async function AccessPage({ params }: { params: Promise<{ id: str
   if (!card.locked) redirect(card.href);
   const Icon = ICONS[card.iconKey];
   return (
-    <div className="site-dark min-h-screen bg-neutral-950 text-neutral-100 [color-scheme:dark]">
+    <div className="site-dark isolate min-h-screen bg-neutral-950 text-neutral-100 [color-scheme:dark]">
+      <SiteBackdrop />
       <SiteHeader />
       <main className="mx-auto max-w-5xl px-4 py-16 text-center sm:px-6">
         <span className="mx-auto flex size-16 items-center justify-center rounded-3xl text-neutral-950 shadow-xl" style={{ background: card.accent }}>
