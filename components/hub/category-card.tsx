@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { motion, useReducedMotion, type Variants } from 'framer-motion';
-import { ArrowUpRight, Lock } from 'lucide-react';
+import { ArrowUpRight, Check, Clock, Lock, ShieldX, Unlock } from 'lucide-react';
 import { ICONS } from '@/data/icons';
 import type { BoxHeight, CardView, IconSize } from '@/lib/site/settings';
 import { AccessModal } from './access-modal';
@@ -27,13 +27,20 @@ export const cardVariants: Variants = {
   show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
 };
 
-function Badge({ category, liveCount }: { category: CardView; liveCount?: number }) {
+export interface AccessInfo {
+  state: 'none' | 'pending' | 'approved' | 'denied';
+  retryAt?: string;
+}
+
+const PILL = 'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider ring-1';
+
+function Badge({ category, liveCount, access }: { category: CardView; liveCount?: number; access?: AccessInfo }) {
   if (category.locked) {
-    return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-neutral-300 ring-1 ring-white/15">
-        <Lock className="size-3" /> Private
-      </span>
-    );
+    const st = access?.state ?? 'none';
+    if (st === 'approved') return <span className={`${PILL} bg-emerald-400/10 text-emerald-300 ring-emerald-400/30`}><Unlock className="size-3" /> Approved</span>;
+    if (st === 'pending') return <span className={`${PILL} bg-amber-400/10 text-amber-300 ring-amber-400/30`}><Clock className="size-3" /> Pending</span>;
+    if (st === 'denied') return <span className={`${PILL} bg-red-400/10 text-red-300 ring-red-400/30`}><ShieldX className="size-3" /> Declined</span>;
+    return <span className={`${PILL} bg-white/5 text-neutral-300 ring-white/15`}><Lock className="size-3" /> Private</span>;
   }
   if (category.badge === 'live') {
     return (
@@ -56,7 +63,7 @@ function Badge({ category, liveCount }: { category: CardView; liveCount?: number
 }
 
 /** `cols` forces a column count (used by the editor's phone/tablet/desktop preview); the live site uses breakpoints. */
-export function CategoryCard({ category, liveCount, cols }: { category: CardView; liveCount?: number; cols?: 1 | 2 | 4 }) {
+export function CategoryCard({ category, liveCount, cols, access, onModalClose }: { category: CardView; liveCount?: number; cols?: 1 | 2 | 4; access?: AccessInfo; onModalClose?: () => void }) {
   const reduce = useReducedMotion();
   const [asking, setAsking] = useState(false);
   const Icon = ICONS[category.iconKey];
@@ -83,7 +90,7 @@ export function CategoryCard({ category, liveCount, cols }: { category: CardView
         >
           <Icon className={size.icon} strokeWidth={2.2} />
         </span>
-        <Badge category={category} liveCount={liveCount} />
+        <Badge category={category} liveCount={liveCount} access={access} />
       </span>
       <span className="relative">
         <span className="flex items-center justify-between gap-3">
@@ -99,7 +106,7 @@ export function CategoryCard({ category, liveCount, cols }: { category: CardView
   );
 
   // A locked box never navigates from the hub: clicking it opens the "type your name" pop-up instead.
-  const onClick = category.locked ? (e: React.MouseEvent) => { e.preventDefault(); setAsking(true); } : undefined;
+  const onClick = category.locked && access?.state !== 'approved' ? (e: React.MouseEvent) => { e.preventDefault(); setAsking(true); } : undefined;
 
   const onPointerMove = (e: React.PointerEvent<HTMLElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
@@ -120,7 +127,7 @@ export function CategoryCard({ category, liveCount, cols }: { category: CardView
       ) : (
         <Link href={category.href} className={className} style={style} onClick={onClick} onPointerMove={onPointerMove}>{inner}</Link>
       )}
-      {category.locked && <AccessModal open={asking} onClose={() => setAsking(false)} title={category.title} accent={category.accent} categoryId={category.id} continueHref={category.href} />}
+      {category.locked && <AccessModal open={asking} onClose={() => { setAsking(false); onModalClose?.(); }} title={category.title} accent={category.accent} categoryId={category.id} continueHref={category.href} />}
     </motion.li>
   );
 }

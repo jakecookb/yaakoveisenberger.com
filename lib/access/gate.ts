@@ -36,7 +36,8 @@ export const lockedPaths = () =>
       if (parsed?.success) for (const c of resolveCards(sanitizeSettings(parsed.data), { includeHidden: true })) if (c.locked && c.href.startsWith('/')) out.set(c.href, c.id);
     } catch {
       out.clear();
-      for (const c of categories) if (c.lockable) out.set(c.href, '*');
+      // Funding stays open in this case: a storage outage must not take donations offline.
+      for (const c of categories) if (c.lockable && c.id !== 'fund') out.set(c.href, '*');
       out.set('/p', '*');
       out.set('/go', '*');
     }

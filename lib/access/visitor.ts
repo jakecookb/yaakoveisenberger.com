@@ -12,6 +12,8 @@ import { isAdmin } from '@/lib/admin/session';
 export const VISITOR_COOKIE = 've_visitor';
 const PREFIX = 'site/access/';
 const MAX_REQUESTS = 500;
+/** After a decline, the same visitor has to wait this long before asking for that box again. */
+export const RETRY_MINUTES = 25;
 
 export interface AccessRequest {
   id: string;
@@ -20,6 +22,8 @@ export interface AccessRequest {
   requested: string[];
   granted: string[];
   denied: string[];
+  /** When each box was declined (ISO). A visitor may ask again RETRY_MINUTES later. */
+  deniedAt?: Record<string, string>;
   all: boolean;
   createdAt: string;
   updatedAt: string;
@@ -52,15 +56,34 @@ async function visitorRecord() {
 export const grants = (rec: AccessRequest | null, categoryId: string) => Boolean(rec && (rec.all || rec.granted.includes(categoryId)));
 
 export type AccessState = 'none' | 'pending' | 'approved' | 'denied';
+export interface AccessInfo {
+  state: AccessState;
+  name?: string;
+  /** Declined only: when the visitor may ask again (ISO). */
+  retryAt?: string;
+}
 
-export async function accessState(categoryId: string): Promise<{ state: AccessState; name?: string }> {
-  if (await isAdmin()) return { state: 'approved' };
-  const rec = await visitorRecord();
+function stateFrom(rec: AccessRequest | null, categoryId: string): AccessInfo {
   if (!rec) return { state: 'none' };
   if (rec.all || rec.granted.includes(categoryId)) return { state: 'approved', name: rec.name };
-  if (rec.denied.includes(categoryId)) return { state: 'denied', name: rec.name };
+  if (rec.denied.includes(categoryId)) {
+    const at = new Date(rec.deniedAt?.[categoryId] ?? rec.updatedAt).getTime();
+    return { state: 'denied', name: rec.name, retryAt: new Date(at + RETRY_MINUTES * 60_000).toISOString() };
+  }
   if (rec.requested.includes(categoryId)) return { state: 'pending', name: rec.name };
   return { state: 'none', name: rec.name };
+}
+
+export async function accessState(categoryId: string): Promise<AccessInfo> {
+  if (await isAdmin()) return { state: 'approved' };
+  return stateFrom(await visitorRecord(), categoryId);
+}
+
+/** Status of several boxes at once (one record read) — lets the home page label each locked box. */
+export async function accessStates(ids: string[]): Promise<Record<string, AccessInfo>> {
+  const admin = await isAdmin();
+  const rec = admin ? null : await visitorRecord();
+  return Object.fromEntries(ids.map((id) => [id, admin ? { state: 'approved' as const } : stateFrom(rec, id)]));
 }
 
 export const hasAccess = async (categoryId: string) => (await accessState(categoryId)).state === 'approved';
@@ -70,8 +93,14 @@ export async function createOrUpdateRequest(name: string | null, categoryId: str
   const existing = await visitorRecord();
   const now = new Date().toISOString();
   if (existing) {
+    const info = stateFrom(existing, categoryId);
+    if (info.state === 'denied' && info.retryAt && new Date(info.retryAt).getTime() > Date.now()) {
+      const mins = Math.max(1, Math.ceil((new Date(info.retryAt).getTime() - Date.now()) / 60_000));
+      return { ok: false, error: `Declined. You can ask again in ${mins} minute${mins === 1 ? '' : 's'}.` };
+    }
     if (!existing.requested.includes(categoryId) && !existing.granted.includes(categoryId) && !existing.all) existing.requested.push(categoryId);
     existing.denied = existing.denied.filter((c) => c !== categoryId);
+    if (existing.deniedAt) delete existing.deniedAt[categoryId];
     existing.updatedAt = now;
     await writeJson(recordPath(existing.id), existing);
     return { ok: true };

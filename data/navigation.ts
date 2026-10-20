@@ -40,7 +40,7 @@ export interface NavCategory {
 }
 
 export const categories: NavCategory[] = [
-  { id: 'fund', title: 'Funding Platform', teaser: 'Live matching campaigns — every gift multiplied and counted in real time.', href: '/fund', icon: HandHeart, accent: '#c8a96a', badge: 'live', featured: true },
+  { id: 'fund', lockable: true, title: 'Funding Platform', teaser: 'Live matching campaigns — every gift multiplied and counted in real time.', href: '/fund', icon: HandHeart, accent: '#c8a96a', badge: 'live', featured: true },
   { id: 'video', gallery: true, lockable: true, title: 'Video & Media', teaser: 'Featured films, camp highlights and event videos.', href: '/video', icon: Clapperboard, accent: '#f43f5e' },
   { id: 'editing', gallery: true, lockable: true, title: 'Video Editing', teaser: 'Story-first edits, motion and color for your next project.', href: '/editing', icon: Scissors, accent: '#a78bfa', status: 'soon' },
   { id: 'photography', gallery: true, lockable: true, title: 'Photography', teaser: 'Events, portraits and the moments in between.', href: '/photography', icon: Camera, accent: '#38bdf8', status: 'soon' },
