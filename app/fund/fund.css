@@ -1,0 +1,68 @@
+/* Scoped styles for the /fund platform (no Tailwind import here — your site's global
+   stylesheet already loads Tailwind; utilities used by /fund are detected from source). */
+
+.fund-root {
+  --fund-accent: #4f46e5;
+  --fund-ink: #0f172a;
+  --fund-muted: #64748b;
+  --fund-line: #e2e8f0;
+  --fund-surface: #ffffff;
+  --fund-canvas: #f8fafc;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: var(--fund-ink);
+}
+
+/* Derived accent steps. Re-declared on .fund-theme so an inline --fund-accent
+   (per-campaign theme color) recomputes them for that subtree. */
+.fund-root,
+.fund-theme {
+  --fund-accent-soft: color-mix(in oklab, var(--fund-accent) 10%, white);
+  --fund-accent-track: color-mix(in oklab, var(--fund-accent) 18%, white);
+  --fund-accent-strong: color-mix(in oklab, var(--fund-accent) 78%, black);
+  --fund-accent-deep: color-mix(in oklab, var(--fund-accent) 45%, #020617);
+}
+
+@keyframes fund-shimmer {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+.fund-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  animation: fund-shimmer 2.4s ease-in-out infinite;
+}
+
+@keyframes fund-pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.8); }
+}
+.fund-live-dot { animation: fund-pulse-dot 1.6s ease-in-out infinite; }
+
+@keyframes fund-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.fund-marquee { animation: fund-marquee 40s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fund-shimmer::after, .fund-live-dot, .fund-marquee { animation: none; }
+}
+
+.fund-tabular { font-variant-numeric: tabular-nums; }
+
+/* Big-screen display: everything scales with the viewport (1080p -> 4K). */
+.fund-display {
+  font-size: clamp(12px, 1.05vmin, 48px);
+  cursor: none;
+}
+.fund-display.show-cursor { cursor: default; }
+
+.fund-prose p + p { margin-top: 1em; }
+
+@keyframes fund-panel-timer {
+  from { width: 0%; }
+  to { width: 100%; }
+}
