@@ -21,7 +21,7 @@ Also included: `/fund` (live campaign list), `/fund/login`, `/fund/l/<code>` (tr
 
 ## Editing the site
 
-- **Home page hub cards** live in [`data/navigation.ts`](data/navigation.ts) — add one entry to `categories` to add a card (set `status: 'soon'` and add a `<ComingSoon id="…" />` page for routes not built yet).
+- **Home page hub cards** live in [`data/navigation.ts`](data/navigation.ts) — add one entry to `categories` to add a card (set `gallery: true` / `lockable: true` and add a page that renders `<CategoryPage id="…" />` for a new photo page).
 - **Video page / contact content** (featured work, videos, email, phone) lives in [`lib/site/content.ts`](lib/site/content.ts). Add a video by adding one line with its YouTube id; add a featured project with a title, image (in `public/images/home/`) and link.
 - **New pages** go in `app/(site)/` — e.g. `app/(site)/about/page.tsx` becomes `/about` and automatically gets the site header and footer. Add it to the menu in [`components/site/header.tsx`](components/site/header.tsx).
 - The `/fund` platform has its own layout and doesn't use the site header/footer.
@@ -172,3 +172,15 @@ lib/fund/actions/{admin,portal}.ts                       server actions (run as 
 lib/fund/matching.ts                                     client mirror of the waterfall (preview only)
 components/fund/hooks/use-campaign-live.ts               Realtime + resync hook
 ```
+
+
+---
+
+## Admin editor (`/admin`)
+
+A private editor for the owner: change box titles, descriptions, icons, icon sizes, colors, order and visibility; edit the home tagline, hero logo and page text; upload photos per category; and **lock** any photo page so visitors must type their name and wait for approval (`/admin/access`).
+
+- **Log in** with the small *Log in* tab at the top right of the site. Sessions are a signed, HttpOnly cookie (7 days). The password is stored only as a scrypt hash.
+- **Storage:** Vercel Blob, all **private**. Settings, photos, access requests and the saved password hash are never public URLs; photos are served through `/media/…`, which checks the admin session or an approved visitor first.
+- **Env vars** (Vercel → Settings → Environment Variables): `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH` (create with `npm run admin:hash`), `ADMIN_SESSION_SECRET` (32+ random chars) and `BLOB_READ_WRITE_TOKEN` (added automatically when a Blob store is connected to the project). Changing the password inside the editor overrides `ADMIN_PASSWORD_HASH`.
+- Only boxes that open their own page can be locked (not `/fund`, `/cookbook`, `/video` or `/contact`).

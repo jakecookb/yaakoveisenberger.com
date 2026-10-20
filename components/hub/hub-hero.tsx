@@ -2,7 +2,7 @@ import Image from 'next/image';
 import logo from '@/public/images/home/logo.png';
 import wordmark from '@/public/images/home/wordmark-white.png';
 
-export function HubHero() {
+export function HubHero({ tagline, logoSrc }: { tagline: string; logoSrc?: string }) {
   return (
     <section className="relative overflow-hidden">
       <div
@@ -14,11 +14,15 @@ export function HubHero() {
         aria-hidden
       />
       <div className="relative mx-auto flex max-w-6xl flex-col items-center px-4 pb-12 pt-14 text-center sm:px-6 sm:pb-16 sm:pt-20">
-        <Image src={logo} alt="" priority className="size-28 rounded-3xl shadow-2xl shadow-black/60 ring-1 ring-white/10 sm:size-36" />
+        {logoSrc ? (
+          <img src={logoSrc} alt="" className="size-28 rounded-3xl object-cover shadow-2xl shadow-black/60 ring-1 ring-white/10 sm:size-36" />
+        ) : (
+          <Image src={logo} alt="" priority className="size-28 rounded-3xl shadow-2xl shadow-black/60 ring-1 ring-white/10 sm:size-36" />
+        )}
         <h1 className="mt-8">
           <Image src={wordmark} alt="Yaakov Eisenberger" priority className="mx-auto h-4 w-auto sm:h-6" />
         </h1>
-        <p className="mt-5 max-w-md text-balance text-neutral-400">Video, projects, food and fundraising — everything in one place.</p>
+        <p className="mt-5 max-w-md text-balance text-neutral-400">{tagline}</p>
       </div>
     </section>
   );

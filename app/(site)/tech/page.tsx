@@ -1,7 +1,9 @@
-import { ComingSoon } from '@/components/hub/coming-soon';
+import { CategoryPage } from '@/components/hub/category-page';
+
+export const revalidate = 60;
 
 export const metadata = { title: 'Tech Projects' };
 
 export default function Page() {
-  return <ComingSoon id="tech" />;
+  return <CategoryPage id="tech" />;
 }

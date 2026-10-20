@@ -2,10 +2,17 @@ import Image from 'next/image';
 import { ExternalLink, Play } from 'lucide-react';
 import { featuredWork, theZoneVideos } from '@/lib/site/content';
 import { YouTubeLite } from '@/components/site/youtube-lite';
+import { PhotoGallery } from '@/components/hub/photo-gallery';
+import { loadSettings } from '@/lib/site/load';
+import { mediaUrl } from '@/lib/site/settings';
+
+export const revalidate = 60;
 
 export const metadata = { title: 'Video & Media' };
 
-export default function VideoPage() {
+export default async function VideoPage() {
+  const settings = await loadSettings();
+  const photos = (settings.photos.video ?? []).map((p) => ({ id: p.id, src: mediaUrl(p.pathname), caption: p.caption }));
   return (
     <>
       <section id="work" className="scroll-mt-20">
@@ -61,6 +68,15 @@ export default function VideoPage() {
           </div>
         </div>
       </section>
+
+      {photos.length > 0 && (
+        <section className="border-t border-white/5">
+          <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
+            <h2 className="text-sm font-semibold uppercase tracking-[0.3em] text-[#c8a96a]">Photos</h2>
+            <div className="mt-8"><PhotoGallery photos={photos} /></div>
+          </div>
+        </section>
+      )}
     </>
   );
 }

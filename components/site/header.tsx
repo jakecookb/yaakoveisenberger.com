@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { Lock } from 'lucide-react';
 import wordmark from '@/public/images/home/wordmark-white.png';
 
 const NAV = [
@@ -26,6 +27,13 @@ export function SiteHeader() {
               <Link key={item.href} href={item.href} className={className}>{item.label}</Link>
             );
           })}
+          <Link
+            href="/admin/login"
+            className="ml-1 inline-flex items-center gap-1.5 rounded-full border border-white/15 px-2.5 py-1.5 text-neutral-300 transition hover:border-white/30 hover:bg-white/5 hover:text-white sm:ml-2 sm:px-3"
+          >
+            <Lock className="size-3.5" aria-hidden />
+            <span className="sr-only sm:not-sr-only">Log in</span>
+          </Link>
         </nav>
       </div>
     </header>
