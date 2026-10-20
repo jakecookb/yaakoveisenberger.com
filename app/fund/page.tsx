@@ -50,8 +50,9 @@ async function CampaignList() {
 
 export default function FundHome() {
   const env = serverEnv();
-  // Public checklist only before the backend exists; afterwards it lives in /fund/admin.
-  const setupIncomplete = !isSupabaseConfigured;
+  // Setup checklist only in local/preview builds before the backend exists; never on the live site
+  // (afterwards the same checks live in /fund/admin → Platform health).
+  const setupIncomplete = !isSupabaseConfigured && process.env.VERCEL_ENV !== 'production';
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
