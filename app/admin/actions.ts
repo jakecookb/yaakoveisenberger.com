@@ -101,7 +101,8 @@ export async function saveSettings(input: unknown): Promise<FormState> {
 
   // Only photos this settings file already owns, or just-uploaded ones in the right folder, may be referenced.
   const kept = new Set(Object.values(next.photos).flat().map((p) => p.pathname));
-  const removed = Object.values(prev.photos).flat().map((p) => p.pathname).filter((p) => !kept.has(p));
+  const submitted = Object.values(parsed.data.photos).flat().map((p) => p.pathname);
+  const removed = [...Object.values(prev.photos).flat().map((p) => p.pathname), ...submitted].filter((p, i, a) => !kept.has(p) && a.indexOf(p) === i);
   if (prev.hero.logoPath && prev.hero.logoPath !== next.hero.logoPath) removed.push(prev.hero.logoPath);
   for (const [cat, photos] of Object.entries(next.photos)) {
     if (photos.some((p) => !p.pathname.startsWith(`photos/${cat}/`))) return { error: 'A photo is filed under the wrong category.' };

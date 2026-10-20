@@ -11,7 +11,7 @@ type State = 'loading' | 'none' | 'pending' | 'approved' | 'denied';
  * Shown instead of a locked page's content. The page itself carries nothing private: this component asks the
  * server whether this browser has been approved, and only then fetches the content.
  */
-export function LockedGate({ categoryId, accent }: { categoryId: string; accent: string }) {
+export function LockedGate({ categoryId, accent, continueHref, className = 'mt-10' }: { categoryId: string; accent: string; continueHref?: string; className?: string }) {
   const [state, setState] = useState<State>('loading');
   const [knownName, setKnownName] = useState<string>();
   const [name, setName] = useState('');
@@ -28,7 +28,10 @@ export function LockedGate({ categoryId, accent }: { categoryId: string; accent:
       const res = await fetch(`/api/access/status?cat=${encodeURIComponent(categoryId)}`, { cache: 'no-store' }).catch(() => null);
       const data = res?.ok ? ((await res.json()) as { state: Exclude<State, 'loading'>; name?: string }) : { state: 'none' as const, name: undefined };
       let body: { body: string; photos: GalleryPhoto[] } | undefined;
-      if (data.state === 'approved') {
+      if (data.state === 'approved' && continueHref) {
+        // Approved: go straight into the box (the gate in proxy.ts now lets this browser through).
+        window.location.replace(continueHref);
+      } else if (data.state === 'approved') {
         const c = await fetch(`/api/category/${encodeURIComponent(categoryId)}`, { cache: 'no-store' }).catch(() => null);
         if (c?.ok) body = await c.json();
       }
@@ -38,7 +41,7 @@ export function LockedGate({ categoryId, accent }: { categoryId: string; accent:
       if (body) setContent(body);
     })();
     return () => { alive = false; };
-  }, [categoryId, tick]);
+  }, [categoryId, tick, continueHref]);
 
   // While waiting for approval, check again every 20 seconds.
   useEffect(() => {
@@ -57,6 +60,8 @@ export function LockedGate({ categoryId, accent }: { categoryId: string; accent:
     setTick((n) => n + 1);
   }
 
+  if (state === 'approved' && continueHref) return <p className={`text-center text-neutral-300 ${className || 'rounded-3xl bg-neutral-900 p-6 ring-1 ring-white/10'}`}>Approved — opening…</p>;
+
   if (state === 'approved') {
     return (
       <div className="mt-10 text-left">
@@ -67,7 +72,7 @@ export function LockedGate({ categoryId, accent }: { categoryId: string; accent:
   }
 
   return (
-    <div className="mx-auto mt-10 w-full max-w-md rounded-3xl bg-neutral-900/70 p-6 text-left ring-1 ring-white/10 sm:p-8">
+    <div className={`mx-auto w-full max-w-md rounded-3xl bg-neutral-900 p-6 text-left ring-1 ring-white/10 sm:p-8 ${className}`}>
       <div className="flex items-center gap-3">
         <span className="flex size-10 items-center justify-center rounded-xl text-neutral-950" style={{ background: accent }}>
           {state === 'pending' ? <Clock className="size-5" /> : state === 'denied' ? <ShieldX className="size-5" /> : <Lock className="size-5" />}

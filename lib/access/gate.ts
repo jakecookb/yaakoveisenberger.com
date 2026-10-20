@@ -1,0 +1,50 @@
+import 'server-only';
+import { isAdminToken } from '@/lib/admin/session';
+import { categories } from '@/data/navigation';
+import { readJsonStrict } from '@/lib/admin/store';
+import { SETTINGS_PATH } from '@/lib/site/load';
+import { resolveCards, sanitizeSettings, settingsSchema } from '@/lib/site/settings';
+import { grants, recordFromCookie } from './visitor';
+
+// Used by proxy.ts: decides, for each request to a locked box, whether this browser may go in.
+// Short in-memory caches keep this cheap (the Cookbook loads many files per page); a lock, unlock or
+// revoke takes effect within a few seconds.
+
+const TTL = 3_000;
+const memo = new Map<string, { v: unknown; exp: number }>();
+async function cached<T>(key: string, fn: () => Promise<T>): Promise<T> {
+  const hit = memo.get(key);
+  if (hit && hit.exp > Date.now()) return hit.v as T;
+  const v = await fn();
+  if (memo.size > 500) memo.clear();
+  memo.set(key, { v, exp: Date.now() + TTL });
+  return v;
+}
+
+/**
+ * Path prefix -> box id, for every locked box that lives on this site (built-in pages, /p/<id> pages and /go/<id> links).
+ * If the settings can't be read the gate fails CLOSED: every lockable built-in page, and all of /p and /go, are
+ * treated as locked (id "*", admin only) rather than letting everyone in.
+ */
+export const lockedPaths = () =>
+  cached('locked', async () => {
+    const out = new Map<string, string>();
+    try {
+      const raw = await readJsonStrict<unknown>(SETTINGS_PATH);
+      const parsed = raw ? settingsSchema.safeParse(raw) : null;
+      if (raw && !parsed?.success) throw new Error('settings unreadable');
+      if (parsed?.success) for (const c of resolveCards(sanitizeSettings(parsed.data), { includeHidden: true })) if (c.locked && c.href.startsWith('/')) out.set(c.href, c.id);
+    } catch {
+      out.clear();
+      for (const c of categories) if (c.lockable) out.set(c.href, '*');
+      out.set('/p', '*');
+      out.set('/go', '*');
+    }
+    return out;
+  });
+
+export async function mayEnter(id: string, visitorCookie: string | undefined, adminCookie: string | undefined) {
+  if (adminCookie && (await cached(`admin:${adminCookie}`, () => isAdminToken(adminCookie)))) return true;
+  if (!visitorCookie || id === '*') return false; // "*" = settings unreadable: admin only
+  return cached(`visitor:${visitorCookie}:${id}`, async () => grants(await recordFromCookie(visitorCookie), id));
+}

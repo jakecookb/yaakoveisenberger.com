@@ -50,17 +50,20 @@ export async function endAdminSession() {
   (await cookies()).delete(ADMIN_COOKIE);
 }
 
-/** True when the request carries a valid admin session (changing the password signs every session out). */
-export async function isAdmin(): Promise<boolean> {
-  if (!isAdminConfigured) return false;
-  const token = (await cookies()).get(ADMIN_COOKIE)?.value;
-  if (!token) return false;
+/** Verifies an admin session token (changing the password signs every session out). */
+export async function isAdminToken(token: string | undefined): Promise<boolean> {
+  if (!isAdminConfigured || !token) return false;
   try {
     const { payload } = await jwtVerify(token, key(), { algorithms: ['HS256'], subject: 'admin' });
     return payload.pv === fingerprint(await currentHash());
   } catch {
     return false;
   }
+}
+
+/** True when the request carries a valid admin session. */
+export async function isAdmin(): Promise<boolean> {
+  return isAdminToken((await cookies()).get(ADMIN_COOKIE)?.value);
 }
 
 export async function requireAdmin() {

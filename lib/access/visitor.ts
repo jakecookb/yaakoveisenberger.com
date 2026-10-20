@@ -33,8 +33,8 @@ export function cleanName(raw: string) {
   return raw.replace(/[\u0000-\u001f\u007f<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, 60);
 }
 
-async function visitorRecord(): Promise<AccessRequest | null> {
-  const raw = (await cookies()).get(VISITOR_COOKIE)?.value;
+/** Looks up the access record a visitor cookie value points to (null if missing, forged or unknown). */
+export async function recordFromCookie(raw: string | undefined): Promise<AccessRequest | null> {
   if (!raw) return null;
   const [id, secret] = raw.split('.');
   if (!id || !secret || !ID.test(id)) return null;
@@ -44,6 +44,12 @@ async function visitorRecord(): Promise<AccessRequest | null> {
   const b = Buffer.from(rec.secretHash);
   return a.length === b.length && timingSafeEqual(a, b) ? rec : null;
 }
+
+async function visitorRecord() {
+  return recordFromCookie((await cookies()).get(VISITOR_COOKIE)?.value);
+}
+
+export const grants = (rec: AccessRequest | null, categoryId: string) => Boolean(rec && (rec.all || rec.granted.includes(categoryId)));
 
 export type AccessState = 'none' | 'pending' | 'approved' | 'denied';
 
