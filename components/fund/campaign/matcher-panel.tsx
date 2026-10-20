@@ -56,7 +56,7 @@ export function MatcherPanel({ matchers, totals, now, currency }: { matchers: Pu
         )}
         <div className="mt-4">
           <div className="mb-1.5 flex justify-between text-xs text-white/70">
-            <span>{formatMoney(remaining, currency)} match funds remaining</span>
+            <span>{formatMoney(remaining, currency, { cents: false })} match funds remaining</span>
             <span>of {formatMoneyCompact(pledged, currency)}</span>
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-white/15">

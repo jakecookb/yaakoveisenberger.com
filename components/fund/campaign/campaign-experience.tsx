@@ -135,7 +135,7 @@ export function CampaignExperience({
                 <span className="flex size-11 items-center justify-center rounded-xl bg-white text-lg font-bold text-[var(--fund-accent-strong)]">{multiplierLabel(live.ratio)}</span>
                 <span className="text-sm">
                   <span className="block font-semibold">{ratioLabel(live.ratio)} matching is live</span>
-                  <span className="text-white/75">{formatMoney(totals.match_remaining_cents, currency)} in match funds left</span>
+                  <span className="text-white/75">{formatMoney(totals.match_remaining_cents, currency, { cents: false })} in match funds left</span>
                 </span>
               </div>
             )}
@@ -148,8 +148,8 @@ export function CampaignExperience({
             <p className="text-sm font-medium text-slate-500">Raised so far</p>
             <AnimatedMoney cents={totals.total_cents} currency={currency} className="mt-1 block text-5xl font-bold tracking-tight sm:text-6xl" />
             <p className="mt-1 text-sm text-slate-500">
-              of {formatMoney(totals.goal_cents, currency)} goal
-              {totals.matched_cents > 0 && <> · includes {formatMoney(totals.matched_cents, currency)} in matching</>}
+              of {formatMoney(totals.goal_cents, currency, { cents: false })} goal
+              {totals.matched_cents > 0 && <> · includes {formatMoney(totals.matched_cents, currency, { cents: false })} in matching</>}
             </p>
             <Thermometer totalCents={totals.total_cents} goalCents={totals.goal_cents} bonusGoalCents={totals.bonus_goal_cents} currency={currency} className="mt-6" />
             <dl className="mt-6 grid grid-cols-3 divide-x divide-slate-100 rounded-2xl bg-slate-50 py-3 text-center">
@@ -159,7 +159,7 @@ export function CampaignExperience({
               </div>
               <div>
                 <dt className="text-xs text-slate-500">Matched</dt>
-                <dd className="mt-0.5 font-semibold">{formatMoney(totals.matched_cents, currency)}</dd>
+                <dd className="mt-0.5 font-semibold">{formatMoney(totals.matched_cents, currency, { cents: false })}</dd>
               </div>
               <div>
                 <dt className="text-xs text-slate-500">Match</dt>
@@ -215,7 +215,7 @@ export function CampaignExperience({
         <div className="mx-auto flex max-w-6xl items-center gap-3">
           <div className="min-w-0 flex-1">
             <AnimatedMoney cents={totals.total_cents} currency={currency} className="block text-lg font-bold leading-tight" />
-            <p className="truncate text-xs text-slate-500">{Math.floor((totals.total_cents / totals.goal_cents) * 100)}% of {formatMoney(totals.goal_cents, currency)}</p>
+            <p className="truncate text-xs text-slate-500">{Math.floor((totals.total_cents / totals.goal_cents) * 100)}% of {formatMoney(totals.goal_cents, currency, { cents: false })}</p>
           </div>
           <Button size="lg" disabled={!canGive} onClick={() => openCheckout()}>
             <Heart className="size-4" aria-hidden /> Donate
