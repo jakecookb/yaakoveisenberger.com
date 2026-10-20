@@ -2,7 +2,7 @@
 
 The website for Yaakov Eisenberger — a Next.js App Router site with:
 
-- **Home page** (`/`) — featured work, TheZone Camp videos and contact details (moved over from Google Sites)
+- **Home page** (`/`) — hub of cards linking to every venture; `/video` has featured work and TheZone Camp videos, `/contact` has contact details (moved over from Google Sites)
 - **Fundraising & matching platform** (`/fund`) — live matching campaigns, nonprofit portal, platform admin and a live-event big screen
 
 | Route | Who | What |
@@ -21,7 +21,8 @@ Also included: `/fund` (live campaign list), `/fund/login`, `/fund/l/<code>` (tr
 
 ## Editing the site
 
-- **Home page content** (featured work, videos, email, phone) lives in [`lib/site/content.ts`](lib/site/content.ts). Add a video by adding one line with its YouTube id; add a featured project with a title, image (in `public/images/home/`) and link.
+- **Home page hub cards** live in [`data/navigation.ts`](data/navigation.ts) — add one entry to `categories` to add a card (set `status: 'soon'` and add a `<ComingSoon id="…" />` page for routes not built yet).
+- **Video page / contact content** (featured work, videos, email, phone) lives in [`lib/site/content.ts`](lib/site/content.ts). Add a video by adding one line with its YouTube id; add a featured project with a title, image (in `public/images/home/`) and link.
 - **New pages** go in `app/(site)/` — e.g. `app/(site)/about/page.tsx` becomes `/about` and automatically gets the site header and footer. Add it to the menu in [`components/site/header.tsx`](components/site/header.tsx).
 - The `/fund` platform has its own layout and doesn't use the site header/footer.
 
