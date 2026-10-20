@@ -3,11 +3,10 @@ import Link from 'next/link';
 import wordmark from '@/public/images/home/wordmark-white.png';
 
 const NAV = [
-  { href: '/#work', label: 'Work', desktopOnly: true },
-  { href: '/#videos', label: 'Videos', desktopOnly: true },
-  { href: '/cookbook', label: 'Cookbook', external: true },
+  { href: '/video', label: 'Video', desktopOnly: true },
+  { href: '/cookbook', label: 'Cookbook', external: true, desktopOnly: true },
   { href: '/fund', label: 'Fundraising' },
-  { href: '/#contact', label: 'Contact' },
+  { href: '/contact', label: 'Contact' },
 ];
 
 export function SiteHeader() {
