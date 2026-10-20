@@ -13,7 +13,7 @@ export const BOX_HEIGHTS = ['compact', 'standard', 'tall', 'xl'] as const;
 export type BoxHeight = (typeof BOX_HEIGHTS)[number];
 
 const cardOverride = z.object({
-  title: z.string().trim().min(1).max(60).optional(),
+  title: z.string().trim().max(60).optional(), // empty = use the built-in name
   teaser: z.string().trim().max(200).optional(),
   hidden: z.boolean().optional(),
   status: z.enum(['live', 'soon']).optional(),
@@ -106,7 +106,10 @@ export function sanitizeSettings(input: SiteSettings): SiteSettings {
   const galleryIds = new Set(all.filter((c) => c.gallery).map((c) => c.id));
   const lockable = new Set(all.filter((c) => c.lockable).map((c) => c.id));
   const cards = only(input.cards);
-  for (const [id, o] of Object.entries(cards)) if (o.locked && !lockable.has(id)) delete o.locked;
+  for (const [id, o] of Object.entries(cards)) {
+    if (o.locked && !lockable.has(id)) delete o.locked;
+    if (o.title !== undefined && !o.title.trim()) delete o.title; // blank name = back to the default
+  }
   return {
     hero: input.hero,
     order: input.order.filter((id, i, a) => known.has(id) && a.indexOf(id) === i),
@@ -154,8 +157,8 @@ export function resolveCards(s: SiteSettings, opts: { includeHidden?: boolean } 
     const href = locked && kind === 'link' ? `/go/${id}` : c.href;
     return {
       id,
-      title: o.title ?? c.title,
-      teaser: o.teaser ?? c.teaser,
+      title: o.title?.trim() ? o.title : c.title,
+      teaser: o.teaser ?? c.teaser, // an empty description is allowed: the tile then shows none
       href,
       iconKey: o.iconKey ?? (c.custom ? 'Star' : iconKeyOf(c.icon)),
       iconSize: o.iconSize ?? 'md',

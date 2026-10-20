@@ -62,7 +62,7 @@ export function AdminEditor({ initial, blobReady, pending, email }: { initial: S
   const cards = useMemo(() => resolveCards(s, { includeHidden: true }), [s]);
 
   const setCard = (id: string, patch: Partial<Record<keyof CardOverride, CardOverride[keyof CardOverride] | undefined>>) =>
-    setS((p) => ({ ...p, cards: { ...p.cards, [id]: clean({ ...p.cards[id], ...patch }) as CardOverride } }));
+    setS((p) => ({ ...p, cards: { ...p.cards, [id]: Object.fromEntries(Object.entries({ ...p.cards[id], ...patch }).filter(([, v]) => v !== undefined)) as CardOverride } }));
   const addBox = (kind: 'page' | 'link') => {
     const id = `c-${Math.random().toString(36).slice(2, 8).padEnd(6, 'x')}`;
     setS((p) => ({ ...p, custom: [...p.custom, kind === 'link' ? { id, kind, url: '' } : { id, kind }], cards: { ...p.cards, [id]: { title: kind === 'link' ? 'New link' : 'New page' } } }));
@@ -121,7 +121,7 @@ export function AdminEditor({ initial, blobReady, pending, email }: { initial: S
         {tabs.map(([k, l]) => <button key={k} onClick={() => setTab(k)} className={chip(tab === k)} aria-pressed={tab === k}>{l}</button>)}
       </nav>
 
-      {tab === 'cards' && <CardsTab cards={cards} custom={s.custom} pages={s.pages} photoCounts={Object.fromEntries(Object.entries(s.photos).map(([k, v]) => [k, v.length]))} setPage={setPage} goPhotos={(id) => { setPhotoCat(id); setTab('photos'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} setCard={setCard} resetCard={resetCard} move={move} addBox={addBox} removeBox={removeBox} setUrl={setUrl} />}
+      {tab === 'cards' && <CardsTab cards={cards} overrides={s.cards} custom={s.custom} pages={s.pages} photoCounts={Object.fromEntries(Object.entries(s.photos).map(([k, v]) => [k, v.length]))} setPage={setPage} goPhotos={(id) => { setPhotoCat(id); setTab('photos'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} setCard={setCard} resetCard={resetCard} move={move} addBox={addBox} removeBox={removeBox} setUrl={setUrl} />}
       {tab === 'text' && <TextTab s={s} setS={setS} blobReady={blobReady} />}
       {tab === 'photos' && <PhotosTab s={s} setS={setS} cards={cards} blobReady={blobReady} cat={photoCat} setCat={setPhotoCat} />}
       {tab === 'account' && <AccountTab email={email} />}
@@ -131,10 +131,9 @@ export function AdminEditor({ initial, blobReady, pending, email }: { initial: S
 
 // ------------------------------------------------------------------ boxes
 
-function CardsTab({ cards, custom, pages, photoCounts, setPage, goPhotos, setCard, resetCard, move, addBox, removeBox, setUrl }: { cards: CardView[]; custom: SiteSettings['custom']; pages: SiteSettings['pages']; photoCounts: Record<string, number>; setPage: (id: string, k: 'heading' | 'body', v: string) => void; goPhotos: (id: string) => void; setCard: (id: string, p: Partial<Record<keyof CardOverride, CardOverride[keyof CardOverride] | undefined>>) => void; resetCard: (id: string) => void; move: (id: string, d: -1 | 1) => void; addBox: (kind: 'page' | 'link') => string; removeBox: (id: string) => void; setUrl: (id: string, url: string) => void }) {
+function CardsTab({ cards, overrides, custom, pages, photoCounts, setPage, goPhotos, setCard, resetCard, move, addBox, removeBox, setUrl }: { cards: CardView[]; overrides: SiteSettings['cards']; custom: SiteSettings['custom']; pages: SiteSettings['pages']; photoCounts: Record<string, number>; setPage: (id: string, k: 'heading' | 'body', v: string) => void; goPhotos: (id: string) => void; setCard: (id: string, p: Partial<Record<keyof CardOverride, CardOverride[keyof CardOverride] | undefined>>) => void; resetCard: (id: string) => void; move: (id: string, d: -1 | 1) => void; addBox: (kind: 'page' | 'link') => string; removeBox: (id: string) => void; setUrl: (id: string, url: string) => void }) {
   const [open, setOpen] = useState<string | null>(null);
   const [device, setDevice] = useState<1 | 2 | 4>(4);
-  const gridCols = { 1: 'grid-cols-1', 2: 'grid-cols-2', 4: 'grid-cols-4' }[device];
   // A new tile is added at the end of a long list: scroll to it so you can start writing straight away.
   const reveal = (id: string) => setTimeout(() => document.getElementById(`tile-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
   return (
@@ -223,8 +222,8 @@ function CardsTab({ cards, custom, pages, photoCounts, setPage, goPhotos, setCar
                       </div>
                     </div>
                   )}
-                  <div><label className={label}>Title</label><input className={input} value={c.title} maxLength={60} onChange={(e) => setCard(c.id, { title: e.target.value || undefined })} /></div>
-                  <div><label className={label}>Short description</label><textarea className={area} rows={2} maxLength={200} value={c.teaser} onChange={(e) => setCard(c.id, { teaser: e.target.value || undefined })} /></div>
+                  <div><label className={label} htmlFor={`title-${c.id}`}>Title</label><input id={`title-${c.id}`} className={input} value={overrides[c.id]?.title ?? c.title} maxLength={60} placeholder={def ? `Leave empty to use “${def.title}”` : 'Name of this tile'} onChange={(e) => setCard(c.id, { title: e.target.value })} /></div>
+                  <div><label className={label} htmlFor={`teaser-${c.id}`}>Short description</label><textarea id={`teaser-${c.id}`} className={area} rows={2} maxLength={200} value={overrides[c.id]?.teaser ?? c.teaser} placeholder="A line under the title (can be left empty)" onChange={(e) => setCard(c.id, { teaser: e.target.value })} /></div>
                   <div>
                     <span className={label}>Icon</span>
                     <div className="flex flex-wrap gap-1.5">
@@ -276,9 +275,7 @@ function CardsTab({ cards, custom, pages, photoCounts, setPage, goPhotos, setCar
             {([[1, 'Phone'], [2, 'Tablet'], [4, 'Desktop']] as const).map(([n, l]) => <button key={n} onClick={() => setDevice(n)} aria-pressed={device === n} className={chip(device === n)}>{l}</button>)}
           </div>
         </div>
-        <ul className={`pointer-events-none grid select-none grid-flow-dense ${gridCols} gap-3 lg:max-h-[75vh] lg:overflow-y-auto`}>
-          {cards.filter((c) => !c.hidden).map((c) => <CategoryCard key={c.id} category={c} cols={device} />)}
-        </ul>
+        <PreviewFrame cards={cards.filter((c) => !c.hidden)} device={device} />
       </div>
     </div>
   );
@@ -415,6 +412,41 @@ function AccountTab({ email }: { email: string }) {
         <p className="mt-2 text-xs text-neutral-500">Ends this browser’s admin session.</p>
         <button className={`${chip(false)} mt-4`}><LogOut className="size-3.5" /> Sign out</button>
       </form>
+    </div>
+  );
+}
+
+// ------------------------------------------------------------------ preview
+
+/**
+ * A faithful miniature of the home page's grid. The cards are laid out at the width the real page uses on a phone, tablet
+ * or desktop, then the whole thing is scaled down to fit this column, so names wrap and boxes line up exactly as they do
+ * for visitors (squeezing real-size cards into a narrow column is what made the old preview look broken).
+ */
+function PreviewFrame({ cards, device }: { cards: CardView[]; device: 1 | 2 | 4 }) {
+  const outer = useRef<HTMLDivElement>(null);
+  const inner = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState({ width: 560, height: 0 });
+  useEffect(() => {
+    const o = outer.current, i = inner.current;
+    if (!o || !i) return;
+    const ro = new ResizeObserver(() => setSize({ width: o.clientWidth, height: i.offsetHeight }));
+    ro.observe(o);
+    ro.observe(i);
+    return () => ro.disconnect();
+  }, []);
+  const virtual = { 1: 343, 2: 720, 4: 1104 }[device]; // the width of the real grid on a phone / tablet / desktop
+  const scale = Math.min(1, size.width / virtual);
+  const cols = { 1: 'grid-cols-1 gap-4', 2: 'grid-cols-2 gap-5', 4: 'grid-cols-4 gap-5' }[device];
+  return (
+    <div className="max-h-[calc(100vh-9rem)] overflow-y-auto rounded-2xl bg-neutral-950 p-3 ring-1 ring-white/10">
+      <div ref={outer} className="w-full overflow-hidden" style={{ height: size.height * scale }} aria-label="Preview of your home page tiles" role="img">
+        <div ref={inner} style={{ width: virtual, transform: `scale(${scale})`, transformOrigin: 'top left' }} className="pointer-events-none select-none">
+          <ul className={`grid grid-flow-dense ${cols}`}>
+            {cards.map((c) => <CategoryCard key={c.id} category={c} cols={device} />)}
+          </ul>
+        </div>
+      </div>
     </div>
   );
 }
