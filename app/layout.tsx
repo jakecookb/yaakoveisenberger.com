@@ -1,11 +1,20 @@
 import type { Metadata } from 'next';
 import './globals.css';
 
-// Stand-in root layout. In your real site keep your existing app/layout.tsx —
-// the /fund module only needs its own app/fund/layout.tsx.
+const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://yaakoveisenberger.com').replace(/\/$/, '');
+
 export const metadata: Metadata = {
-  title: 'Yaakov Eisenberger',
-  description: 'yaakoveisenberger.com',
+  metadataBase: new URL(siteUrl),
+  title: { default: 'Yaakov Eisenberger', template: '%s · Yaakov Eisenberger' },
+  description: 'Videos, projects and fundraising campaigns by Yaakov Eisenberger.',
+  openGraph: {
+    title: 'Yaakov Eisenberger',
+    description: 'Videos, projects and fundraising campaigns by Yaakov Eisenberger.',
+    url: siteUrl,
+    siteName: 'Yaakov Eisenberger',
+    images: [{ url: '/images/home/memories-of-shmuel.jpg', width: 1280, height: 718 }],
+    type: 'website',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

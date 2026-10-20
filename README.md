@@ -1,9 +1,13 @@
-# yaakoveisenberger.com/fund — Fundraising & Matching Platform
+# yaakoveisenberger.com
 
-A multi-tenant, real-time matching-campaign platform that lives under `/fund` in a Next.js App Router site.
+The website for Yaakov Eisenberger — a Next.js App Router site with:
+
+- **Home page** (`/`) — featured work, TheZone Camp videos and contact details (moved over from Google Sites)
+- **Fundraising & matching platform** (`/fund`) — live matching campaigns, nonprofit portal, platform admin and a live-event big screen
 
 | Route | Who | What |
 |---|---|---|
+| `/` | Everyone | Home page |
 | `/fund/[campaignSlug]` | Donors | Live thermometer, countdown, rolling total, multi-tier matching, donor feed, team/ambassador leaderboards, 3-step Stripe checkout |
 | `/fund/admin` | Platform owner | Revenue / live campaigns / match funds locked / platform fees, campaign management + slugs, Stripe Connect onboarding, fraud & transaction monitor, CSV export |
 | `/fund/portal/[campaignSlug]` | Nonprofit managers | Live stats + conversion, matcher pledges & ratios, teams & ambassadors, link/QR generator, outreach log, offline cash/check/wire entry |
@@ -15,7 +19,26 @@ Also included: `/fund` (live campaign list), `/fund/login`, `/fund/l/<code>` (tr
 
 ---
 
-## Quick start (about 15 minutes)
+## Editing the site
+
+- **Home page content** (featured work, videos, email, phone) lives in [`lib/site/content.ts`](lib/site/content.ts). Add a video by adding one line with its YouTube id; add a featured project with a title, image (in `public/images/home/`) and link.
+- **New pages** go in `app/(site)/` — e.g. `app/(site)/about/page.tsx` becomes `/about` and automatically gets the site header and footer. Add it to the menu in [`components/site/header.tsx`](components/site/header.tsx).
+- The `/fund` platform has its own layout and doesn't use the site header/footer.
+
+---
+
+## Go live
+
+1. **Vercel** – vercel.com → **Add New… → Project** → import `jakecookb/yaakoveisenberger.com` (framework is detected as Next.js). Add the environment variables from `.env.example` (at minimum `NEXT_PUBLIC_SITE_URL=https://yaakoveisenberger.com`), then **Deploy**. You get a preview URL — check everything there first.
+2. **Domain** – in the Vercel project → **Settings → Domains**, add `yaakoveisenberger.com` and `www.yaakoveisenberger.com`. Vercel shows the DNS records it needs.
+3. **Cloudflare DNS** (where the domain is managed) – replace the existing `yaakoveisenberger.com` and `www` records with the ones Vercel shows. Set them to **DNS only** (grey cloud), or keep them proxied with SSL/TLS mode **Full (strict)**. The `www` record currently points at Google Sites — changing it is the switch-over; changing it back restores Google Sites.
+4. `cookbook.yaakoveisenberger.com` is a separate project and is unaffected.
+
+The home page works without any keys. The fundraising platform needs Supabase and Stripe — see below.
+
+---
+
+## Fundraising platform setup (about 15 minutes)
 
 You need accounts that only you can create — everything else is automated.
 
@@ -37,38 +60,12 @@ No Supabase yet? `npm run dev` and open **`/fund/demo`** and **`/fund/display/de
 
 ---
 
-## Adding it to your existing site
+## Notes for developers
 
-Copy these into your repo (paths are relative to the project root; adjust for `src/` if you use it):
-
-```
-app/fund/                    # all four routes + login, auth callback, short links
-app/api/fund/                # checkout, Stripe webhook, Connect, exports, public snapshot
-components/fund/             # UI
-lib/fund/                    # Supabase/Stripe clients, auth, actions, matching, validation
-supabase/migrations/  supabase/seed.sql
-scripts/fund-setup.mjs  scripts/test-db.mjs
-```
-
-Then:
-
-1. **Dependencies**
-   ```bash
-   npm i @supabase/ssr @supabase/supabase-js stripe @stripe/stripe-js @stripe/react-stripe-js framer-motion zod qrcode.react lucide-react server-only
-   npm i -D pg @electric-sql/pglite
-   ```
-2. **Session refresh** – Supabase Auth needs the request proxy for `/fund/admin` and `/fund/portal`.
-   - No `proxy.ts`/`middleware.ts` yet → copy `proxy.ts` (Next 16) as is (rename to `middleware.ts` and export `middleware` on Next ≤ 15).
-   - Already have one → call it for fund paths:
-     ```ts
-     import { updateFundSession } from '@/lib/fund/supabase/proxy';
-     if (request.nextUrl.pathname.startsWith('/fund/')) return updateFundSession(request);
-     ```
-3. **Security headers** – merge the `headers()` block from `next.config.ts` (CSP that allows Stripe, Supabase and Turnstile, scoped to `/fund`).
-4. **Tailwind** – v4 detects the classes automatically. On Tailwind v3 add `'./components/fund/**/*.{ts,tsx}', './app/fund/**/*.{ts,tsx}'` to `content`.
-5. **Your navbar/footer** – `/fund/display/*` renders as a fixed full-viewport layer above your root layout, so no layout changes are needed for the big screen. The other pages render inside your existing chrome.
-6. **Path alias** – code imports from `@/lib/...` and `@/components/...` (`"paths": { "@/*": ["./*"] }`).
-7. **Caching model** – written for Next's default model. If your site enables `cacheComponents`, wrap the bodies of the `/fund` pages in `<Suspense>`.
+- **Session refresh** – `proxy.ts` (Next 16's middleware) refreshes Supabase Auth cookies for `/fund/admin` and `/fund/portal`. If you add your own proxy logic, keep calling `updateFundSession(request)` for `/fund/*` paths.
+- **Security headers** – `next.config.ts` sets a strict CSP (Stripe, Supabase, Turnstile allowed) scoped to `/fund`.
+- **Caching model** – written for Next's default model. If you enable `cacheComponents`, wrap the bodies of the `/fund` pages in `<Suspense>`.
+- **Moving `/fund` into another Next.js app** – copy `app/fund`, `app/api/fund`, `components/fund`, `lib/fund`, `supabase/`, `scripts/`, the `proxy.ts` call and the `headers()` block; the module has no dependency on the rest of this site.
 
 ---
 
@@ -142,7 +139,7 @@ Open `/fund/display/<slug>` on the venue computer (Chrome kiosk: `chrome --kiosk
 ## Development & tests
 
 ```bash
-npm run dev          # http://localhost:3000/fund/demo
+npm run dev          # http://localhost:3000 (home) · /fund/demo (simulated campaign)
 npm run test:db      # 22 database tests in an embedded Postgres (matching, refunds, RLS, broadcasts, rate limits)
 npm run typecheck    # next typegen && tsc
 npm run lint
@@ -157,6 +154,8 @@ Test cards: `4242 4242 4242 4242` (success), `4000 0000 0000 9995` (decline), `4
 ## File map
 
 ```
+app/(site)/                                              main site pages (home) + shared header/footer layout
+lib/site/content.ts                                      home page content (videos, featured work, contact)
 supabase/migrations/20261020000000_fund_platform.sql   schema, RLS, matching waterfall, broadcasts, RPCs
 supabase/seed.sql                                        sample campaign
 app/fund/[campaignSlug]/                                 public campaign page
