@@ -57,6 +57,15 @@ const nextConfig: NextConfig = {
         headers: [...securityHeaders, { key: 'Content-Security-Policy', value: csp('*') }],
       },
       {
+        // Admin area, access checks and gated media: never cached, never indexed.
+        source: '/:path(admin|api/admin|api/access|api/category|media)/:rest*',
+        headers: [
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'Referrer-Policy', value: 'same-origin' },
+        ],
+      },
+      {
         source: '/api/fund/:path*',
         headers: [...securityHeaders, { key: 'X-Robots-Tag', value: 'noindex' }],
       },
