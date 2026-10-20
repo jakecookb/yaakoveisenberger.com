@@ -44,8 +44,9 @@ export const lockedPaths = () =>
     return out;
   });
 
-export async function mayEnter(id: string, visitorCookie: string | undefined, adminCookie: string | undefined) {
-  if (adminCookie && (await cached(`admin:${adminCookie}`, () => isAdminToken(adminCookie)))) return true;
-  if (!visitorCookie || id === '*') return false; // "*" = settings unreadable: admin only
-  return cached(`visitor:${visitorCookie}:${id}`, async () => grants(await recordFromCookie(visitorCookie), id));
+/** Who may enter a locked box: the owner, an approved visitor, or nobody. */
+export async function mayEnter(id: string, visitorCookie: string | undefined, adminCookie: string | undefined): Promise<'admin' | 'visitor' | null> {
+  if (adminCookie && (await cached(`admin:${adminCookie}`, () => isAdminToken(adminCookie)))) return 'admin';
+  if (!visitorCookie || id === '*') return null; // "*" = settings unreadable: admin only
+  return (await cached(`visitor:${visitorCookie}:${id}`, async () => grants(await recordFromCookie(visitorCookie), id))) ? 'visitor' : null;
 }

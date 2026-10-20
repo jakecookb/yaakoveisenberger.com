@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import type { NextConfig } from 'next';
 
 const supabaseOrigin = (() => {
@@ -37,7 +38,17 @@ const securityHeaders = [
 // under this site at /cookbook — Vercel proxies the requests, so it shares this domain.
 const cookbookOrigin = (process.env.COOKBOOK_ORIGIN ?? 'https://cookbook-roan-ten.vercel.app').replace(/\/$/, '');
 
+// The ONNX Runtime version names the folder its files are served from (see scripts/copy-ort.mjs), so they can be cached for a year.
+const ortVersion = (() => {
+  try {
+    return JSON.parse(readFileSync('node_modules/onnxruntime-web/package.json', 'utf8')).version as string;
+  } catch {
+    return 'unknown';
+  }
+})();
+
 const nextConfig: NextConfig = {
+  env: { NEXT_PUBLIC_ORT_VERSION: ortVersion },
   poweredByHeader: false,
   async rewrites() {
     return [

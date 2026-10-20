@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { lockedPaths, mayEnter } from '@/lib/access/gate';
-import { VISITOR_COOKIE } from '@/lib/access/visitor';
+import { VISITOR_COOKIE, visitorCookieOptions } from '@/lib/access/visitor';
 import { ADMIN_COOKIE } from '@/lib/admin/session';
 import { updateFundSession } from '@/lib/fund/supabase/proxy';
 
@@ -15,10 +15,13 @@ const needsFundSession = (p: string) => p.startsWith('/fund/admin') || p.startsW
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   let id: string | undefined;
+  let renew: string | undefined; // the visitor cookie to extend, if an approved visitor is using their access
   for (const [prefix, boxId] of await lockedPaths()) if (pathname === prefix || pathname.startsWith(prefix + '/')) id = boxId;
   if (id) {
-    const ok = await mayEnter(id, request.cookies.get(VISITOR_COOKIE)?.value, request.cookies.get(ADMIN_COOKIE)?.value);
-    if (!ok) {
+    const visitor = request.cookies.get(VISITOR_COOKIE)?.value;
+    const who = await mayEnter(id, visitor, request.cookies.get(ADMIN_COOKIE)?.value);
+    if (who === 'visitor') renew = visitor;
+    if (!who) {
       const url = request.nextUrl.clone();
       url.pathname = id === '*' ? '/' : `/access/${id}`; // '*' = settings unreadable, gate fails closed
       url.search = '';
@@ -27,7 +30,9 @@ export async function proxy(request: NextRequest) {
       return res;
     }
   }
-  return needsFundSession(pathname) ? updateFundSession(request) : NextResponse.next();
+  const res = needsFundSession(pathname) ? await updateFundSession(request) : NextResponse.next();
+  if (renew) res.cookies.set(VISITOR_COOKIE, renew, visitorCookieOptions());
+  return res;
 }
 
 export const config = {

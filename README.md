@@ -200,3 +200,24 @@ Free, private vocal / instrumental splitter. Visitors upload an MP3 or WAV and d
 - **Models** (63 MB each) download once from Hugging Face (several byte-identical mirrors are tried in order), are checked against a pinned SHA-256 and cached in the browser (Cache API). To change a model, update `models.ts` — its settings (`dimF`, `dimTPow`, `nFft`, `compensate`) come from UVR's model table, keyed by the hash of the last 10 MB of the file.
 - **Speed:** about 3× the song's length on a 4-core laptop, longer on phones. The page is cross-origin isolated (`/separator` sends COOP/COEP headers, see `next.config.ts`) so WebAssembly can use several threads. The runtime files are copied to `public/ort` by `scripts/copy-ort.mjs` after `npm install` (git-ignored).
 - It's a normal hub box (`data/navigation.ts`), so it can be hidden, resized, re-titled or **locked** from the admin editor like any other.
+
+---
+
+## Cookies and caching
+
+**Cookies** (all first-party, `HttpOnly`, `SameSite=Lax`, `Secure` in production; no analytics, ads or tracking):
+
+| Cookie | What for | Lifetime |
+|---|---|---|
+| `__Host-ve_admin` | The owner's signed-in session (signed token; changing the password signs everyone out). | 7 days |
+| `ve_visitor` | Remembers a visitor the owner **approved** for locked tiles, so they don't have to ask again. Holds a random id and secret; the approval itself is stored on the server and never expires (the owner can revoke it). | About 13 months (400 days, the most a browser keeps), **renewed every time the visitor returns** |
+| `ve_challenge` | Ties a WhatsApp sign-in / password-reset code to the browser that asked for it. | 10 minutes |
+
+Because these are strictly necessary for features the visitor asked for, no consent banner is needed.
+
+**Caching**
+
+- Pages are rebuilt at most once a minute (and immediately when the owner saves); `/_next/static/*` and `/ort/<version>/*` (the audio separator's runtime, in a folder named after its version) are cached for a year.
+- Photos (`/media/*`) have unique file names and support `ETag` / `304`: **public** photos are kept 1 day in the browser and 5 minutes in the shared CDN; **locked** photos only in the approved visitor's own browser for 10 minutes, never in a shared cache.
+- Access checks are cached on the server for a few seconds; saving in the editor refreshes them at once on the same server.
+- The audio separator keeps its AI model on the visitor's device (Cache API) after the first download.
