@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion, type Variants } from 'framer-motion';
 import { ArrowUpRight, Check, Clock, Lock, ShieldX, Unlock } from 'lucide-react';
 import { ICONS } from '@/data/icons';
@@ -66,26 +66,31 @@ function Badge({ category, liveCount, access }: { category: CardView; liveCount?
 export function CategoryCard({ category, liveCount, cols, access, onModalClose }: { category: CardView; liveCount?: number; cols?: 1 | 2 | 4; access?: AccessInfo; onModalClose?: () => void }) {
   const reduce = useReducedMotion();
   const [asking, setAsking] = useState(false);
+  // Phones have no hover, so the glow is driven by touch as well: it lights up the moment a finger lands, stays on while the
+  // finger scrolls the page (touch events, unlike pointer events, aren't cancelled by scrolling) and fades shortly after.
+  const [touched, setTouched] = useState(false);
+  const fade = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(fade.current), []);
   const Icon = ICONS[category.iconKey];
   const size = SIZES[category.iconSize];
   const h = HEIGHTS[category.height];
   const span = cols
     ? cols === 1 || category.width === 'normal' ? '' : category.width === 'wide' ? 'col-span-2' : 'col-span-full'
     : category.width === 'wide' ? 'sm:col-span-2' : category.width === 'full' ? 'sm:col-span-full' : '';
-  const className = `group relative flex h-full flex-col justify-between overflow-hidden rounded-3xl bg-neutral-900/70 ring-1 ring-white/10 outline-none transition-[box-shadow,--tw-ring-color] duration-300 hover:ring-[var(--accent)] hover:shadow-[0_0_0_1px_var(--accent),0_20px_60px_-20px_var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${h.box}`;
+  const className = `group relative flex h-full flex-col justify-between overflow-hidden rounded-3xl bg-neutral-900/70 ring-1 ring-white/10 outline-none [-webkit-tap-highlight-color:transparent] transition-[box-shadow,transform,--tw-ring-color] duration-300 hover:ring-[var(--accent)] hover:shadow-[0_0_0_1px_var(--accent),0_20px_60px_-20px_var(--accent)] data-[active=true]:-translate-y-1.5 data-[active=true]:scale-[1.02] data-[active=true]:ring-[var(--accent)] data-[active=true]:shadow-[0_0_0_1px_var(--accent),0_20px_60px_-20px_var(--accent)] motion-reduce:data-[active=true]:translate-y-0 motion-reduce:data-[active=true]:scale-100 focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${h.box}`;
   const style = { '--accent': category.accent } as React.CSSProperties;
 
   const inner = (
     <>
       {/* pointer-follow highlight */}
       <span
-        className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+        className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-data-[active=true]:opacity-100"
         style={{ background: 'radial-gradient(420px circle at var(--mx,50%) var(--my,0%), color-mix(in srgb, var(--accent) 18%, transparent), transparent 60%)' }}
         aria-hidden
       />
       <span className="relative flex items-start justify-between gap-3">
         <span
-          className={`flex items-center justify-center ${size.tile} text-neutral-950 shadow-lg transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3`}
+          className={`flex items-center justify-center ${size.tile} text-neutral-950 shadow-lg transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3 group-data-[active=true]:scale-110 group-data-[active=true]:-rotate-3`}
           style={{ background: category.accent }}
         >
           <Icon className={size.icon} strokeWidth={2.2} />
@@ -96,7 +101,7 @@ export function CategoryCard({ category, liveCount, cols, access, onModalClose }
         <span className="flex items-center justify-between gap-3">
           <span className={`${h.title} font-semibold tracking-tight text-white`}>{category.title}</span>
           <ArrowUpRight
-            className="size-5 shrink-0 -translate-x-1 translate-y-1 text-neutral-500 opacity-60 transition duration-300 group-hover:translate-x-0 group-hover:translate-y-0 group-hover:text-[var(--accent)] group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:translate-y-0 group-focus-visible:opacity-100"
+            className="size-5 shrink-0 -translate-x-1 translate-y-1 text-neutral-500 opacity-60 transition duration-300 group-hover:translate-x-0 group-hover:translate-y-0 group-hover:text-[var(--accent)] group-hover:opacity-100 group-data-[active=true]:translate-x-0 group-data-[active=true]:translate-y-0 group-data-[active=true]:text-[var(--accent)] group-data-[active=true]:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:translate-y-0 group-focus-visible:opacity-100"
             aria-hidden
           />
         </span>
@@ -107,6 +112,18 @@ export function CategoryCard({ category, liveCount, cols, access, onModalClose }
 
   // A locked box never navigates from the hub: clicking it opens the "type your name" pop-up instead.
   const onClick = category.locked && access?.state !== 'approved' ? (e: React.MouseEvent) => { e.preventDefault(); setAsking(true); } : undefined;
+
+  const aim = (el: HTMLElement, x: number, y: number) => {
+    const r = el.getBoundingClientRect();
+    el.style.setProperty('--mx', `${x - r.left}px`);
+    el.style.setProperty('--my', `${y - r.top}px`);
+  };
+  const touch = {
+    onTouchStart: (e: React.TouchEvent<HTMLElement>) => { clearTimeout(fade.current); setTouched(true); aim(e.currentTarget, e.touches[0].clientX, e.touches[0].clientY); },
+    onTouchMove: (e: React.TouchEvent<HTMLElement>) => aim(e.currentTarget, e.touches[0].clientX, e.touches[0].clientY),
+    onTouchEnd: () => { clearTimeout(fade.current); fade.current = setTimeout(() => setTouched(false), 450); },
+    onTouchCancel: () => { clearTimeout(fade.current); fade.current = setTimeout(() => setTouched(false), 450); },
+  };
 
   const onPointerMove = (e: React.PointerEvent<HTMLElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
@@ -123,9 +140,9 @@ export function CategoryCard({ category, liveCount, cols, access, onModalClose }
       className={span || undefined}
     >
       {category.external ? (
-        <a href={category.href} {...(/^https?:/.test(category.href) ? { target: '_blank', rel: 'noopener noreferrer' } : {})} className={className} style={style} onClick={onClick} onPointerMove={onPointerMove}>{inner}</a>
+        <a href={category.href} {...(/^https?:/.test(category.href) ? { target: '_blank', rel: 'noopener noreferrer' } : {})} className={className} style={style} data-active={touched ? 'true' : undefined} onClick={onClick} onPointerMove={onPointerMove} {...touch}>{inner}</a>
       ) : (
-        <Link href={category.href} className={className} style={style} onClick={onClick} onPointerMove={onPointerMove}>{inner}</Link>
+        <Link href={category.href} className={className} style={style} data-active={touched ? 'true' : undefined} onClick={onClick} onPointerMove={onPointerMove} {...touch}>{inner}</Link>
       )}
       {category.locked && <AccessModal open={asking} onClose={() => { setAsking(false); onModalClose?.(); }} title={category.title} accent={category.accent} categoryId={category.id} continueHref={category.href} />}
     </motion.li>
