@@ -117,6 +117,8 @@ export function AdminEditor({ initial, blobReady, pending, email }: { initial: S
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Link href="/admin/access" className={chip(pending > 0)}><Users className="size-3.5" /> Access requests{pending > 0 && ` (${pending})`}</Link>
+          <Link href="/admin/analytics" className={chip(false)}>Analytics</Link>
+          <Link href="/admin/broadcast" className={chip(false)}>Subscribers & email</Link>
           {status && <span role="status" className={`text-xs ${status.ok ? 'text-emerald-300' : 'text-red-400'}`}>{status.msg}</span>}
           <button onClick={save} disabled={!dirty || saving || !blobReady} className="inline-flex h-9 items-center gap-2 rounded-full bg-[#c8a96a] px-4 text-sm font-semibold text-neutral-950 transition hover:bg-[#d8bc82] disabled:opacity-40">
             <Save className="size-4" /> {saving ? 'Saving…' : dirty ? 'Save changes' : 'Saved'}

@@ -49,3 +49,8 @@ body:has(.site-dark) {
   background-size: 16px 16px;
   background-position: 0 0, 0 8px, 8px -8px, -8px 0;
 }
+
+/* Gallery carousel: photos bob gently, like bubbles. */
+@keyframes photo-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+.photo-float { animation: photo-float 6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .photo-float { animation: none; } }

@@ -1,5 +1,4 @@
-import Link from 'next/link';
-import { ArrowLeft, Crosshair } from 'lucide-react';
+import { Crosshair } from 'lucide-react';
 import { WeaponsFeed } from '@/components/weapons/weapons-feed';
 import { loadWeaponsFeed } from '@/lib/weapons/fetch';
 import { SOURCES } from '@/lib/weapons/sources';
@@ -13,9 +12,6 @@ export default async function WeaponsPage() {
   return (
     <section>
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
-        <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-neutral-400 transition hover:text-white">
-          <ArrowLeft className="size-4" /> All projects
-        </Link>
         <div className="mt-6 flex items-center gap-4">
           <span className="flex size-14 shrink-0 items-center justify-center rounded-2xl text-neutral-950" style={{ background: '#fb923c' }}><Crosshair className="size-7" strokeWidth={2.2} /></span>
           <div>

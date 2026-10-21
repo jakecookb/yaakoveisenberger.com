@@ -268,3 +268,11 @@ Browser-only multi-track intro builder: upload WAV/MP3, assign Low / Bridge / Hi
 ## Rental Command Center (`/rentals`) and Developer Tools (`/devtools`)
 
 Rentals: Hertz, National and Avis have no public rate APIs (and their sites forbid scraping), so live prices come from each company's own search — the page copies the trip, AAA number and CDP/AWD/contract codes, opens the site, then compares the daily rates you enter as all-in totals with editable tax/fee estimates. Everything is stored in the visitor's browser only. Devtools: JSON → TypeScript (`lib/devtools/json-to-ts.ts`), glassmorphism builder, Git cheat sheet, Base64/URL encoders.
+
+## Site v2: menu, analytics, subscribers, quotes
+
+- **Menu:** ☰ top-left opens a drawer grouped News / Productivity / Personal (`group` in `data/navigation.ts`). Every page but the hub shows "← Back to Hub".
+- **Galleries:** Photography, Fish Boards, Meat Boards and Events show uploaded photos (Admin → Photos) in a floating carousel. Fish/Meat Boards have a quote form: the owner gets the request (reply goes to the customer), the customer gets a confirmation.
+- **Analytics:** `components/site/tracker.tsx` sends one summary per tab visit; `/api/t` adds IP and Vercel geo and stores it under `site/analytics/<day>/`. Admin → Analytics has search, filters and CSV. Bots are skipped.
+- **Subscribers:** footer sign-up with a topic; Admin → Subscribers & email sends announcements to a topic (plus "all updates" subscribers) through Resend's batch API, each with a one-click unsubscribe.
+- **Security:** site-wide CSP (own scripts, WASM for the AI tools, Hugging Face for model downloads, YouTube/Vimeo frames) plus X-Frame-Options DENY; /fund keeps its Stripe policy.

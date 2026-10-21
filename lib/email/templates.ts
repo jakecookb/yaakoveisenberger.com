@@ -4,11 +4,11 @@ import { siteUrl } from '@/lib/site/url';
 // Branded HTML emails. Email clients ignore most modern CSS, so this is table layout with inline styles,
 // dark colours that match the site, and a plain-text copy of every message.
 
-const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+export const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 
 const GOLD = '#c8a96a';
 
-function layout({ preheader, heading, body, button, footnote }: { preheader: string; heading: string; body: string; button?: { label: string; href: string }; footnote?: string }) {
+export function layout({ preheader, heading, body, button, footnote }: { preheader: string; heading: string; body: string; button?: { label: string; href: string }; footnote?: string }) {
   const base = siteUrl();
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark light"><meta name="supported-color-schemes" content="dark light"><title>${esc(heading)}</title></head>
@@ -63,5 +63,44 @@ export function approvedEmail({ name, link, box }: { name: string; link: string;
       button: { label: `Open ${box}`, href: link },
     }),
     text: `You're in, ${first}!\n\nYour request to see ${box} on yaakoveisenberger.com was approved. Open it here:\n\n${link}\n`,
+  };
+}
+
+const row = (k: string, v: string) => `<tr><td style="padding:4px 12px 4px 0;color:#737373;vertical-align:top;">${esc(k)}</td><td style="padding:4px 0;color:#e5e5e5;">${esc(v)}</td></tr>`;
+
+export interface QuoteInfo { board: string; name: string; email: string; phone: string; date: string; guests: string; message: string }
+
+export function quoteToOwner(q: QuoteInfo) {
+  const rows = [['Board', q.board], ['Name', q.name], ['Email', q.email], ['Phone', q.phone], ['Event date', q.date || '—'], ['Guests', q.guests || '—'], ['Details', q.message || '—']];
+  return {
+    subject: `New quote request: ${q.board} — ${q.name}`,
+    html: layout({ preheader: `${q.name} asked for a ${q.board} quote`, heading: `New ${q.board} quote request`, body: `<table role="presentation" cellpadding="0" cellspacing="0" border="0">${rows.map(([k, v]) => row(k, v)).join('')}</table><p style="margin:16px 0 0;">Just hit reply to answer ${esc(q.name.split(' ')[0])} directly.</p>` }),
+    text: rows.map(([k, v]) => `${k}: ${v}`).join('\n') + '\n\nReply to this email to answer the customer directly.',
+  };
+}
+
+export function quoteToCustomer(q: QuoteInfo) {
+  return {
+    subject: `We got your ${q.board} request`,
+    html: layout({ preheader: 'Thanks — your quote request is in', heading: `Thanks, ${q.name.split(' ')[0]}!`, body: `<p style="margin:0 0 14px;">Your ${esc(q.board.toLowerCase())} quote request is in. I’ll get back to you shortly with pricing and availability${q.date ? ` for ${esc(q.date)}` : ''}.</p><p style="margin:0;">Anything to add? Just reply to this email.</p>`, footnote: 'You’re receiving this because you requested a quote on yaakoveisenberger.com.' }),
+    text: `Thanks, ${q.name.split(' ')[0]}! Your ${q.board} quote request is in — I'll reply shortly with pricing and availability. Anything to add? Just reply to this email.`,
+  };
+}
+
+export function welcomeSubscriber(topics: string, unsubscribe: string) {
+  return {
+    subject: 'You’re subscribed to yaakoveisenberger.com',
+    html: layout({ preheader: 'Updates are on the way', heading: 'You’re on the list', body: `<p style="margin:0 0 14px;">Thanks for subscribing. You’ll get an email when there’s something new about: <b style="color:#e5e5e5;">${esc(topics)}</b>.</p><p style="margin:0;font-size:13px;">Changed your mind? <a href="${esc(unsubscribe)}" style="color:#c8a96a;">Unsubscribe</a> any time.</p>` }),
+    text: `Thanks for subscribing to yaakoveisenberger.com updates about: ${topics}.\n\nUnsubscribe any time: ${unsubscribe}`,
+  };
+}
+
+/** An announcement: the owner's plain text, paragraphs kept, links clickable. */
+export function broadcastEmail(subject: string, body: string, unsubscribe: string, link?: string) {
+  const html = body.split(/\n{2,}/).map((p) => `<p style="margin:0 0 14px;">${esc(p).replace(/\n/g, '<br>').replace(/(https:\/\/[^\s<]+)/g, '<a href="$1" style="color:#c8a96a;">$1</a>')}</p>`).join('');
+  return {
+    subject,
+    html: layout({ preheader: body.slice(0, 90), heading: subject, body: `${html}<p style="margin:18px 0 0;font-size:12px;"><a href="${esc(unsubscribe)}" style="color:#737373;">Unsubscribe</a></p>`, button: link ? { label: 'Take a look', href: link } : undefined }),
+    text: `${body}\n\n${link ? `${link}\n\n` : ''}Unsubscribe: ${unsubscribe}`,
   };
 }

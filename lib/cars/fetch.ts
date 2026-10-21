@@ -5,6 +5,8 @@ import { enrich, selectFeed, type Selection } from './pick';
 import { SOURCES } from './sources';
 import type { CarItem } from './types';
 
+/** Backups are written at most every 30 minutes (each write is a storage operation). */
+let lastSaved = 0;
 const SNAPSHOT = 'cars/latest.json';
 
 async function pull(url: string): Promise<string | null> {
@@ -45,7 +47,7 @@ export async function loadCarFeed(): Promise<CarFeed> {
   const now = Date.now();
   const items = await live();
   if (items.length >= 3) {
-    if (isBlobConfigured) writeJson(SNAPSHOT, { savedAt: now, items }).catch(() => {});
+    if (isBlobConfigured && now - lastSaved > 30 * 60_000) { lastSaved = now; writeJson(SNAPSHOT, { savedAt: now, items }).catch(() => {}); }
     return { ...selectFeed(items, now), updatedAt: new Date(now).toISOString(), stale: false };
   }
   const snap = await readJson<{ savedAt: number; items: CarItem[] }>(SNAPSHOT);
