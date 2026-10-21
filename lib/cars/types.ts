@@ -1,5 +1,5 @@
 export interface CarSpec {
-  kind: 'power' | 'speed' | 'range' | 'battery' | 'price' | 'drive' | 'topspeed';
+  kind: 'power' | 'speed' | 'range' | 'battery' | 'price' | 'drive' | 'topspeed' | 'caliber' | 'capacity' | 'barrel' | 'blade' | 'steel' | 'weight';
   label: string;
 }
 

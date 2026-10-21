@@ -39,7 +39,7 @@ export default async function TechPage() {
           <ArrowLeft className="size-4" /> All projects
         </Link>
         <div className="mt-6 flex items-center gap-4">
-          <span className="flex size-14 items-center justify-center rounded-2xl text-neutral-950" style={{ background: ACCENT }}><CodeXml className="size-7" strokeWidth={2.2} /></span>
+          <span className="flex size-14 shrink-0 items-center justify-center rounded-2xl text-neutral-950" style={{ background: ACCENT }}><CodeXml className="size-7" strokeWidth={2.2} /></span>
           <div>
             <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">Tech &amp; Gadgets</h1>
             <p className="mt-1 text-neutral-400">The latest on Samsung Galaxy, iPhone and wearables — refreshed automatically.</p>
