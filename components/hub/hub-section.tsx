@@ -39,7 +39,9 @@ export function SectionStack({ sections }: { sections: { id: string; title: stri
         if (r.bottom > HEADER + 60) out.push({ ...s, state: 'current', fade: 1 });
         else out.push({ ...s, state: 'past', fade: Math.max(0, 1 - (HEADER + 60 - r.bottom) / 420) });
       }
-      setRows(out.filter((r) => r.fade > 0.02));
+      // While a section's own title is passing under the header, show nothing (no overlap with it).
+      const passing = sections.some((s) => { const t = document.getElementById(s.id)?.getBoundingClientRect().top ?? 1e9; return t > HEADER - 30 && t < HEADER + 70; });
+      setRows(passing ? [] : out.filter((r) => r.fade > 0.02));
     };
     const on = () => { if (!raf) raf = requestAnimationFrame(measure); };
     measure();

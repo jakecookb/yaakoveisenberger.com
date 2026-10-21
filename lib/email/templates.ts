@@ -71,18 +71,18 @@ const row = (k: string, v: string) => `<tr><td style="padding:4px 12px 4px 0;col
 export interface QuoteInfo { board: string; name: string; email: string; phone: string; date: string; guests: string; message: string }
 
 export function quoteToOwner(q: QuoteInfo) {
-  const rows = [['Board', q.board], ['Name', q.name], ['Email', q.email], ['Phone', q.phone], ['Event date', q.date || '—'], ['Guests', q.guests || '—'], ['Details', q.message || '—']];
+  const rows = [['Category', q.board], ['Name', q.name], ['Email', q.email], ['Phone', q.phone], ['Event date', q.date || '—'], ['Guests / size', q.guests || '—'], ['Details', q.message || '—']];
   return {
-    subject: `New quote request: ${q.board} — ${q.name}`,
-    html: layout({ preheader: `${q.name} asked for a ${q.board} quote`, heading: `New ${q.board} quote request`, body: `<table role="presentation" cellpadding="0" cellspacing="0" border="0">${rows.map(([k, v]) => row(k, v)).join('')}</table><p style="margin:16px 0 0;">Just hit reply to answer ${esc(q.name.split(' ')[0])} directly.</p>` }),
+    subject: `Quote request: ${q.board} — ${q.name}`,
+    html: layout({ preheader: `${q.name} asked for a ${q.board} quote`, heading: `New quote request — ${q.board}`, body: `<table role="presentation" cellpadding="0" cellspacing="0" border="0">${rows.map(([k, v]) => row(k, v)).join('')}</table><p style="margin:16px 0 0;">Just hit reply to answer ${esc(q.name.split(' ')[0])} directly.</p>` }),
     text: rows.map(([k, v]) => `${k}: ${v}`).join('\n') + '\n\nReply to this email to answer the customer directly.',
   };
 }
 
 export function quoteToCustomer(q: QuoteInfo) {
   return {
-    subject: `We got your ${q.board} request`,
-    html: layout({ preheader: 'Thanks — your quote request is in', heading: `Thanks, ${q.name.split(' ')[0]}!`, body: `<p style="margin:0 0 14px;">Your ${esc(q.board.toLowerCase())} quote request is in. I’ll get back to you shortly with pricing and availability${q.date ? ` for ${esc(q.date)}` : ''}.</p><p style="margin:0;">Anything to add? Just reply to this email.</p>`, footnote: 'You’re receiving this because you requested a quote on yaakoveisenberger.com.' }),
+    subject: `We got your ${q.board} quote request`,
+    html: layout({ preheader: 'Thanks — your quote request is in', heading: `Thanks, ${q.name.split(' ')[0]}!`, body: `<p style="margin:0 0 14px;">Your ${esc(q.board)} quote request is in. I’ll get back to you shortly with pricing and availability${q.date ? ` for ${esc(q.date)}` : ''}.</p><p style="margin:0;">Anything to add? Just reply to this email.</p>`, footnote: 'You’re receiving this because you requested a quote on yaakoveisenberger.com.' }),
     text: `Thanks, ${q.name.split(' ')[0]}! Your ${q.board} quote request is in — I'll reply shortly with pricing and availability. Anything to add? Just reply to this email.`,
   };
 }
