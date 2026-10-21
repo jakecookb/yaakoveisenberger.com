@@ -10,6 +10,7 @@ import {
   CodeXml,
   Fish,
   Gauge,
+  QrCode,
   HandHeart,
   Music,
   Scissors,
@@ -56,6 +57,7 @@ export const categories: NavCategory[] = [
   { id: 'music', gallery: true, lockable: true, title: 'Music & DJ', teaser: 'Sound and sets for simchas and events.', href: '/music', icon: Music, accent: '#e879f9', status: 'soon' },
   { id: 'separator', lockable: true, title: 'Audio Separator', teaser: 'Split any song into vocals and instrumental — free, private, right in your browser.', href: '/separator', icon: AudioLines, accent: '#a3e635', badge: 'new', external: true /* needs a full page load so the browser applies the cross-origin isolation headers (multi-threaded WebAssembly) */ },
   { id: 'cars', lockable: true, title: 'Latest Car Reveals', teaser: 'Fresh reveals and concepts from around the web — about seven new ones every week.', href: '/cars', icon: CarFront, accent: '#818cf8', badge: 'new' },
+  { id: 'qr', lockable: true, title: 'QR Code Generator', teaser: 'Turn any link or text into a branded QR code — instant, free, downloadable.', href: '/qr', icon: QrCode, accent: '#f472b6', badge: 'new' },
   { id: 'contact', lockable: true, title: 'Contact & Booking', teaser: 'Start a project or check availability.', href: '/contact', icon: CalendarCheck, accent: '#fbbf24' },
 ];
 
