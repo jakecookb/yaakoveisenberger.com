@@ -256,3 +256,15 @@ A photo editor that runs entirely in the visitor's browser (photos are never upl
 ## Weapons & 2A Hub (`/weapons`)
 
 Same approach as the car and tech feeds: public RSS from firearms, knife and gun-rights publications (`lib/weapons/sources.ts`) plus two Google News topic searches (knife law, carry-permit reciprocity), refreshed every 30 minutes with a Blob snapshot fallback. `lib/weapons/pick.ts` sorts each story into Handguns, Long Guns, Knives & Edged Tools or 2A Gun Rights News, skips deals/giveaways, pulls quick specs (caliber, capacity, barrel or blade length, blade steel, weight, MSRP) and keeps a few places in each tab for carry-law and knife-law stories. Its hub tile (like Cars and Tech) shows a small monospace "news" pill; set `news: true` in `data/navigation.ts` for any other news box.
+
+## Wedding Intro Remix (`/audio-remix`)
+
+Browser-only multi-track intro builder: upload WAV/MP3, assign Low / Bridge / High / custom parts, order by template or drag, trim with waveform handles (snap to beats and cut markers, ±beat / ±10 ms nudges). `lib/remix/analyze.ts` detects tempo and the beat grid (spectral-flux onsets, autocorrelation, joint tempo+phase comb using kick/bass onsets) and BS.1770 loudness; `lib/remix/render.ts` renders with an OfflineAudioContext — beat-aligned equal-power blends (length chosen from tempo similarity), optional bass-swap filter sweep, per-part gain to −14 LUFS and a −1 dBFS look-ahead limiter. Export WAV (16-bit) or MP3 320 (LAME in a worker). Songs keep their own tempo (no time-stretching).
+
+## CCW Reciprocity & Carry Laws (`/ccw`)
+
+`data/ccw/states.json` holds 50 states + DC, extracted field-by-field from the handgunlaw.us state guides (updated Aug–Oct 2026; each record keeps its `sourceUpdated` date and link). Unstated items are null/"unknown", never guessed. `lib/ccw/coverage.ts` combines up to four resident/non-resident permits with home state and age. To update a state, edit its record (see `lib/ccw/types.ts`).
+
+## Rental Command Center (`/rentals`) and Developer Tools (`/devtools`)
+
+Rentals: Hertz, National and Avis have no public rate APIs (and their sites forbid scraping), so live prices come from each company's own search — the page copies the trip, AAA number and CDP/AWD/contract codes, opens the site, then compares the daily rates you enter as all-in totals with editable tax/fee estimates. Everything is stored in the visitor's browser only. Devtools: JSON → TypeScript (`lib/devtools/json-to-ts.ts`), glassmorphism builder, Git cheat sheet, Base64/URL encoders.
