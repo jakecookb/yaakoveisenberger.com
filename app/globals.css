@@ -51,6 +51,14 @@ body:has(.site-dark) {
 }
 
 /* Gallery carousel: photos bob gently, like bubbles. */
-@keyframes photo-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-.photo-float { animation: photo-float 6s ease-in-out infinite; }
+@keyframes photo-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.photo-float { animation: photo-float 3.6s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .photo-float { animation: none; } }
+
+/* Flowing multi-colour glow (Gemini-style) for the sign-up pill. */
+@property --glow-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+@keyframes glow-spin { to { --glow-angle: 360deg; } }
+.glow-ring { background: conic-gradient(from var(--glow-angle), #4285f4, #9b72cb, #d96570, #f9ab00, #34a853, #4285f4); animation: glow-spin 5s linear infinite; }
+.glow-ring::before { content: ''; position: absolute; inset: -6px; z-index: -1; border-radius: inherit; background: inherit; filter: blur(16px); opacity: 0.45; }
+.glow-fill { background: conic-gradient(from var(--glow-angle), #4285f4, #9b72cb, #d96570, #f9ab00, #34a853, #4285f4); animation: glow-spin 5s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .glow-ring, .glow-fill { animation: none; } }
