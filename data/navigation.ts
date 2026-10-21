@@ -14,6 +14,7 @@ import {
   HandHeart,
   Music,
   Scissors,
+  WandSparkles,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -58,6 +59,7 @@ export const categories: NavCategory[] = [
   { id: 'separator', lockable: true, title: 'Audio Separator', teaser: 'Split any song into vocals and instrumental — free, private, right in your browser.', href: '/separator', icon: AudioLines, accent: '#a3e635', badge: 'new', external: true /* needs a full page load so the browser applies the cross-origin isolation headers (multi-threaded WebAssembly) */ },
   { id: 'cars', lockable: true, title: 'Latest Car Reveals', teaser: 'Fresh reveals and concepts from around the web — about seven new ones every week.', href: '/cars', icon: CarFront, accent: '#818cf8', badge: 'new' },
   { id: 'qr', lockable: true, title: 'QR Code Generator', teaser: 'Turn any link or text into a branded QR code — instant, free, downloadable.', href: '/qr', icon: QrCode, accent: '#f472b6', badge: 'new' },
+  { id: 'editor', lockable: true, title: 'AI Photo Suite', teaser: 'Pro photo editor with AI background removal, auto-enhance and color grades — free, right in your browser.', href: '/editor', icon: WandSparkles, accent: '#fda4af', badge: 'new', external: true /* full page load for cross-origin isolation (multi-threaded AI) */ },
   { id: 'contact', lockable: true, title: 'Contact & Booking', teaser: 'Start a project or check availability.', href: '/contact', icon: CalendarCheck, accent: '#fbbf24' },
 ];
 

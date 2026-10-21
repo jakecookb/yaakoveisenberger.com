@@ -243,3 +243,12 @@ Clicking a locked or greyed-out box asks for **name, email and phone**. The visi
 Admin → Access requests shows everyone's name, email (✓ once they've opened a link), phone, request date and status, with **Download CSV** for the full list (formula-looking cells are escaped so spreadsheets don't run them).
 
 Email needs `RESEND_API_KEY` in Vercel (see `.env.example`). Without it, requests still work and the confirmation says the email couldn't be sent.
+
+## AI Photo Suite (`/editor`)
+
+A photo editor that runs entirely in the visitor's browser (photos are never uploaded).
+
+- **Rendering** (`lib/photo/engine.ts`): one WebGL2 shader applies every adjustment live (exposure, contrast, highlights, shadows, temperature, tint, vibrance, saturation, RGB curves, clarity, sharpen, grain, vignette, telephoto/wide lens distortion, colour grades, crop/straighten/rotate/flip, background). Export re-runs the same shader at full resolution in 2048-px tiles → PNG, JPEG or WebP. An untouched export is pixel-identical to the original.
+- **Background removal** (`components/photo/segment.worker.ts`): the open-source *ormbg* model (Apache-2.0) via ONNX Runtime Web. Browsers with WebGPU + half precision use the 84 MB GPU build; everything else (or any GPU failure) uses the 42 MB 8-bit CPU build. Downloaded once from Hugging Face, checked against SHA-256, cached. `?ai=gpu` forces a GPU attempt (to test the fallback).
+- **Auto-Enhance / Color Match** (`lib/photo/auto.ts`): measure the photo (brightness percentiles, clipping, colour of neutral areas) and set the sliders / pick a grade — instant, no model download.
+- The page is cross-origin isolated (like `/separator`) so the CPU model can use several threads.
