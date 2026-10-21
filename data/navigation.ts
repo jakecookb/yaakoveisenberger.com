@@ -35,6 +35,8 @@ export interface NavCategory {
   external?: boolean;
   /** 'live' shows a pulsing "Live" chip (with a campaign count when known). */
   badge?: 'live' | 'new';
+  /** A live news feed: its tile shows a small "news" pill. */
+  news?: boolean;
   /** 'soon' shows a "Soon" chip; the page shows "Coming soon" until it has photos. */
   status?: 'live' | 'soon';
   /** Spans two columns on wider screens. */
@@ -50,7 +52,7 @@ export const categories: NavCategory[] = [
   { id: 'video', gallery: true, lockable: true, title: 'Video & Media', teaser: 'Featured films, camp highlights and event videos.', href: '/video', icon: Clapperboard, accent: '#f43f5e' },
   { id: 'editing', gallery: true, lockable: true, title: 'Video Editing', teaser: 'Story-first edits, motion and color for your next project.', href: '/editing', icon: Scissors, accent: '#a78bfa', status: 'soon' },
   { id: 'photography', gallery: true, lockable: true, title: 'Photography', teaser: 'Events, portraits and the moments in between.', href: '/photography', icon: Camera, accent: '#38bdf8', status: 'soon' },
-  { id: 'tech', lockable: true, title: 'Tech & Gadgets', teaser: 'Live news on Samsung Galaxy, iPhone and wearables — S27 Ultra leaks included.', href: '/tech', icon: CodeXml, accent: '#34d399', badge: 'new' },
+  { id: 'tech', news: true, lockable: true, title: 'Tech & Gadgets', teaser: 'Live news on Samsung Galaxy, iPhone and wearables — S27 Ultra leaks included.', href: '/tech', icon: CodeXml, accent: '#34d399', badge: 'new' },
   { id: 'speed', lockable: true, title: 'Speed Test', teaser: 'Check your download, upload and ping in seconds.', href: '/speed', icon: Gauge, accent: '#22d3ee', badge: 'new' },
   { id: 'cookbook', lockable: true, title: 'Cookbook & Recipes', teaser: 'Family recipes — scanned, scaled, saved and shared.', href: '/cookbook', icon: ChefHat, accent: '#fb923c', external: true },
   { id: 'bookbinding', gallery: true, lockable: true, title: 'Book Binding', teaser: 'Hand-bound books, sewn and finished the slow way.', href: '/bookbinding', icon: BookOpen, accent: '#d6a27a', status: 'soon' },
@@ -58,10 +60,10 @@ export const categories: NavCategory[] = [
   { id: 'meatboards', gallery: true, lockable: true, title: 'Meat Boards', teaser: 'Showstopping grazing boards, made to order.', href: '/meatboards', icon: Beef, accent: '#ef4444', status: 'soon' },
   { id: 'music', gallery: true, lockable: true, title: 'Music & DJ', teaser: 'Sound and sets for simchas and events.', href: '/music', icon: Music, accent: '#e879f9', status: 'soon' },
   { id: 'separator', lockable: true, title: 'Audio Separator', teaser: 'Split any song into vocals and instrumental — free, private, right in your browser.', href: '/separator', icon: AudioLines, accent: '#a3e635', badge: 'new', external: true /* needs a full page load so the browser applies the cross-origin isolation headers (multi-threaded WebAssembly) */ },
-  { id: 'cars', lockable: true, title: 'Latest Car Reveals', teaser: 'Fresh reveals and concepts from around the web — about seven new ones every week.', href: '/cars', icon: CarFront, accent: '#818cf8', badge: 'new' },
+  { id: 'cars', news: true, lockable: true, title: 'Latest Car Reveals', teaser: 'Fresh reveals and concepts from around the web — about seven new ones every week.', href: '/cars', icon: CarFront, accent: '#818cf8', badge: 'new' },
   { id: 'qr', lockable: true, title: 'QR Code Generator', teaser: 'Turn any link or text into a branded QR code — instant, free, downloadable.', href: '/qr', icon: QrCode, accent: '#f472b6', badge: 'new' },
   { id: 'editor', lockable: true, title: 'AI Photo Suite', teaser: 'Pro photo editor with AI background removal, auto-enhance and color grades — free, right in your browser.', href: '/editor', icon: WandSparkles, accent: '#fda4af', badge: 'new', external: true /* full page load for cross-origin isolation (multi-threaded AI) */ },
-  { id: 'weapons', lockable: true, title: 'Weapons & 2A Hub', teaser: 'Handguns, long guns and knives — plus the latest on 2A law and carry reciprocity.', href: '/weapons', icon: Crosshair, accent: '#fb923c', badge: 'new' },
+  { id: 'weapons', news: true, lockable: true, title: 'Weapons & 2A Hub', teaser: 'Handguns, long guns and knives — plus the latest on 2A law and carry reciprocity.', href: '/weapons', icon: Crosshair, accent: '#fb923c', badge: 'new' },
   { id: 'contact', lockable: true, title: 'Contact & Booking', teaser: 'Start a project or check availability.', href: '/contact', icon: CalendarCheck, accent: '#fbbf24' },
 ];
 

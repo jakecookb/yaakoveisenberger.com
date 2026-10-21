@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { CarCard } from '@/components/cars/car-card';
+import { NEWS_GRID, phoneOrphan } from '@/components/cars/news-grid';
 import type { WeaponItem, WeaponsSelection, WeaponsTab } from '@/lib/weapons/pick';
 
 const ACCENT = '#fb923c';
@@ -42,9 +43,9 @@ export function WeaponsFeed({ feed }: { feed: WeaponsSelection }) {
         ))}
       </div>
       <p className="mt-4 text-sm text-neutral-500">{info.hint}</p>
-      <div id="weapons-panel" role="tabpanel" aria-label={info.label} className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div id="weapons-panel" role="tabpanel" aria-label={info.label} className={`mt-5 ${NEWS_GRID}`}>
         {items.length === 0 && <p className="col-span-full rounded-3xl bg-neutral-900/70 p-8 text-center text-neutral-400 ring-1 ring-white/10">No fresh stories in this section right now — check back soon.</p>}
-        {items.map((c, i) => <CarCard key={c.id} car={c} accent={ACCENT} pill="news" featured={i === 0 && items.length > 2} />)}
+        {items.map((c, i) => <CarCard key={c.id} car={c} accent={ACCENT} featured={i === 0 && items.length > 2} className={phoneOrphan(i, items.length, items.length > 2)} />)}
       </div>
     </div>
   );

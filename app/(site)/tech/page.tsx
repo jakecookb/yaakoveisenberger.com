@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ArrowLeft, CodeXml } from 'lucide-react';
 import { CarCard } from '@/components/cars/car-card';
+import { NEWS_GRID, phoneOrphan } from '@/components/cars/news-grid';
 import { loadTechFeed } from '@/lib/tech/fetch';
 import { SOURCES } from '@/lib/tech/sources';
 import type { CarItem } from '@/lib/cars/types';
@@ -22,8 +23,8 @@ function Section({ title, hint, items: all }: { title: string; hint: string; ite
         <h2 className="text-sm font-semibold uppercase tracking-[0.3em]" style={{ color: ACCENT }}>{title}</h2>
         <p className="text-sm text-neutral-500">{hint}</p>
       </div>
-      <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {items.map((c, i) => <CarCard key={c.id} car={c} accent={ACCENT} featured={i === 0 && items.length > 2} />)}
+      <div className={`mt-5 ${NEWS_GRID}`}>
+        {items.map((c, i) => <CarCard key={c.id} car={c} accent={ACCENT} featured={i === 0 && items.length > 2} className={phoneOrphan(i, items.length, items.length > 2)} />)}
       </div>
     </>
   );

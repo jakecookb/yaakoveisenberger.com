@@ -135,6 +135,8 @@ export interface CardView {
   accent: string;
   external: boolean;
   badge?: 'live' | 'new';
+  /** A live news feed (shows a "news" pill on its tile). */
+  news: boolean;
   status: 'live' | 'soon';
   width: BoxWidth;
   height: BoxHeight;
@@ -170,6 +172,7 @@ export function resolveCards(s: SiteSettings, opts: { includeHidden?: boolean } 
       accent: o.accent ?? c.accent,
       external: Boolean(c.external),
       badge: c.badge,
+      news: Boolean(c.news),
       status: o.status ?? c.status ?? 'live',
       width: o.width ?? (o.wide || c.featured ? 'wide' : 'normal'),
       height: o.height ?? 'standard',

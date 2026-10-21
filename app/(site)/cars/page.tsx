@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ArrowLeft, CarFront } from 'lucide-react';
 import { CarCard } from '@/components/cars/car-card';
+import { NEWS_GRID, phoneOrphan } from '@/components/cars/news-grid';
 import { loadCarFeed } from '@/lib/cars/fetch';
 import { SOURCES } from '@/lib/cars/sources';
 
@@ -27,15 +28,15 @@ export default async function CarsPage() {
         {first ? (
           <>
             <h2 className="mt-12 text-sm font-semibold uppercase tracking-[0.3em] text-[#818cf8]">This week</h2>
-            <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className={`mt-5 ${NEWS_GRID}`}>
               <CarCard car={first} featured />
-              {rest.map((c) => <CarCard key={c.id} car={c} />)}
+              {rest.map((c, i) => <CarCard key={c.id} car={c} className={phoneOrphan(i + 1, rest.length + 1, true)} />)}
             </div>
             {feed.earlier.length > 0 && (
               <>
                 <h2 className="mt-14 text-sm font-semibold uppercase tracking-[0.3em] text-neutral-500">Earlier</h2>
-                <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                  {feed.earlier.map((c) => <CarCard key={c.id} car={c} />)}
+                <div className={`mt-5 ${NEWS_GRID}`}>
+                  {feed.earlier.map((c, i) => <CarCard key={c.id} car={c} className={phoneOrphan(i, feed.earlier.length, false)} />)}
                 </div>
               </>
             )}
