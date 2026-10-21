@@ -7,7 +7,7 @@ import { cleanEmail, cleanName, cleanPhone } from '@/lib/access/visitor';
 import { sendEmail } from '@/lib/email/send';
 import { quoteToCustomer, quoteToOwner } from '@/lib/email/templates';
 
-const BOARDS: Record<string, string> = { fishboards: 'Fish Board', meatboards: 'Meat Board' };
+const BOARDS: Record<string, string> = { fishboards: 'Fish Boards', meatboards: 'Meat Boards', events: 'Events', photography: 'Photography' };
 const hits = new Map<string, { n: number; t: number }>();
 const text = (v: unknown, max: number) => String(v ?? '').replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, '').trim().slice(0, max);
 
@@ -15,7 +15,7 @@ const text = (v: unknown, max: number) => String(v ?? '').replace(/[\u0000-\u000
 export async function requestQuote(input: Record<string, unknown>): Promise<{ ok: boolean; error?: string }> {
   if (text(input.website, 10)) return { ok: true }; // honeypot
   const board = BOARDS[text(input.board, 20)];
-  if (!board) return { ok: false, error: 'Unknown board type.' };
+  if (!board) return { ok: false, error: 'Please choose a category.' };
   const ip = await clientIp();
   const h = hits.get(ip);
   if (h && Date.now() - h.t < 15 * 60_000 && h.n >= 4) return { ok: false, error: 'Too many requests — please try again in a few minutes.' };
