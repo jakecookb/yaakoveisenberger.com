@@ -1,5 +1,4 @@
 import Image from 'next/image';
-import Link from 'next/link';
 import wordmark from '@/public/images/home/wordmark-white.png';
 import { site } from '@/lib/site/content';
 
@@ -14,7 +13,7 @@ export function SiteFooter() {
           <a href={site.phoneHref} className="hover:text-white">{site.phone}</a>
         </p>
         <p className="text-xs text-neutral-500">
-          © {site.name} · <Link href="/fund" className="hover:text-neutral-300">Fundraising campaigns</Link>
+          © {site.name}
         </p>
       </div>
     </footer>
