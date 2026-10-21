@@ -4,9 +4,7 @@ import { LoginTab } from './login-tab';
 import wordmark from '@/public/images/home/wordmark-white.png';
 
 const NAV = [
-  { href: '/video', label: 'Video', desktopOnly: true },
   { href: '/cookbook', label: 'Cookbook', external: true, desktopOnly: true },
-  { href: '/fund', label: 'Fundraising' },
   { href: '/contact', label: 'Contact' },
 ];
 
