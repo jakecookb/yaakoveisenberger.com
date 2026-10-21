@@ -17,25 +17,17 @@ export default async function CarsPage() {
           <span className="flex size-14 shrink-0 items-center justify-center rounded-2xl text-neutral-950" style={{ background: '#818cf8' }}><CarFront className="size-7" strokeWidth={2.2} /></span>
           <div>
             <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">Latest Car Reveals</h1>
-            <p className="mt-1 text-neutral-400">The newest reveals and concepts — about seven fresh ones every week.</p>
+            <p className="mt-1 text-neutral-400">The newest car reveals and concepts — refreshed automatically, newest first.</p>
           </div>
         </div>
 
         {first ? (
           <>
-            <h2 className="mt-12 text-sm font-semibold uppercase tracking-[0.3em] text-[#818cf8]">This week</h2>
+            <h2 className="mt-12 text-sm font-semibold uppercase tracking-[0.3em] text-[#818cf8]">Latest</h2>
             <div className={`mt-5 ${NEWS_GRID}`}>
               <CarCard car={first} featured />
               {rest.map((c, i) => <CarCard key={c.id} car={c} className={phoneOrphan(i + 1, rest.length + 1, true)} />)}
             </div>
-            {feed.earlier.length > 0 && (
-              <>
-                <h2 className="mt-14 text-sm font-semibold uppercase tracking-[0.3em] text-neutral-500">Earlier</h2>
-                <div className={`mt-5 ${NEWS_GRID}`}>
-                  {feed.earlier.map((c, i) => <CarCard key={c.id} car={c} className={phoneOrphan(i, feed.earlier.length, false)} />)}
-                </div>
-              </>
-            )}
           </>
         ) : (
           <p className="mt-12 rounded-3xl bg-neutral-900/70 p-8 text-center text-neutral-400 ring-1 ring-white/10">The feed is taking a breather — check back in a few minutes.</p>
