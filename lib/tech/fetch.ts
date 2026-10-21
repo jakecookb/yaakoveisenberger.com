@@ -1,0 +1,40 @@
+import 'server-only';
+import { isBlobConfigured, readJson, writeJson } from '@/lib/admin/store';
+import { parseFeed } from '@/lib/cars/parse';
+import type { CarItem } from '@/lib/cars/types';
+import { enrichTech, selectTech, type TechSelection } from './pick';
+import { SOURCES } from './sources';
+
+const SNAPSHOT = 'tech/latest.json';
+
+async function pull(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url, {
+      headers: { 'user-agent': 'Mozilla/5.0 (compatible; yaakoveisenberger.com tech feed)', accept: 'application/rss+xml, application/xml, text/xml' },
+      signal: AbortSignal.timeout(8000),
+      next: { revalidate: 1800 },
+    });
+    return res.ok ? await res.text() : null;
+  } catch {
+    return null;
+  }
+}
+
+export interface TechFeed extends TechSelection {
+  updatedAt: string;
+  stale: boolean;
+}
+
+/** Same approach as the car feed: pages are cached for 30 minutes; if every site is down the last saved list is shown. */
+export async function loadTechFeed(): Promise<TechFeed> {
+  const now = Date.now();
+  const batches = await Promise.all(SOURCES.map(async (s) => { const xml = await pull(s.feed); return xml ? parseFeed(xml, s) : []; }));
+  const items = batches.flat().map((r) => enrichTech(r, now)).filter((i): i is CarItem => i !== null);
+  if (items.length >= 3) {
+    if (isBlobConfigured) writeJson(SNAPSHOT, { savedAt: now, items }).catch(() => {});
+    return { ...selectTech(items, now), updatedAt: new Date(now).toISOString(), stale: false };
+  }
+  const snap = await readJson<{ savedAt: number; items: CarItem[] }>(SNAPSHOT);
+  if (snap?.items?.length) return { ...selectTech(snap.items, snap.savedAt), updatedAt: new Date(snap.savedAt).toISOString(), stale: true };
+  return { samsung: [], apple: [], more: [], updatedAt: new Date(now).toISOString(), stale: true };
+}

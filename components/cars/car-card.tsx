@@ -4,14 +4,12 @@ import { useEffect, useRef, useState } from 'react';
 import { ArrowUpRight } from 'lucide-react';
 import type { CarItem } from '@/lib/cars/types';
 
-const ACCENT = '#818cf8';
-
 const ago = (iso: string) => {
   const d = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 3_600_000));
   return d < 1 ? 'Just now' : d < 24 ? `${d}h ago` : `${Math.floor(d / 24)}d ago`;
 };
 
-export function CarCard({ car, featured }: { car: CarItem; featured?: boolean }) {
+export function CarCard({ car, featured, accent = '#818cf8' }: { car: CarItem; featured?: boolean; accent?: string }) {
   // Same touch-glow as the hub cards: lights up on touch, even while the finger scrolls.
   const [touched, setTouched] = useState(false);
   const fade = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -28,7 +26,7 @@ export function CarCard({ car, featured }: { car: CarItem; featured?: boolean })
       onTouchStart={on}
       onTouchEnd={off}
       onTouchCancel={off}
-      style={{ '--accent': ACCENT } as React.CSSProperties}
+      style={{ '--accent': accent } as React.CSSProperties}
       className={`group relative flex flex-col overflow-hidden rounded-3xl bg-neutral-900/70 ring-1 ring-white/10 outline-none [-webkit-tap-highlight-color:transparent] transition-[box-shadow,transform] duration-300 hover:ring-[var(--accent)] hover:shadow-[0_20px_60px_-20px_var(--accent)] data-[active=true]:-translate-y-1 data-[active=true]:ring-[var(--accent)] data-[active=true]:shadow-[0_20px_60px_-20px_var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${featured ? 'sm:col-span-2 lg:col-span-3 lg:flex-row' : ''}`}
     >
       <div className={`relative overflow-hidden bg-neutral-800 ${featured ? 'aspect-[16/9] lg:aspect-auto lg:w-3/5' : 'aspect-[16/10]'}`}>
