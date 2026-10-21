@@ -30,7 +30,7 @@ export function CategoryGrid({ cards, liveCampaigns }: { cards: CardView[]; live
       initial={reduce ? false : 'hidden'}
       animate="show"
       variants={{ hidden: {}, show: { transition: { staggerChildren: 0.05, delayChildren: 0.1 } } }}
-      className="grid grid-flow-dense grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4"
+      className="grid grid-flow-dense grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4"
     >
       {cards.map((c) => (
         <CategoryCard key={c.id} category={c} liveCount={c.id === 'fund' ? liveCampaigns : undefined} access={states[c.id]} onModalClose={() => setTick((n) => n + 1)} />
