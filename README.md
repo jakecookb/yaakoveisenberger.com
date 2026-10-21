@@ -225,3 +225,7 @@ Because these are strictly necessary for features the visitor asked for, no cons
 ## Latest Car Reveals (`/cars`)
 
 A free, automatic feed: every 30 minutes (ISR) the page reads the public RSS feeds listed in `lib/cars/sources.ts`, keeps genuine reveals and concepts (`lib/cars/pick.ts`), pulls headline-ready specs out of the text (`lib/cars/specs.ts`) and shows about seven fresh ones for the week plus an "Earlier" list. Stories link to the original sites. The last good list is saved in the private Blob store, so the page still shows something if every site is down. To add a source, add one line to `SOURCES`.
+
+## Tech & Gadgets (`/tech`) and Speed Test (`/speed`)
+
+`/tech` works like the car feed: RSS from phone-news sites (`lib/tech/sources.ts`), scored in `lib/tech/pick.ts` (Samsung Galaxy S26/S27 Ultra and Apple get their own sections, then wearables and other phones), refreshed every 30 minutes with a Blob snapshot as a fallback. `/speed` measures ping, download and upload in the browser against `/api/speed/{ping,down,up}`; uploads are sent in 2 MB pieces to stay under the host's request-size limit.
