@@ -252,3 +252,7 @@ A photo editor that runs entirely in the visitor's browser (photos are never upl
 - **Background removal** (`components/photo/segment.worker.ts`): the open-source *ormbg* model (Apache-2.0) via ONNX Runtime Web. Browsers with WebGPU + half precision use the 84 MB GPU build; everything else (or any GPU failure) uses the 42 MB 8-bit CPU build. Downloaded once from Hugging Face, checked against SHA-256, cached. `?ai=gpu` forces a GPU attempt (to test the fallback).
 - **Auto-Enhance / Color Match** (`lib/photo/auto.ts`): measure the photo (brightness percentiles, clipping, colour of neutral areas) and set the sliders / pick a grade — instant, no model download.
 - The page is cross-origin isolated (like `/separator`) so the CPU model can use several threads.
+
+## Weapons & 2A Hub (`/weapons`)
+
+Same approach as the car and tech feeds: public RSS from firearms, knife and gun-rights publications (`lib/weapons/sources.ts`) plus two Google News topic searches (knife law, carry-permit reciprocity), refreshed every 30 minutes with a Blob snapshot fallback. `lib/weapons/pick.ts` sorts each story into Handguns, Long Guns, Knives & Edged Tools or 2A Gun Rights News, skips deals/giveaways, pulls quick specs (caliber, capacity, barrel or blade length, blade steel, weight, MSRP) and keeps a few places in each tab for carry-law and knife-law stories. Every card carries a small monospace "news" pill.

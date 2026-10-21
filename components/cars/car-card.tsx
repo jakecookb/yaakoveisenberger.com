@@ -9,7 +9,8 @@ const ago = (iso: string) => {
   return d < 1 ? 'Just now' : d < 24 ? `${d}h ago` : `${Math.floor(d / 24)}d ago`;
 };
 
-export function CarCard({ car, featured, accent = '#818cf8' }: { car: CarItem; featured?: boolean; accent?: string }) {
+/** `pill` adds a small label in the card's top-right corner (the weapons feed marks every card "news"). */
+export function CarCard({ car, featured, accent = '#818cf8', pill }: { car: CarItem; featured?: boolean; accent?: string; pill?: string }) {
   // Same touch-glow as the hub cards: lights up on touch, even while the finger scrolls.
   const [touched, setTouched] = useState(false);
   const fade = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -29,7 +30,16 @@ export function CarCard({ car, featured, accent = '#818cf8' }: { car: CarItem; f
       style={{ '--accent': accent } as React.CSSProperties}
       className={`group relative flex flex-col overflow-hidden rounded-3xl bg-neutral-900/70 ring-1 ring-white/10 outline-none [-webkit-tap-highlight-color:transparent] transition-[box-shadow,transform] duration-300 hover:ring-[var(--accent)] hover:shadow-[0_20px_60px_-20px_var(--accent)] data-[active=true]:-translate-y-1 data-[active=true]:ring-[var(--accent)] data-[active=true]:shadow-[0_20px_60px_-20px_var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${featured ? 'sm:col-span-2 lg:col-span-3 lg:flex-row' : ''}`}
     >
+      {pill && (
+        <span className="absolute right-3 top-3 z-10 rounded-full border border-white/15 bg-neutral-950/55 px-2 py-0.5 font-mono text-[10px] font-medium lowercase leading-4 tracking-[0.12em] text-neutral-300/90 backdrop-blur-sm">{pill}</span>
+      )}
       <div className={`relative overflow-hidden bg-neutral-800 ${featured ? 'aspect-[16/9] lg:aspect-auto lg:w-3/5' : 'aspect-[16/10]'}`}>
+        {!car.image && (
+          // No picture in the feed: a quiet gradient with the source's name instead of an empty box.
+          <div className="flex size-full items-end bg-[radial-gradient(120%_90%_at_10%_0%,color-mix(in_srgb,var(--accent)_22%,transparent),transparent_60%),linear-gradient(160deg,#1c1c1c,#0f0f0f)] p-4" aria-hidden>
+            <span className="font-mono text-xs uppercase tracking-[0.2em] text-neutral-500">{car.source}</span>
+          </div>
+        )}
         {car.image && (
           <img src={car.image} alt="" loading={featured ? 'eager' : 'lazy'} referrerPolicy="no-referrer" className="size-full object-cover transition duration-500 group-hover:scale-105 group-data-[active=true]:scale-105" />
         )}
