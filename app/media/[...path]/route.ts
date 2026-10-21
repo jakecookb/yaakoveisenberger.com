@@ -1,5 +1,6 @@
 import { get } from '@vercel/blob';
 import { hasAccess } from '@/lib/access/visitor';
+import { isAdmin } from '@/lib/admin/session';
 import { isBlobConfigured } from '@/lib/admin/store';
 import { loadSettingsFast } from '@/lib/site/load';
 import { HERO_PATH, PHOTO_PATH, resolveCards } from '@/lib/site/settings';
@@ -26,13 +27,17 @@ export async function GET(request: Request, { params }: { params: Promise<{ path
   const settings = await loadSettingsFast();
   let locked = false;
 
+  // The owner sees fresh uploads right away (before pressing Save); visitors only see saved ones.
+  const admin = await isAdmin();
   if (HERO_PATH.test(pathname)) {
-    if (settings.hero.logoPath !== pathname) return notFound();
+    if (settings.hero.logoPath !== pathname && !admin) return notFound();
   } else if (PHOTO_PATH.test(pathname)) {
     const category = pathname.split('/')[1];
-    if (!settings.photos[category]?.some((p) => p.pathname === pathname)) return notFound();
-    locked = Boolean(resolveCards(settings, { includeHidden: true }).find((c) => c.id === category)?.locked);
-    if (locked && !(await hasAccess(category))) return new Response('Locked', { status: 403, headers: { 'Cache-Control': 'private, no-store' } });
+    const saved = settings.photos[category]?.some((p) => p.pathname === pathname);
+    if (!saved && !admin) return notFound();
+    if (!saved) locked = true; // never cache an unsaved upload publicly
+    else locked = Boolean(resolveCards(settings, { includeHidden: true }).find((c) => c.id === category)?.locked);
+    if (locked && !admin && !(await hasAccess(category))) return new Response('Locked', { status: 403, headers: { 'Cache-Control': 'private, no-store' } });
   } else {
     return notFound();
   }

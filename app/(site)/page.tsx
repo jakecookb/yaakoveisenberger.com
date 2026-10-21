@@ -4,7 +4,6 @@ import { mediaUrl, resolveCards } from '@/lib/site/settings';
 import { HeroFade } from '@/components/hub/hero-fade';
 import { HubHero } from '@/components/hub/hub-hero';
 import { CategoryGrid } from '@/components/hub/category-grid';
-import { NewsStrip } from '@/components/hub/news-column';
 import { HubSection } from '@/components/hub/hub-section';
 import { categories } from '@/data/navigation';
 
@@ -37,10 +36,9 @@ export default async function HomePage() {
       <div className="relative z-10 mx-auto max-w-7xl space-y-12 px-4 pb-20 sm:px-6 sm:pb-28">
         {SECTIONS.map((sec) => {
           const cards = groups[sec.id];
-          if (!cards.length && sec.id !== 'news') return null;
+          if (!cards.length) return null;
           return (
             <HubSection key={sec.id} id={sec.id} title={sec.title} subtitle={sec.subtitle} accent={sec.accent}>
-              {sec.id === 'news' && <NewsStrip />}
               {cards.length > 0 && <CategoryGrid cards={cards} liveCampaigns={liveCampaigns} />}
             </HubSection>
           );
