@@ -1,13 +1,13 @@
 import {
   AudioLines, Beef, BookOpen, Briefcase, CalendarCheck, Cake, Camera, CarFront, ChefHat, Clapperboard, CodeXml, Film, Fish, Gauge, Globe,
-  Hammer, HandHeart, Heart, Image as ImageIcon, Mic, Music, Palette, Scissors, Sparkles, Star, Utensils,
+  Hammer, HandHeart, Heart, Image as ImageIcon, Mic, Music, Palette, QrCode, Scissors, Sparkles, Star, Utensils,
   type LucideIcon,
 } from 'lucide-react';
 
 // Icons the admin editor can pick from. Add an entry here and it shows up in the picker.
 export const ICONS = {
   HandHeart, Clapperboard, Scissors, Camera, CodeXml, ChefHat, BookOpen, Fish, Beef, Music, CalendarCheck,
-  Heart, Star, Film, AudioLines, CarFront, Gauge, Image: ImageIcon, Mic, Palette, Hammer, Utensils, Globe, Sparkles, Briefcase, Cake,
+  Heart, Star, Film, AudioLines, CarFront, Gauge, QrCode, Image: ImageIcon, Mic, Palette, Hammer, Utensils, Globe, Sparkles, Briefcase, Cake,
 } satisfies Record<string, LucideIcon>;
 
 export type IconKey = keyof typeof ICONS;

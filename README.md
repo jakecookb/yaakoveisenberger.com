@@ -229,3 +229,7 @@ A free, automatic feed: every 30 minutes (ISR) the page reads the public RSS fee
 ## Tech & Gadgets (`/tech`) and Speed Test (`/speed`)
 
 `/tech` works like the car feed: RSS from phone-news sites (`lib/tech/sources.ts`), scored in `lib/tech/pick.ts` (Samsung Galaxy S26/S27 Ultra and Apple get their own sections, then wearables and other phones), refreshed every 30 minutes with a Blob snapshot as a fallback. `/speed` measures ping, download and upload in the browser against `/api/speed/{ping,down,up}`; uploads are sent in 2 MB pieces to stay under the host's request-size limit.
+
+## QR Code Generator (`/qr`)
+
+Runs entirely in the browser (the `qrcode` package computes the code; `lib/qr/render.ts` draws the branded card: logo badge in the centre, site name underneath, error-correction level H so the logo never stops it scanning). Verified by decoding downloaded PNGs from 23 to 1,900 characters.
