@@ -32,7 +32,7 @@ export async function CategoryPage({ id }: { id: string }) {
         </span>
         <h1 className="mt-8 text-3xl font-semibold tracking-tight text-white sm:text-4xl">{page?.heading || card.title}</h1>
         <p className="mx-auto mt-3 max-w-xl text-neutral-400">{card.teaser}</p>
-        {!card.locked && QUOTABLE.includes(id) && <QuoteButton category={id} accent={card.accent} />}
+        {QUOTABLE.includes(id) && <QuoteButton category={id} accent={card.accent} />}
         {!card.locked && page?.body && <RichText text={page.body} className="mx-auto mt-8 max-w-2xl" />}
         {showSoon && <p className="mx-auto mt-6 w-fit rounded-full bg-white/5 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-neutral-300 ring-1 ring-white/10">Coming soon</p>}
 

@@ -5,7 +5,8 @@ import { motion, useReducedMotion } from 'framer-motion';
 import type { CardView } from '@/lib/site/settings';
 import { CategoryCard, type AccessInfo } from './category-card';
 
-export function CategoryGrid({ cards, liveCampaigns }: { cards: CardView[]; liveCampaigns?: number }) {
+/** `fullOnPhone`: one card per line below 640px (the News section). */
+export function CategoryGrid({ cards, liveCampaigns, fullOnPhone }: { cards: CardView[]; liveCampaigns?: number; fullOnPhone?: boolean }) {
   const reduce = useReducedMotion();
   const [states, setStates] = useState<Record<string, AccessInfo>>({});
   const [tick, setTick] = useState(0);
@@ -30,7 +31,7 @@ export function CategoryGrid({ cards, liveCampaigns }: { cards: CardView[]; live
       initial={reduce ? false : 'hidden'}
       animate="show"
       variants={{ hidden: {}, show: { transition: { staggerChildren: 0.05, delayChildren: 0.1 } } }}
-      className="grid grid-flow-dense grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-2 xl:grid-cols-3"
+      className={`grid grid-flow-dense ${fullOnPhone ? 'grid-cols-1' : 'grid-cols-2'} gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-2 xl:grid-cols-3`}
     >
       {cards.map((c) => (
         <CategoryCard key={c.id} category={c} liveCount={c.id === 'fund' ? liveCampaigns : undefined} access={states[c.id]} onModalClose={() => setTick((n) => n + 1)} />
