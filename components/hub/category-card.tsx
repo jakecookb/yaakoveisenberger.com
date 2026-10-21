@@ -99,7 +99,10 @@ export function CategoryCard({ category, liveCount, cols, access, onModalClose }
         >
           <Icon className={size.icon} strokeWidth={2.2} />
         </span>
-        <Badge category={category} liveCount={liveCount} access={access} />
+        <span className="flex flex-wrap items-center justify-end gap-1.5">
+          {category.news && <span className="rounded-full border border-white/15 bg-neutral-950/40 px-2 py-0.5 font-mono text-[10px] font-medium lowercase leading-4 tracking-[0.12em] text-neutral-300/90">news</span>}
+          <Badge category={category} liveCount={liveCount} access={access} />
+        </span>
       </span>
       <span className="relative">
         <span className="flex items-center justify-between gap-3">
