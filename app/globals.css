@@ -27,3 +27,25 @@ body:has(.site-dark) {
   0%, 100% { opacity: 0.2; }
   50% { opacity: 1; }
 }
+
+/* Photo editor sliders: an invisible native range input over a custom track (keeps keyboard + screen-reader support). */
+.photo-range::-webkit-slider-runnable-track { height: 20px; background: transparent; }
+.photo-range::-moz-range-track { height: 20px; background: transparent; }
+.photo-range::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; margin-top: 3px;
+  width: 14px; height: 14px; border-radius: 9999px; background: #fafafa;
+  box-shadow: 0 0 0 3px rgba(253, 164, 175, 0.35), 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+.photo-range::-moz-range-thumb {
+  width: 14px; height: 14px; border: 0; border-radius: 9999px; background: #fafafa;
+  box-shadow: 0 0 0 3px rgba(253, 164, 175, 0.35), 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+.photo-range:focus-visible { outline: none; }
+.photo-range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px #fda4af; }
+.photo-checker {
+  background-color: #262626;
+  background-image: linear-gradient(45deg, #333 25%, transparent 25%), linear-gradient(-45deg, #333 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #333 75%), linear-gradient(-45deg, transparent 75%, #333 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+}
