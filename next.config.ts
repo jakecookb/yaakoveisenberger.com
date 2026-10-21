@@ -27,6 +27,24 @@ const csp = (frameAncestors: string) =>
     "form-action 'self'",
   ].join('; ');
 
+// Content-Security-Policy for the rest of the site: only this site's own scripts, WebAssembly for the in-browser AI tools
+// (models download from Hugging Face), YouTube/Vimeo embeds, no framing by other sites, no plugins.
+const siteCsp = [
+  "default-src 'self'",
+  `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'${isDev ? " 'unsafe-eval'" : ''}`,
+  "worker-src 'self' blob:",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https:",
+  "media-src 'self' blob: data:",
+  "font-src 'self' data:",
+  "connect-src 'self' blob: data: https://huggingface.co https://*.huggingface.co https://*.hf.co",
+  'frame-src https://www.youtube-nocookie.com https://www.youtube.com https://player.vimeo.com',
+  "frame-ancestors 'none'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+].join('; ');
+
 const securityHeaders = [
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
@@ -56,8 +74,19 @@ const nextConfig: NextConfig = {
       { source: '/cookbook/:path*', destination: `${cookbookOrigin}/cookbook/:path*` },
     ];
   },
+  async redirects() {
+    return [
+      { source: '/fish-boards', destination: '/fishboards', permanent: true },
+      { source: '/meat-boards', destination: '/meatboards', permanent: true },
+    ];
+  },
   async headers() {
     return [
+      {
+        // Every page except /fund (its own policy above, for Stripe) and the separately-built /cookbook app.
+        source: '/:path((?!fund|cookbook).*)',
+        headers: [...securityHeaders, { key: 'Content-Security-Policy', value: siteCsp }, { key: 'X-Frame-Options', value: 'DENY' }],
+      },
       {
         // Everything under /fund except the big screen (which OBS / signage players may embed).
         source: '/fund/:path((?!display).*)',

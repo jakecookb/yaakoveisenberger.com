@@ -1,5 +1,3 @@
-import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
 import { PhotoSuite } from '@/components/photo/photo-suite';
 
 export const metadata = { title: 'AI Photo Suite', description: 'Free pro photo editor with AI background removal, auto-enhance, color grades, curves and more — all in your browser.' };
@@ -10,7 +8,6 @@ export default function EditorPage() {
       <div className="mx-auto max-w-[96rem] px-3 py-6 sm:px-6">
         <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
           <div className="flex items-baseline gap-4">
-            <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-neutral-400 transition hover:text-white"><ArrowLeft className="size-4" /> All projects</Link>
             <h1 className="text-sm font-semibold uppercase tracking-[0.3em] text-[#fda4af]">AI Photo Suite</h1>
           </div>
           <p className="text-xs text-neutral-500">Private: photos never leave your device.</p>

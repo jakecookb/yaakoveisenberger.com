@@ -1,5 +1,4 @@
-import Link from 'next/link';
-import { ArrowLeft, Disc3 } from 'lucide-react';
+import { Disc3 } from 'lucide-react';
 import { RemixStudio } from '@/components/remix/remix-studio';
 
 export const metadata = { title: 'Wedding Intro Remix', description: 'Stitch songs into one seamless intro — on-beat blends, matched loudness, MP3 or WAV.' };
@@ -8,9 +7,6 @@ export default function Page() {
   return (
     <section>
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14">
-        <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-neutral-400 transition hover:text-white">
-          <ArrowLeft className="size-4" /> All projects
-        </Link>
         <div className="mt-6 flex items-center gap-4">
           <span className="flex size-14 shrink-0 items-center justify-center rounded-2xl text-neutral-950" style={{ background: '#c084fc' }}><Disc3 className="size-7" strokeWidth={2.2} /></span>
           <div>

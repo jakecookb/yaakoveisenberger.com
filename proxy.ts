@@ -39,6 +39,6 @@ export const config = {
   matcher: [
     '/fund', '/fund/:path*', '/fund/admin/:path*', '/fund/portal/:path*', '/fund/login', '/fund/auth/:path*',
     '/video/:path*', '/contact/:path*', '/cookbook/:path*', '/p/:path*', '/go/:path*',
-    '/editing/:path*', '/photography/:path*', '/tech/:path*', '/bookbinding/:path*', '/fishboards/:path*', '/meatboards/:path*', '/music/:path*', '/separator/:path*', '/cars/:path*', '/speed/:path*', '/qr/:path*', '/editor/:path*', '/weapons/:path*', '/audio-remix/:path*', '/ccw/:path*', '/rentals/:path*', '/devtools/:path*',
+    '/editing/:path*', '/photography/:path*', '/tech/:path*', '/bookbinding/:path*', '/fishboards/:path*', '/meatboards/:path*', '/music/:path*', '/separator/:path*', '/cars/:path*', '/speed/:path*', '/qr/:path*', '/editor/:path*', '/weapons/:path*', '/audio-remix/:path*', '/ccw/:path*', '/rentals/:path*', '/devtools/:path*', '/events/:path*',
   ],
 };

@@ -6,6 +6,7 @@ import { mediaUrl, resolveCards } from '@/lib/site/settings';
 import { LockedGate } from './locked-gate';
 import { PhotoGallery } from './photo-gallery';
 import { RichText } from './rich-text';
+import { QuoteForm } from './quote-form';
 
 /**
  * A category's own page: heading and text (editable in the admin), its photo gallery, and — if the admin
@@ -33,6 +34,8 @@ export async function CategoryPage({ id }: { id: string }) {
         {showSoon && <p className="mx-auto mt-6 w-fit rounded-full bg-white/5 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-neutral-300 ring-1 ring-white/10">Coming soon</p>}
 
         {card.locked ? <LockedGate categoryId={id} accent={card.accent} /> : photos.length > 0 && <div className="mt-10 text-left"><PhotoGallery photos={photos} /></div>}
+
+        {!card.locked && (id === 'fishboards' || id === 'meatboards') && <QuoteForm board={id} title={card.title} accent={card.accent} />}
 
         <Link href="/" className="mx-auto mt-12 inline-flex h-11 items-center gap-2 rounded-full border border-white/20 px-6 text-sm font-semibold text-white transition hover:bg-white/5">
           <ArrowLeft className="size-4" /> Back to all

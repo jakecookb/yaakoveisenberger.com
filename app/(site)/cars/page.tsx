@@ -1,5 +1,4 @@
-import Link from 'next/link';
-import { ArrowLeft, CarFront } from 'lucide-react';
+import { CarFront } from 'lucide-react';
 import { CarCard } from '@/components/cars/car-card';
 import { NEWS_GRID, phoneOrphan } from '@/components/cars/news-grid';
 import { loadCarFeed } from '@/lib/cars/fetch';
@@ -14,9 +13,6 @@ export default async function CarsPage() {
   return (
     <section>
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
-        <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-neutral-400 transition hover:text-white">
-          <ArrowLeft className="size-4" /> All projects
-        </Link>
         <div className="mt-6 flex items-center gap-4">
           <span className="flex size-14 shrink-0 items-center justify-center rounded-2xl text-neutral-950" style={{ background: '#818cf8' }}><CarFront className="size-7" strokeWidth={2.2} /></span>
           <div>

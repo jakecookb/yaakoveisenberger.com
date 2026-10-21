@@ -15,6 +15,10 @@ export interface Email {
   subject: string;
   html: string;
   text: string;
+  /** Where replies go (e.g. the customer, so the owner can answer straight from their inbox). */
+  replyTo?: string;
+  /** Extra headers, e.g. List-Unsubscribe for announcements. */
+  headers?: Record<string, string>;
 }
 
 export async function sendEmail(mail: Email): Promise<boolean> {
@@ -31,7 +35,7 @@ export async function sendEmail(mail: Email): Promise<boolean> {
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: FROM, to: [mail.to], subject: mail.subject, html: mail.html, text: mail.text }),
+      body: JSON.stringify({ from: FROM, to: [mail.to], subject: mail.subject, html: mail.html, text: mail.text, ...(mail.replyTo ? { reply_to: mail.replyTo } : {}), ...(mail.headers ? { headers: mail.headers } : {}) }),
       signal: AbortSignal.timeout(10_000),
     });
     if (!res.ok) console.error('Email failed', res.status, (await res.text()).slice(0, 300));
@@ -40,4 +44,24 @@ export async function sendEmail(mail: Email): Promise<boolean> {
     console.error('Email failed', e);
     return false;
   }
+}
+
+/** Many emails in as few requests as possible (Resend batch API: up to 100 per request). Returns how many were accepted. */
+export async function sendBatch(mails: Email[]): Promise<number> {
+  let ok = 0;
+  if (!process.env.RESEND_API_KEY) {
+    for (const m of mails) if (await sendEmail(m)) ok++;
+    return ok;
+  }
+  for (let i = 0; i < mails.length; i += 100) {
+    const chunk = mails.slice(i, i + 100).map((m) => ({ from: FROM, to: [m.to], subject: m.subject, html: m.html, text: m.text, ...(m.replyTo ? { reply_to: m.replyTo } : {}), ...(m.headers ? { headers: m.headers } : {}) }));
+    try {
+      const res = await fetch('https://api.resend.com/emails/batch', { method: 'POST', headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify(chunk), signal: AbortSignal.timeout(30_000) });
+      if (res.ok) ok += chunk.length;
+      else console.error('Batch email failed', res.status, (await res.text()).slice(0, 300));
+    } catch (e) {
+      console.error('Batch email failed', e);
+    }
+  }
+  return ok;
 }
