@@ -8,6 +8,10 @@ import {
   ChefHat,
   Clapperboard,
   CodeXml,
+  Disc3,
+  KeyRound,
+  ShieldCheck,
+  SquareTerminal,
   Crosshair,
   Fish,
   Gauge,
@@ -64,6 +68,10 @@ export const categories: NavCategory[] = [
   { id: 'qr', lockable: true, title: 'QR Code Generator', teaser: 'Turn any link or text into a branded QR code — instant, free, downloadable.', href: '/qr', icon: QrCode, accent: '#f472b6', badge: 'new' },
   { id: 'editor', lockable: true, title: 'AI Photo Suite', teaser: 'Pro photo editor with AI background removal, auto-enhance and color grades — free, right in your browser.', href: '/editor', icon: WandSparkles, accent: '#fda4af', badge: 'new', external: true /* full page load for cross-origin isolation (multi-threaded AI) */ },
   { id: 'weapons', news: true, lockable: true, title: 'Weapons & 2A Hub', teaser: 'Handguns, long guns and knives — plus the latest on 2A law and carry reciprocity.', href: '/weapons', icon: Crosshair, accent: '#fb923c', badge: 'new' },
+  { id: 'audio-remix', lockable: true, title: 'Wedding Intro Remix', teaser: 'Stitch songs into one on-beat intro — low, bridge, high — and export MP3 or WAV.', href: '/audio-remix', icon: Disc3, accent: '#c084fc', badge: 'new' },
+  { id: 'ccw', lockable: true, title: 'CCW Reciprocity & Laws', teaser: 'Up to four permits, 50-state coverage map, and every state’s carry rules.', href: '/ccw', icon: ShieldCheck, accent: '#f59e0b', badge: 'new' },
+  { id: 'rentals', lockable: true, title: 'Rental Command Center', teaser: 'Hertz, National and Avis side by side — AAA and codes saved, true all-in totals.', href: '/rentals', icon: KeyRound, accent: '#60a5fa', badge: 'new' },
+  { id: 'devtools', lockable: true, title: 'Developer Tools', teaser: 'JSON → TypeScript, glass style builder, Git cheat sheet, Base64 & URL tools.', href: '/devtools', icon: SquareTerminal, accent: '#2dd4bf', badge: 'new' },
   { id: 'contact', lockable: true, title: 'Contact & Booking', teaser: 'Start a project or check availability.', href: '/contact', icon: CalendarCheck, accent: '#fbbf24' },
 ];
 
