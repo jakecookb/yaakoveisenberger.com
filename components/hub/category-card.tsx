@@ -8,18 +8,19 @@ import { ICONS } from '@/data/icons';
 import type { BoxHeight, CardView, IconSize } from '@/lib/site/settings';
 import { AccessModal } from './access-modal';
 
+// Phones show two boxes per row, so everything is a step smaller there (sm: and up is unchanged).
 const HEIGHTS: Record<BoxHeight, { box: string; title: string; teaser: string }> = {
-  compact: { box: 'min-h-28 gap-3 p-4', title: 'text-base', teaser: 'line-clamp-2 text-xs' },
-  standard: { box: 'min-h-48 gap-8 p-6 sm:p-7', title: 'text-xl', teaser: 'text-sm' },
-  tall: { box: 'min-h-72 gap-10 p-7 sm:p-8', title: 'text-2xl', teaser: 'text-base' },
-  xl: { box: 'min-h-96 gap-12 p-8 sm:p-10', title: 'text-3xl', teaser: 'text-lg' },
+  compact: { box: 'min-h-28 gap-3 p-3.5 sm:p-4', title: 'text-sm sm:text-base', teaser: 'line-clamp-2 text-xs' },
+  standard: { box: 'min-h-40 gap-5 p-4 sm:min-h-48 sm:gap-8 sm:p-7', title: 'text-base sm:text-xl', teaser: 'line-clamp-3 text-xs sm:line-clamp-none sm:text-sm' },
+  tall: { box: 'min-h-56 gap-6 p-4 sm:min-h-72 sm:gap-10 sm:p-8', title: 'text-lg sm:text-2xl', teaser: 'text-sm sm:text-base' },
+  xl: { box: 'min-h-72 gap-8 p-5 sm:min-h-96 sm:gap-12 sm:p-10', title: 'text-xl sm:text-3xl', teaser: 'text-sm sm:text-lg' },
 };
 
 const SIZES: Record<IconSize, { tile: string; icon: string }> = {
-  sm: { tile: 'size-10 rounded-xl', icon: 'size-5' },
-  md: { tile: 'size-12 rounded-2xl', icon: 'size-6' },
-  lg: { tile: 'size-16 rounded-2xl', icon: 'size-8' },
-  xl: { tile: 'size-20 rounded-3xl', icon: 'size-10' },
+  sm: { tile: 'size-9 rounded-xl sm:size-10', icon: 'size-4.5 sm:size-5' },
+  md: { tile: 'size-10 rounded-xl sm:size-12 sm:rounded-2xl', icon: 'size-5 sm:size-6' },
+  lg: { tile: 'size-12 rounded-2xl sm:size-16', icon: 'size-6 sm:size-8' },
+  xl: { tile: 'size-14 rounded-2xl sm:size-20 sm:rounded-3xl', icon: 'size-7 sm:size-10' },
 };
 
 export const cardVariants: Variants = {
@@ -76,10 +77,11 @@ export function CategoryCard({ category, liveCount, cols, access, onModalClose }
   const grey = category.greyed && access?.state !== 'approved';
   const size = SIZES[category.iconSize];
   const h = HEIGHTS[category.height];
+  // Wide and full-row boxes take the whole row on a phone (two columns), as they do in the preview's phone view.
   const span = cols
-    ? cols === 1 || category.width === 'normal' ? '' : category.width === 'wide' ? 'col-span-2' : 'col-span-full'
-    : category.width === 'wide' ? 'sm:col-span-2' : category.width === 'full' ? 'sm:col-span-full' : '';
-  const className = `group relative flex h-full flex-col justify-between overflow-hidden rounded-3xl bg-neutral-900/70 ring-1 ring-white/10 outline-none [-webkit-tap-highlight-color:transparent] transition-[box-shadow,transform,--tw-ring-color] duration-300 hover:ring-[var(--accent)] hover:shadow-[0_0_0_1px_var(--accent),0_20px_60px_-20px_var(--accent)] data-[active=true]:-translate-y-1.5 data-[active=true]:scale-[1.02] data-[active=true]:ring-[var(--accent)] data-[active=true]:shadow-[0_0_0_1px_var(--accent),0_20px_60px_-20px_var(--accent)] motion-reduce:data-[active=true]:translate-y-0 motion-reduce:data-[active=true]:scale-100 focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${grey ? 'grayscale bg-neutral-900/40 opacity-55 hover:opacity-80 data-[active=true]:opacity-80' : ''} ${h.box}`;
+    ? category.width === 'normal' ? '' : category.width === 'wide' || cols === 1 ? 'col-span-2' : 'col-span-full'
+    : category.width === 'wide' ? 'col-span-2' : category.width === 'full' ? 'col-span-2 sm:col-span-full' : '';
+  const className = `group relative flex h-full flex-col justify-between overflow-hidden rounded-3xl bg-neutral-900/70 ring-1 ring-white/10 outline-none [-webkit-tap-highlight-color:transparent] transition-[box-shadow,transform,--tw-ring-color] duration-300 hover:ring-[var(--accent)] hover:shadow-[0_0_0_1px_var(--accent),0_20px_60px_-20px_var(--accent)] data-[active=true]:-translate-y-1.5 data-[active=true]:scale-[1.02] data-[active=true]:ring-[var(--accent)] data-[active=true]:shadow-[0_0_0_1px_var(--accent),0_20px_60px_-20px_var(--accent)] motion-reduce:data-[active=true]:translate-y-0 motion-reduce:data-[active=true]:scale-100 focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${grey ? 'grayscale' : ''} ${h.box}`;
   const style = { '--accent': grey ? '#737373' : category.accent } as React.CSSProperties;
 
   const inner = (
@@ -113,6 +115,12 @@ export function CategoryCard({ category, liveCount, cols, access, onModalClose }
           <span className={`mt-2 block ${h.teaser} leading-relaxed text-neutral-400`}>{category.teaser}</span>
         )}
       </span>
+      {grey && (
+        // Fog: the box is there, but you can barely make it out.
+        <span className="absolute inset-0 z-10 flex items-center justify-center bg-neutral-900/45 backdrop-blur-[5px] transition-[backdrop-filter] duration-300 group-hover:backdrop-blur-[4px]" aria-hidden>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-neutral-950/60 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-neutral-300 ring-1 ring-white/10"><Lock className="size-3" /> Private</span>
+        </span>
+      )}
     </>
   );
 

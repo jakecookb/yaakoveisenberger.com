@@ -460,7 +460,7 @@ function PreviewFrame({ cards, device }: { cards: CardView[]; device: 1 | 2 | 4 
   }, []);
   const virtual = { 1: 343, 2: 720, 4: 1104 }[device]; // the width of the real grid on a phone / tablet / desktop
   const scale = Math.min(1, size.width / virtual);
-  const cols = { 1: 'grid-cols-1 gap-4', 2: 'grid-cols-2 gap-5', 4: 'grid-cols-4 gap-5' }[device];
+  const cols = { 1: 'grid-cols-2 gap-3', 2: 'grid-cols-2 gap-5', 4: 'grid-cols-4 gap-5' }[device];
   return (
     <div className="max-h-[calc(100vh-9rem)] overflow-y-auto rounded-2xl bg-neutral-950 p-3 ring-1 ring-white/10">
       <div ref={outer} className="w-full overflow-hidden" style={{ height: size.height * scale }} aria-label="Preview of your home page tiles" role="img">
