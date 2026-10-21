@@ -40,7 +40,7 @@ export default async function HomePage() {
           if (!cards.length) return null;
           return (
             <HubSection key={sec.id} id={sec.id} title={sec.title} subtitle={sec.subtitle} accent={sec.accent}>
-              {cards.length > 0 && <CategoryGrid cards={cards} liveCampaigns={liveCampaigns} />}
+              {cards.length > 0 && <CategoryGrid cards={cards} liveCampaigns={liveCampaigns} fullOnPhone={sec.id === 'news'} />}
             </HubSection>
           );
         })}

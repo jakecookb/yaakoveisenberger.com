@@ -94,9 +94,9 @@ export function CategoryCard({ category, liveCount, cols, access, onModalClose }
         style={{ background: 'radial-gradient(420px circle at var(--mx,50%) var(--my,0%), color-mix(in srgb, var(--accent) 18%, transparent), transparent 60%)' }}
         aria-hidden
       />
-      <span className="relative flex items-start justify-between gap-3">
+      <span className="relative flex flex-wrap items-start justify-between gap-2">
         <span
-          className={`flex items-center justify-center ${size.tile} text-neutral-950 shadow-lg transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3 group-data-[active=true]:scale-110 group-data-[active=true]:-rotate-3`}
+          className={`flex shrink-0 items-center justify-center ${size.tile} text-neutral-950 shadow-lg transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3 group-data-[active=true]:scale-110 group-data-[active=true]:-rotate-3`}
           style={{ background: grey ? '#525252' : category.accent }}
         >
           <Icon className={size.icon} strokeWidth={2.2} />
