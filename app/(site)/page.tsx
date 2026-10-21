@@ -4,7 +4,7 @@ import { mediaUrl, resolveCards } from '@/lib/site/settings';
 import { HeroFade } from '@/components/hub/hero-fade';
 import { HubHero } from '@/components/hub/hub-hero';
 import { CategoryGrid } from '@/components/hub/category-grid';
-import { HubSection } from '@/components/hub/hub-section';
+import { HubSection, SectionStack } from '@/components/hub/hub-section';
 import { categories } from '@/data/navigation';
 
 // Cached and refreshed every minute (and instantly when the admin saves) so the "live campaigns"
@@ -34,6 +34,7 @@ export default async function HomePage() {
         <HubHero tagline={settings.hero.tagline} logoSrc={settings.hero.logoPath ? mediaUrl(settings.hero.logoPath) : undefined} />
       </HeroFade>
       <div className="relative z-10 mx-auto max-w-7xl space-y-12 px-4 pb-20 sm:px-6 sm:pb-28">
+        <SectionStack sections={SECTIONS.filter((s) => groups[s.id].length).map(({ id, title, accent }) => ({ id, title, accent }))} />
         {SECTIONS.map((sec) => {
           const cards = groups[sec.id];
           if (!cards.length) return null;

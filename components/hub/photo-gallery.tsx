@@ -15,21 +15,48 @@ export function PhotoGallery({ photos }: { photos: GalleryPhoto[] }) {
   const [open, setOpen] = useState<number | null>(null);
   const track = useRef<HTMLDivElement>(null);
   const paused = useRef(false);
-  // The wheel turns slowly by itself (looping back to the start), pausing while someone hovers or touches it.
+  const drag = useRef<{ x: number; left: number; moved: boolean; v: number; t: number } | null>(null);
+  const momentum = useRef(0);
+  // Turns by itself (looping), faster than before; drag, flick, or use the scroll wheel to spin it yourself.
   useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     let raf = 0;
     const tick = () => {
       const t = track.current;
-      if (t && !paused.current && open === null) {
-        t.scrollLeft += 0.4;
-        if (t.scrollLeft + t.clientWidth >= t.scrollWidth - 1) t.scrollLeft = 0;
+      if (t && open === null && !drag.current) {
+        const auto = reduce || paused.current ? 0 : 1.1;
+        t.scrollLeft += auto + momentum.current;
+        momentum.current *= 0.94;
+        if (Math.abs(momentum.current) < 0.05) momentum.current = 0;
+        if (t.scrollLeft + t.clientWidth >= t.scrollWidth - 1 && momentum.current >= 0) t.scrollLeft = 0;
       }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    const t = track.current;
+    // Mouse wheel spins the strip sideways while the pointer is over it (it lets go at either end).
+    const wheel = (e: WheelEvent) => {
+      if (!t || Math.abs(e.deltaY) < Math.abs(e.deltaX)) return;
+      const atEnd = (e.deltaY > 0 && t.scrollLeft + t.clientWidth >= t.scrollWidth - 1) || (e.deltaY < 0 && t.scrollLeft <= 0);
+      if (atEnd) return;
+      e.preventDefault();
+      momentum.current += e.deltaY * 0.08;
+    };
+    t?.addEventListener('wheel', wheel, { passive: false });
+    return () => { cancelAnimationFrame(raf); t?.removeEventListener('wheel', wheel); };
   }, [open]);
+  const onDown = (e: React.PointerEvent) => { if (e.pointerType !== 'mouse') return; drag.current = { x: e.clientX, left: track.current!.scrollLeft, moved: false, v: 0, t: performance.now() }; };
+  const onMove = (e: React.PointerEvent) => {
+    const d = drag.current;
+    if (!d) return;
+    const now = performance.now();
+    const next = d.left - (e.clientX - d.x);
+    d.v = (track.current!.scrollLeft - next) / Math.max(1, now - d.t) * -16;
+    d.t = now;
+    if (Math.abs(e.clientX - d.x) > 4) d.moved = true;
+    track.current!.scrollLeft = next;
+  };
+  const onUp = () => { const d = drag.current; if (d) { momentum.current = d.v; setTimeout(() => { drag.current = null; }, 0); } };
   const close = useCallback(() => setOpen(null), []);
   const step = useCallback((d: number) => setOpen((i) => (i === null ? i : (i + d + photos.length) % photos.length)), [photos.length]);
 
@@ -52,16 +79,17 @@ export function PhotoGallery({ photos }: { photos: GalleryPhoto[] }) {
       {/* Bubbly floating carousel: rounded photos drift gently on a slowly turning track with faded edges. */}
       <div
         ref={track}
-        onPointerEnter={() => (paused.current = true)} onPointerLeave={() => (paused.current = false)}
-        onTouchStart={() => (paused.current = true)} onTouchEnd={() => setTimeout(() => (paused.current = false), 2500)}
-        className="flex gap-5 overflow-x-auto px-[8%] py-8 [mask-image:linear-gradient(90deg,transparent,#000_10%,#000_90%,transparent)] [scrollbar-width:none]"
+        onPointerEnter={() => (paused.current = true)} onPointerLeave={() => { paused.current = false; onUp(); }}
+        onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp}
+        onTouchStart={() => (paused.current = true)} onTouchEnd={() => setTimeout(() => (paused.current = false), 2000)}
+        className="flex cursor-grab select-none gap-3 overflow-x-auto px-[6%] py-4 [mask-image:linear-gradient(90deg,transparent,#000_8%,#000_92%,transparent)] [scrollbar-width:none] active:cursor-grabbing"
       >
         {photos.map((p, i) => (
-          <figure key={p.id} className="photo-float w-64 shrink-0 sm:w-80" style={{ animationDelay: `${(i % 5) * -1.3}s` }}>
-            <button type="button" onClick={() => setOpen(i)} className="group block w-full overflow-hidden rounded-[2rem] bg-neutral-900 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.8)] ring-1 ring-white/15 transition duration-500 hover:scale-[1.04] hover:ring-white/40 focus-visible:ring-2 focus-visible:ring-[#c8a96a]">
-              <img src={p.src} alt={p.caption} loading="lazy" decoding="async" className="aspect-[4/5] w-full object-cover transition-opacity duration-700" />
+          <figure key={p.id} className="photo-float w-36 shrink-0 sm:w-44" style={{ animationDelay: `${(i % 5) * -0.9}s` }}>
+            <button type="button" onClick={(e) => { if (drag.current?.moved) { e.preventDefault(); return; } setOpen(i); }} draggable={false} className="group block w-full overflow-hidden rounded-[1.4rem] bg-neutral-900 shadow-[0_14px_30px_-14px_rgba(0,0,0,0.9)] ring-1 ring-white/15 transition duration-300 hover:scale-[1.06] hover:ring-white/40 focus-visible:ring-2 focus-visible:ring-[#c8a96a]">
+              <img src={p.src} alt={p.caption} loading="lazy" decoding="async" draggable={false} className="aspect-square w-full object-cover" />
             </button>
-            {p.caption && <figcaption className="mt-3 px-2 text-center text-sm text-neutral-400">{p.caption}</figcaption>}
+            {p.caption && <figcaption className="mt-1.5 truncate px-1 text-center text-xs text-neutral-500">{p.caption}</figcaption>}
           </figure>
         ))}
       </div>
