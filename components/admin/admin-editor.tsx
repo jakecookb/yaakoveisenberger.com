@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { upload } from '@vercel/blob/client';
-import { ArrowDown, ArrowUp, Eye, EyeOff, ExternalLink, FileText, ImagePlus, Images, Link2, Lock, LogOut, Plus, RotateCcw, Save, Trash2, Unlock, Users } from 'lucide-react';
+import { ArrowDown, ArrowUp, CircleDashed, Eye, EyeOff, ExternalLink, FileText, ImagePlus, Images, Link2, Lock, LogOut, Plus, RotateCcw, Save, Trash2, Unlock, Users } from 'lucide-react';
 import { categories } from '@/data/navigation';
 import { ICON_KEYS, ICONS } from '@/data/icons';
 import { changePassword, logoutAction, saveSettings, type FormState } from '@/app/admin/actions';
@@ -42,6 +42,15 @@ async function uploadImage(folder: string, file: File) {
   const name = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
   return upload(`${folder}/${name}`, blob, { access: 'private', handleUploadUrl: '/api/admin/upload', contentType: blob.type });
 }
+
+type Mode = 'open' | 'locked' | 'greyed';
+const MODES: Mode[] = ['open', 'locked', 'greyed'];
+const modeOf = (c: { locked: boolean; greyed: boolean }): Mode => (c.greyed ? 'greyed' : c.locked ? 'locked' : 'open');
+const MODE_INFO: Record<Mode, { label: string; hint: string; icon: typeof Lock; row: string }> = {
+  open: { label: 'Open', hint: 'Anyone can open this box', icon: Unlock, row: 'text-neutral-400 ring-white/10 hover:bg-white/10' },
+  locked: { label: 'Locked', hint: 'Shown normally with a lock; visitors request access and you approve them', icon: Lock, row: 'bg-[#c8a96a] text-neutral-950 ring-[#c8a96a]' },
+  greyed: { label: 'Greyed out', hint: 'Shown as a faint grey hint with no description; clicking it asks for access', icon: CircleDashed, row: 'bg-neutral-600 text-white ring-neutral-500' },
+};
 
 export function AdminEditor({ initial, blobReady, pending, email }: { initial: SiteSettings; blobReady: boolean; pending: number; email: string }) {
   const [s, setS] = useState<SiteSettings>(initial);
@@ -132,6 +141,8 @@ export function AdminEditor({ initial, blobReady, pending, email }: { initial: S
 // ------------------------------------------------------------------ boxes
 
 function CardsTab({ cards, overrides, custom, pages, photoCounts, setPage, goPhotos, setCard, resetCard, move, addBox, removeBox, setUrl }: { cards: CardView[]; overrides: SiteSettings['cards']; custom: SiteSettings['custom']; pages: SiteSettings['pages']; photoCounts: Record<string, number>; setPage: (id: string, k: 'heading' | 'body', v: string) => void; goPhotos: (id: string) => void; setCard: (id: string, p: Partial<Record<keyof CardOverride, CardOverride[keyof CardOverride] | undefined>>) => void; resetCard: (id: string) => void; move: (id: string, d: -1 | 1) => void; addBox: (kind: 'page' | 'link') => string; removeBox: (id: string) => void; setUrl: (id: string, url: string) => void }) {
+  // Each lockable box is Open, Locked or Greyed out (greyed = locked, and shown as a faint colourless hint on the hub).
+  const setMode = (id: string, m: Mode) => setCard(id, { locked: m === 'open' ? undefined : true, greyed: m === 'greyed' ? true : undefined });
   const [open, setOpen] = useState<string | null>(null);
   const [device, setDevice] = useState<1 | 2 | 4>(4);
   // A new tile is added at the end of a long list: scroll to it so you can start writing straight away.
@@ -139,7 +150,7 @@ function CardsTab({ cards, overrides, custom, pages, photoCounts, setPage, goPho
   return (
     <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
       <div>
-      <p className="mb-3 text-sm text-neutral-400">Click a box to edit it. Use the <Lock className="inline size-3.5" /> button to make a box private — visitors must type their name and you approve them first.</p>
+      <p className="mb-3 text-sm text-neutral-400">Click a box to edit it. Use the <Unlock className="inline size-3.5" /> button to switch a box between <b className="text-neutral-200">Open</b>, <b className="text-neutral-200">Locked</b> and <b className="text-neutral-200">Greyed out</b> — for the last two, visitors send their name, email and phone and you approve them first.</p>
       <div className="mb-5 rounded-2xl bg-gradient-to-br from-[#c8a96a]/15 to-transparent p-4 ring-1 ring-[#c8a96a]/40">
         <p className="flex items-center gap-2 font-semibold text-white"><Plus className="size-4 text-[#c8a96a]" /> Add a new tile</p>
         <p className="mt-1 text-xs text-neutral-400">It shows up on your home page right away (after you press Save). Choose what happens when someone clicks it:</p>
@@ -166,10 +177,17 @@ function CardsTab({ cards, overrides, custom, pages, photoCounts, setPage, goPho
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-xl text-neutral-950" style={{ background: c.accent }}><Icon className="size-5" /></span>
                 <button onClick={() => setOpen(isOpen ? null : c.id)} className="min-w-0 flex-1 text-left" aria-expanded={isOpen}>
                   <span className="block truncate font-medium text-white">{c.title}</span>
-                  <span className="block truncate text-xs text-neutral-500">{c.locked ? 'Private · ' : ''}{c.hidden ? 'Hidden · ' : ''}{{ normal: 'Normal', wide: 'Wide', full: 'Full row' }[c.width]} · {{ compact: 'Compact', standard: 'Standard', tall: 'Tall', xl: 'Extra tall' }[c.height]} · {c.kind === 'link' ? url || 'no web address yet' : c.href}</span>
+                  <span className="block truncate text-xs text-neutral-500">{c.greyed ? 'Greyed out · ' : c.locked ? 'Locked · ' : ''}{c.hidden ? 'Hidden · ' : ''}{{ normal: 'Normal', wide: 'Wide', full: 'Full row' }[c.width]} · {{ compact: 'Compact', standard: 'Standard', tall: 'Tall', xl: 'Extra tall' }[c.height]} · {c.kind === 'link' ? url || 'no web address yet' : c.href}</span>
                 </button>
                 {c.lockable ? (
-                  <button aria-label={c.locked ? `Unlock ${c.title}` : `Lock ${c.title}`} aria-pressed={c.locked} onClick={() => setCard(c.id, { locked: !c.locked })} className={`rounded-lg p-2 ring-1 ${c.locked ? 'bg-[#c8a96a] text-neutral-950 ring-[#c8a96a]' : 'text-neutral-400 ring-white/10 hover:bg-white/10'}`} title={c.locked ? 'Private — click to open to everyone' : 'Open to everyone — click to make private'}>{c.locked ? <Lock className="size-4" /> : <Unlock className="size-4" />}</button>
+                  (() => {
+                    const m = modeOf(c);
+                    const nextMode = MODES[(MODES.indexOf(m) + 1) % MODES.length];
+                    const ModeIcon = MODE_INFO[m].icon;
+                    return (
+                      <button aria-label={`${c.title}: ${MODE_INFO[m].label}. Switch to ${MODE_INFO[nextMode].label}`} onClick={() => setMode(c.id, nextMode)} className={`rounded-lg p-2 ring-1 ${MODE_INFO[m].row}`} title={`${MODE_INFO[m].label} — click for ${MODE_INFO[nextMode].label}`}><ModeIcon className="size-4" /></button>
+                    );
+                  })()
                 ) : (
                   <span title="Can’t be locked — donors need the fundraising pages to stay public" className="rounded-lg p-2 text-neutral-700"><Lock className="size-4" /></span>
                 )}
@@ -253,7 +271,12 @@ function CardsTab({ cards, overrides, custom, pages, photoCounts, setPage, goPho
                     <button onClick={() => setCard(c.id, { hidden: !c.hidden })} className={chip(c.hidden)}>{c.hidden ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />} {c.hidden ? 'Hidden' : 'Visible'}</button>
                     <button onClick={() => setCard(c.id, { status: c.status === 'soon' ? 'live' : 'soon' })} aria-pressed={c.status === 'soon'} className={chip(c.status === 'soon')}>“Soon” tag</button>
                     {c.lockable ? (
-                      <button onClick={() => setCard(c.id, { locked: !c.locked })} aria-pressed={c.locked} className={chip(c.locked)}>{c.locked ? <Lock className="size-3.5" /> : <Unlock className="size-3.5" />} {c.locked ? 'Locked — approval needed' : 'Open to everyone'}</button>
+                      <div role="radiogroup" aria-label="Who can open this box" className="flex flex-wrap gap-2">
+                        {MODES.map((m) => {
+                          const ModeIcon = MODE_INFO[m].icon;
+                          return <button key={m} role="radio" aria-checked={modeOf(c) === m} onClick={() => setMode(c.id, m)} className={chip(modeOf(c) === m)} title={MODE_INFO[m].hint}><ModeIcon className="size-3.5" /> {MODE_INFO[m].label}</button>;
+                        })}
+                      </div>
                     ) : <span className="text-xs text-neutral-600">Can’t be locked — donors need the fundraising pages to stay public.</span>}
                   </div>
                   <div className="flex flex-wrap items-center gap-4">

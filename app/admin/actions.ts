@@ -10,9 +10,12 @@ import {
   checkCredentials, clientIp, CREDENTIAL_PATH, endAdminSession, isAdminConfigured, isAdminEmail, loginBlocked, recordLogin, requireAdmin, startAdminSession,
 } from '@/lib/admin/session';
 import { isBlobConfigured, readJson, writeJson } from '@/lib/admin/store';
-import { deleteRequest, updateRequest } from '@/lib/access/visitor';
+import { deleteRequest, getRequest, signInToken, updateRequest } from '@/lib/access/visitor';
+import { sendEmail } from '@/lib/email/send';
+import { approvedEmail } from '@/lib/email/templates';
+import { siteUrl } from '@/lib/site/url';
 import { forgetSettingsMemo, loadSettings, SETTINGS_PATH } from '@/lib/site/load';
-import { sanitizeSettings, settingsSchema } from '@/lib/site/settings';
+import { resolveCards, sanitizeSettings, settingsSchema } from '@/lib/site/settings';
 
 export interface FormState {
   error?: string;
@@ -145,7 +148,19 @@ export async function approveAction(formData: FormData) {
     }
     if (r.all) r.requested = [];
   });
+  await emailApproval(id, cat);
   revalidatePath('/admin/access');
+}
+
+/** Lets the person know they're in, with a link that signs them in on any device. Best effort: approval stands either way. */
+async function emailApproval(id: string, cat: string) {
+  try {
+    const rec = await getRequest(id);
+    if (!rec?.email) return;
+    const box = cat === '*' ? 'everything on the site' : resolveCards(await loadSettings(), { includeHidden: true }).find((c) => c.id === cat)?.title ?? 'your page';
+    const link = `${siteUrl()}/access/verify?t=${await signInToken(rec, cat === '*' ? undefined : cat)}`;
+    await sendEmail({ to: rec.email, ...approvedEmail({ name: rec.name, link, box }) });
+  } catch {}
 }
 
 export async function denyAction(formData: FormData) {

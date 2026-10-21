@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Check, Clock, Lock, ShieldX } from 'lucide-react';
-import { requestAccess } from '@/app/access-actions';
+import { requestAccess, signInByEmail } from '@/app/access-actions';
+import { SentDialog } from './sent-dialog';
 import { PhotoGallery, type GalleryPhoto } from './photo-gallery';
 import { RichText } from './rich-text';
 
@@ -11,7 +12,10 @@ interface Status {
   state: Exclude<State, 'loading'>;
   name?: string;
   retryAt?: string;
+  hasEmail?: boolean;
 }
+
+const input = 'h-11 w-full rounded-xl bg-neutral-950 px-4 text-white ring-1 ring-white/15 placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-[#c8a96a]';
 
 const minutesLeft = (iso: string | undefined, now: number) => (iso ? Math.max(0, Math.ceil((new Date(iso).getTime() - now) / 60_000)) : 0);
 
@@ -21,8 +25,12 @@ const minutesLeft = (iso: string | undefined, now: number) => (iso ? Math.max(0,
  * Visitors see Pending → Approved (then they're let in) or Declined (then they can ask again after a wait).
  */
 export function LockedGate({ categoryId, accent, continueHref, className = 'mt-10' }: { categoryId: string; accent: string; continueHref?: string; className?: string }) {
-  const [status, setStatus] = useState<{ state: State; name?: string; retryAt?: string }>({ state: 'loading' });
+  const [status, setStatus] = useState<{ state: State; name?: string; retryAt?: string; hasEmail?: boolean }>({ state: 'loading' });
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [mode, setMode] = useState<'request' | 'signin'>('request');
+  const [sent, setSent] = useState<{ to?: string; emailed: boolean }>({ emailed: false });
   const [website, setWebsite] = useState(''); // honeypot
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
@@ -66,9 +74,10 @@ export function LockedGate({ categoryId, accent, continueHref, className = 'mt-1
     e.preventDefault();
     setBusy(true);
     setError(undefined);
-    const res = await requestAccess(name, categoryId, website);
+    const res = mode === 'signin' ? await signInByEmail(email, categoryId, website) : await requestAccess({ name, email, phone }, categoryId, website);
     setBusy(false);
     if (!res.ok) return setError(res.error);
+    if (res.sentTo) setSent({ to: res.sentTo, emailed: Boolean(res.emailed) });
     setTick((n) => n + 1);
   }
 
@@ -112,7 +121,7 @@ export function LockedGate({ categoryId, accent, continueHref, className = 'mt-1
 
       {state === 'pending' && (
         <p className="mt-4 text-sm leading-relaxed text-neutral-400">
-          Thanks{who ? `, ${who}` : ''}. I’ll review your request. Keep this open or come back later in the same browser — it opens as soon as I approve it.
+          Thanks{who ? `, ${who}` : ''}. I’ll review your request. It opens here as soon as I approve it — or use the sign-in link in your email on any device.
           <span className="mt-3 flex items-center gap-2 text-neutral-500"><Check className="size-4" /> Waiting for approval</span>
         </p>
       )}
@@ -126,18 +135,43 @@ export function LockedGate({ categoryId, accent, continueHref, className = 'mt-1
 
       {canAsk && (
         <form onSubmit={submit} className="mt-5 space-y-3">
-          {state === 'none' && <p className="text-sm text-neutral-400">You don’t have access to this yet. {who ? `Request it as ${who}.` : 'Type your name and I’ll approve it first.'}</p>}
-          {!who && (
+          {mode === 'signin' ? (
             <>
-              <label className="block text-sm font-medium text-neutral-200" htmlFor="visitor-name">Your name</label>
-              <input id="visitor-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={60} required autoComplete="name" placeholder="First and last name" className="h-11 w-full rounded-xl bg-neutral-950 px-4 text-white ring-1 ring-white/15 placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-[#c8a96a]" />
+              <p className="text-sm text-neutral-400">Already asked before? Enter your email and we’ll send you a sign-in link.</p>
+              <label className="block text-sm font-medium text-neutral-200" htmlFor="visitor-email">Email address</label>
+              <input id="visitor-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} maxLength={254} required autoComplete="email" inputMode="email" placeholder="you@example.com" className={input} />
+            </>
+          ) : who && status.hasEmail ? (
+            state === 'none' && <p className="text-sm text-neutral-400">You don’t have access to this yet. Request it as {who}.</p>
+          ) : (
+            <>
+              {state === 'none' && <p className="text-sm text-neutral-400">{who ? `Hi ${who} — add your email and phone to request this.` : 'You don’t have access to this yet. Tell me who you are and I’ll approve it first.'}</p>}
+              {!who && (
+                <div>
+                  <label className="block text-sm font-medium text-neutral-200" htmlFor="visitor-name">Name</label>
+                  <input id="visitor-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={60} required autoComplete="name" placeholder="First and last name" className={`mt-1.5 ${input}`} />
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-medium text-neutral-200" htmlFor="visitor-email">Email address</label>
+                <input id="visitor-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} maxLength={254} required autoComplete="email" inputMode="email" placeholder="you@example.com" className={`mt-1.5 ${input}`} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-200" htmlFor="visitor-phone">Phone number</label>
+                <input id="visitor-phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={25} required autoComplete="tel" inputMode="tel" placeholder="(555) 123-4567" className={`mt-1.5 ${input}`} />
+              </div>
             </>
           )}
           <input tabIndex={-1} autoComplete="off" aria-hidden value={website} onChange={(e) => setWebsite(e.target.value)} className="hidden" name="website" />
           {error && <p role="alert" className="text-sm text-red-400">{error}</p>}
-          <button disabled={busy || (!who && name.trim().length < 2)} className="h-11 w-full rounded-full bg-[#c8a96a] font-semibold text-neutral-950 transition hover:bg-[#d8bc82] disabled:opacity-50">
-            {busy ? 'Sending…' : state === 'denied' ? 'Ask again' : 'Request access'}
+          <button disabled={busy} className="h-11 w-full rounded-full bg-[#c8a96a] font-semibold text-neutral-950 transition hover:bg-[#d8bc82] disabled:opacity-50">
+            {busy ? 'Sending…' : mode === 'signin' ? 'Email me a sign-in link' : state === 'denied' ? 'Ask again' : 'Request access'}
           </button>
+          {!who && (
+            <button type="button" onClick={() => { setMode(mode === 'signin' ? 'request' : 'signin'); setError(undefined); }} className="w-full text-center text-xs text-neutral-400 underline-offset-4 hover:text-white hover:underline">
+              {mode === 'signin' ? 'New here? Request access' : 'Already requested or approved? Sign in'}
+            </button>
+          )}
         </form>
       )}
 
@@ -146,6 +180,7 @@ export function LockedGate({ categoryId, accent, continueHref, className = 'mt-1
           Ask again in {wait} min
         </button>
       )}
+      <SentDialog email={sent.to} emailed={sent.emailed} onClose={() => setSent({ emailed: false })} />
     </div>
   );
 }

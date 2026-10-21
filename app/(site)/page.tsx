@@ -17,7 +17,8 @@ export default async function HomePage() {
         <HubHero tagline={settings.hero.tagline} logoSrc={settings.hero.logoPath ? mediaUrl(settings.hero.logoPath) : undefined} />
       </HeroFade>
       <section className="relative z-10 mx-auto max-w-6xl px-4 pb-20 sm:px-6 sm:pb-28">
-        <CategoryGrid cards={resolveCards(settings)} liveCampaigns={liveCampaigns} />
+        {/* A greyed-out box's description is private too: it never reaches the page. */}
+        <CategoryGrid cards={resolveCards(settings).map((c) => (c.greyed ? { ...c, teaser: '' } : c))} liveCampaigns={liveCampaigns} />
       </section>
     </>
   );

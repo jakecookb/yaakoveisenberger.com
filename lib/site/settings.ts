@@ -18,6 +18,8 @@ const cardOverride = z.object({
   hidden: z.boolean().optional(),
   status: z.enum(['live', 'soon']).optional(),
   locked: z.boolean().optional(),
+  /** Locked AND shown greyed out on the hub: only a faint hint of the box, no description. */
+  greyed: z.boolean().optional(),
   width: z.enum(BOX_WIDTHS).optional(),
   height: z.enum(BOX_HEIGHTS).optional(),
   /** Legacy: replaced by `width`. */
@@ -108,6 +110,7 @@ export function sanitizeSettings(input: SiteSettings): SiteSettings {
   const cards = only(input.cards);
   for (const [id, o] of Object.entries(cards)) {
     if (o.locked && !lockable.has(id)) delete o.locked;
+    if (o.greyed && !lockable.has(id)) delete o.greyed;
     if (o.title !== undefined && !o.title.trim()) delete o.title; // blank name = back to the default
   }
   return {
@@ -136,6 +139,8 @@ export interface CardView {
   width: BoxWidth;
   height: BoxHeight;
   locked: boolean;
+  /** Greyed-out display (always also locked). */
+  greyed: boolean;
   hidden: boolean;
   gallery: boolean;
   lockable: boolean;
@@ -151,7 +156,7 @@ export function resolveCards(s: SiteSettings, opts: { includeHidden?: boolean } 
   const views = ids.map((id): CardView => {
     const c = byId.get(id)!;
     const o = s.cards[id] ?? {};
-    const locked = Boolean(c.lockable && o.locked);
+    const locked = Boolean(c.lockable && (o.locked || o.greyed));
     const kind = c.custom ? c.custom.kind : 'builtin';
     // A locked link goes through /go/<id> so the real URL is only revealed to approved visitors.
     const href = locked && kind === 'link' ? `/go/${id}` : c.href;
@@ -169,6 +174,7 @@ export function resolveCards(s: SiteSettings, opts: { includeHidden?: boolean } 
       width: o.width ?? (o.wide || c.featured ? 'wide' : 'normal'),
       height: o.height ?? 'standard',
       locked,
+      greyed: locked && Boolean(o.greyed),
       hidden: Boolean(o.hidden) || (kind === 'link' && !isSafeUrl(c.custom?.url)),
       gallery: Boolean(c.gallery),
       lockable: Boolean(c.lockable),

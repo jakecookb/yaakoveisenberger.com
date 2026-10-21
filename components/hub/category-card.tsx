@@ -72,13 +72,15 @@ export function CategoryCard({ category, liveCount, cols, access, onModalClose }
   const fade = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => () => clearTimeout(fade.current), []);
   const Icon = ICONS[category.iconKey];
+  // Greyed out: a faint, colourless hint of the box until this visitor is approved.
+  const grey = category.greyed && access?.state !== 'approved';
   const size = SIZES[category.iconSize];
   const h = HEIGHTS[category.height];
   const span = cols
     ? cols === 1 || category.width === 'normal' ? '' : category.width === 'wide' ? 'col-span-2' : 'col-span-full'
     : category.width === 'wide' ? 'sm:col-span-2' : category.width === 'full' ? 'sm:col-span-full' : '';
-  const className = `group relative flex h-full flex-col justify-between overflow-hidden rounded-3xl bg-neutral-900/70 ring-1 ring-white/10 outline-none [-webkit-tap-highlight-color:transparent] transition-[box-shadow,transform,--tw-ring-color] duration-300 hover:ring-[var(--accent)] hover:shadow-[0_0_0_1px_var(--accent),0_20px_60px_-20px_var(--accent)] data-[active=true]:-translate-y-1.5 data-[active=true]:scale-[1.02] data-[active=true]:ring-[var(--accent)] data-[active=true]:shadow-[0_0_0_1px_var(--accent),0_20px_60px_-20px_var(--accent)] motion-reduce:data-[active=true]:translate-y-0 motion-reduce:data-[active=true]:scale-100 focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${h.box}`;
-  const style = { '--accent': category.accent } as React.CSSProperties;
+  const className = `group relative flex h-full flex-col justify-between overflow-hidden rounded-3xl bg-neutral-900/70 ring-1 ring-white/10 outline-none [-webkit-tap-highlight-color:transparent] transition-[box-shadow,transform,--tw-ring-color] duration-300 hover:ring-[var(--accent)] hover:shadow-[0_0_0_1px_var(--accent),0_20px_60px_-20px_var(--accent)] data-[active=true]:-translate-y-1.5 data-[active=true]:scale-[1.02] data-[active=true]:ring-[var(--accent)] data-[active=true]:shadow-[0_0_0_1px_var(--accent),0_20px_60px_-20px_var(--accent)] motion-reduce:data-[active=true]:translate-y-0 motion-reduce:data-[active=true]:scale-100 focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${grey ? 'grayscale bg-neutral-900/40 opacity-55 hover:opacity-80 data-[active=true]:opacity-80' : ''} ${h.box}`;
+  const style = { '--accent': grey ? '#737373' : category.accent } as React.CSSProperties;
 
   const inner = (
     <>
@@ -91,7 +93,7 @@ export function CategoryCard({ category, liveCount, cols, access, onModalClose }
       <span className="relative flex items-start justify-between gap-3">
         <span
           className={`flex items-center justify-center ${size.tile} text-neutral-950 shadow-lg transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3 group-data-[active=true]:scale-110 group-data-[active=true]:-rotate-3`}
-          style={{ background: category.accent }}
+          style={{ background: grey ? '#525252' : category.accent }}
         >
           <Icon className={size.icon} strokeWidth={2.2} />
         </span>
@@ -99,13 +101,17 @@ export function CategoryCard({ category, liveCount, cols, access, onModalClose }
       </span>
       <span className="relative">
         <span className="flex items-center justify-between gap-3">
-          <span className={`${h.title} font-semibold tracking-tight text-white`}>{category.title}</span>
+          <span className={`${h.title} font-semibold tracking-tight ${grey ? 'text-neutral-400' : 'text-white'}`}>{category.title}</span>
           <ArrowUpRight
             className="size-5 shrink-0 -translate-x-1 translate-y-1 text-neutral-500 opacity-60 transition duration-300 group-hover:translate-x-0 group-hover:translate-y-0 group-hover:text-[var(--accent)] group-hover:opacity-100 group-data-[active=true]:translate-x-0 group-data-[active=true]:translate-y-0 group-data-[active=true]:text-[var(--accent)] group-data-[active=true]:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:translate-y-0 group-focus-visible:opacity-100"
             aria-hidden
           />
         </span>
-        <span className={`mt-2 block ${h.teaser} leading-relaxed text-neutral-400`}>{category.teaser}</span>
+        {grey ? (
+          <span className={`mt-2 flex items-center gap-1.5 ${h.teaser} text-neutral-500`}><Lock className="size-3.5" /> Private · tap to request access</span>
+        ) : (
+          <span className={`mt-2 block ${h.teaser} leading-relaxed text-neutral-400`}>{category.teaser}</span>
+        )}
       </span>
     </>
   );
