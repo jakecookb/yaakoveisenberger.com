@@ -10,7 +10,7 @@ export default function Error({ reset }: { error: Error; reset: () => void }) {
       <p className="mt-2 text-neutral-400">This page hit a snag. Try again, or head back to the hub.</p>
       <div className="mt-6 flex gap-3">
         <button type="button" onClick={reset} className="h-11 rounded-full bg-white px-5 font-semibold text-neutral-950">Try again</button>
-        <Link href="/" className="inline-flex h-11 items-center rounded-full px-5 font-semibold text-white ring-1 ring-white/20">Back to Hub</Link>
+        <Link href="/" className="inline-flex h-11 items-center rounded-full px-5 font-semibold text-white ring-1 ring-white/20">Return to Main Page</Link>
       </div>
     </section>
   );
