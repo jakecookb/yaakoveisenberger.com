@@ -233,3 +233,13 @@ A free, automatic feed: every 30 minutes (ISR) the page reads the public RSS fee
 ## QR Code Generator (`/qr`)
 
 Runs entirely in the browser (the `qrcode` package computes the code; `lib/qr/render.ts` draws the branded card: logo badge in the centre, site name underneath, error-correction level H so the logo never stops it scanning). Verified by decoding downloaded PNGs from 23 to 1,900 characters.
+
+## Access requests, sign-in emails and sign-up export
+
+Each lockable box is **Open**, **Locked** (shown normally with a lock) or **Greyed out** (a faint grey hint with no description; the description never reaches the page). Set it with the round button on each box in Admin → Boxes, or the Open / Locked / Greyed out switch inside a box.
+
+Clicking a locked or greyed-out box asks for **name, email and phone**. The visitor sees a "check your inbox" confirmation, and gets a branded email with a sign-in link (valid 24 hours) that signs in any device. If the email already belongs to someone, the new browser is *not* signed in — only the link from the inbox does that. "Sign in" lets a returning visitor get a new link by email alone (the answer is the same whether or not the address is known). When you approve someone they get a "you're approved" email with a link straight in.
+
+Admin → Access requests shows everyone's name, email (✓ once they've opened a link), phone, request date and status, with **Download CSV** for the full list (formula-looking cells are escaped so spreadsheets don't run them).
+
+Email needs `RESEND_API_KEY` in Vercel (see `.env.example`). Without it, requests still work and the confirmation says the email couldn't be sent.

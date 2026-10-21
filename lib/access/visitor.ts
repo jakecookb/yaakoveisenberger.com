@@ -1,13 +1,14 @@
 import 'server-only';
 import { cookies } from 'next/headers';
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
-import { list, del } from '@vercel/blob';
-import { isBlobConfigured, readJson, writeJson } from '@/lib/admin/store';
+import { jwtVerify, SignJWT } from 'jose';
+import { isBlobConfigured, listPaths, readJson, removePath, writeJson } from '@/lib/admin/store';
 import { isAdmin } from '@/lib/admin/session';
 
-// A visitor asks for access by typing their name. The request is a private blob
-// (site/access/<id>.json); the visitor's browser keeps "<id>.<secret>" in a cookie and only the
-// hash of the secret is stored. The admin approves per category or for everything.
+// A visitor asks for access with their name, email and phone. The request is a private blob
+// (site/access/<id>.json); each signed-in browser keeps "<id>.<secret>" in a cookie and only hashes of
+// the secrets are stored. A sign-in link emailed to the visitor signs in any other device (and proves the
+// email is theirs). The admin approves per category or for everything.
 
 export const VISITOR_COOKIE = 've_visitor';
 /** About 13 months: the longest a browser will keep a cookie (Chrome caps it at 400 days). Renewed on every visit. */
@@ -34,7 +35,14 @@ export const RETRY_MINUTES = 25;
 export interface AccessRequest {
   id: string;
   name: string;
+  email?: string;
+  phone?: string;
+  /** Set once the visitor opened a sign-in link from their inbox. */
+  emailVerifiedAt?: string;
+  /** The first browser's secret (older records only have this one). */
   secretHash: string;
+  /** Every other signed-in browser (most recent last, capped). */
+  deviceHashes?: string[];
   requested: string[];
   granted: string[];
   denied: string[];
@@ -47,10 +55,26 @@ export interface AccessRequest {
 
 const sha = (s: string) => createHash('sha256').update(s).digest('hex');
 const recordPath = (id: string) => `${PREFIX}${id}.json`;
+// One small index file per email address (named by its hash) points to that person's record.
+const emailPath = (email: string) => `site/access-email/${sha(email)}.json`;
+const MAX_DEVICES = 10;
 const ID = /^[a-f0-9]{24}$/;
 
 export function cleanName(raw: string) {
   return raw.replace(/[\u0000-\u001f\u007f<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, 60);
+}
+
+/** A plausible email address, lower-cased; null if it isn't one. */
+export function cleanEmail(raw: string) {
+  const e = raw.trim().toLowerCase();
+  return e.length <= 254 && /^[^\s@<>()",;:]+@[^\s@<>()",;:]+\.[a-z]{2,}$/.test(e) ? e : null;
+}
+
+/** Keeps digits, a leading +, and common separators; null unless there are 7–15 digits. */
+export function cleanPhone(raw: string) {
+  const p = raw.replace(/[^\d+()\-.\s]/g, '').replace(/\s+/g, ' ').trim().slice(0, 25);
+  const digits = p.replace(/\D/g, '').length;
+  return digits >= 7 && digits <= 15 ? p : null;
 }
 
 /** Looks up the access record a visitor cookie value points to (null if missing, forged or unknown). */
@@ -61,8 +85,8 @@ export async function recordFromCookie(raw: string | undefined): Promise<AccessR
   const rec = await readJson<AccessRequest>(recordPath(id));
   if (!rec) return null;
   const a = Buffer.from(sha(secret));
-  const b = Buffer.from(rec.secretHash);
-  return a.length === b.length && timingSafeEqual(a, b) ? rec : null;
+  const match = (h: string) => { const b = Buffer.from(h); return a.length === b.length && timingSafeEqual(a, b); };
+  return [rec.secretHash, ...(rec.deviceHashes ?? [])].some(match) ? rec : null;
 }
 
 async function visitorRecord() {
@@ -75,12 +99,18 @@ export type AccessState = 'none' | 'pending' | 'approved' | 'denied';
 export interface AccessInfo {
   state: AccessState;
   name?: string;
+  /** The signed-in visitor already gave their email (so the form only needs a button). */
+  hasEmail?: boolean;
   /** Declined only: when the visitor may ask again (ISO). */
   retryAt?: string;
 }
 
 function stateFrom(rec: AccessRequest | null, categoryId: string): AccessInfo {
   if (!rec) return { state: 'none' };
+  return { ...stateOnly(rec, categoryId), hasEmail: Boolean(rec.email) };
+}
+
+function stateOnly(rec: AccessRequest, categoryId: string): AccessInfo {
   if (rec.all || rec.granted.includes(categoryId)) return { state: 'approved', name: rec.name };
   if (rec.denied.includes(categoryId)) {
     const at = new Date(rec.deniedAt?.[categoryId] ?? rec.updatedAt).getTime();
@@ -104,41 +134,139 @@ export async function accessStates(ids: string[]): Promise<Record<string, Access
 
 export const hasAccess = async (categoryId: string) => (await accessState(categoryId)).state === 'approved';
 
-export async function createOrUpdateRequest(name: string | null, categoryId: string): Promise<{ ok: true } | { ok: false; error: string }> {
-  if (!isBlobConfigured) return { ok: false, error: 'Access requests are not set up yet.' };
-  const existing = await visitorRecord();
-  const now = new Date().toISOString();
-  if (existing) {
-    const info = stateFrom(existing, categoryId);
-    if (info.state === 'denied' && info.retryAt && new Date(info.retryAt).getTime() > Date.now()) {
-      const mins = Math.max(1, Math.ceil((new Date(info.retryAt).getTime() - Date.now()) / 60_000));
-      return { ok: false, error: `Declined. You can ask again in ${mins} minute${mins === 1 ? '' : 's'}.` };
-    }
-    if (!existing.requested.includes(categoryId) && !existing.granted.includes(categoryId) && !existing.all) existing.requested.push(categoryId);
-    existing.denied = existing.denied.filter((c) => c !== categoryId);
-    if (existing.deniedAt) delete existing.deniedAt[categoryId];
-    existing.updatedAt = now;
-    await writeJson(recordPath(existing.id), existing);
-    return { ok: true };
+export interface Contact { name: string; email: string; phone: string }
+export type RequestResult =
+  | { ok: true; signedIn: boolean; record: AccessRequest; emailTo?: string; existingEmail?: boolean }
+  | { ok: false; error: string };
+
+function addCategory(rec: AccessRequest, categoryId: string): string | null {
+  const info = stateFrom(rec, categoryId);
+  if (info.state === 'denied' && info.retryAt && new Date(info.retryAt).getTime() > Date.now()) {
+    const mins = Math.max(1, Math.ceil((new Date(info.retryAt).getTime() - Date.now()) / 60_000));
+    return `Declined. You can ask again in ${mins} minute${mins === 1 ? '' : 's'}.`;
   }
-  const clean = cleanName(name ?? '');
-  if (clean.length < 2) return { ok: false, error: 'Please type your name.' };
-  const { blobs } = await list({ prefix: PREFIX, limit: MAX_REQUESTS + 1 });
-  if (blobs.length > MAX_REQUESTS) return { ok: false, error: 'Too many open requests right now. Please try again later.' };
+  if (!rec.requested.includes(categoryId) && !rec.granted.includes(categoryId) && !rec.all) rec.requested.push(categoryId);
+  rec.denied = rec.denied.filter((c) => c !== categoryId);
+  if (rec.deniedAt) delete rec.deniedAt[categoryId];
+  return null;
+}
+
+async function recordByEmail(email: string) {
+  const idx = await readJson<{ id: string }>(emailPath(email));
+  return idx && ID.test(idx.id) ? readJson<AccessRequest>(recordPath(idx.id)) : null;
+}
+
+/** Signs this browser in to a record: a new secret, its hash stored alongside the others. */
+async function signInBrowser(rec: AccessRequest) {
+  const secret = randomBytes(24).toString('base64url');
+  rec.deviceHashes = [...(rec.deviceHashes ?? []), sha(secret)].slice(-MAX_DEVICES);
+  (await cookies()).set(VISITOR_COOKIE, `${rec.id}.${secret}`, visitorCookieOptions());
+}
+
+/**
+ * A visitor asks for a box. Three cases:
+ *  - this browser is already signed in: the box is added to their record (contact details filled in if missing);
+ *  - the email belongs to someone already registered: the box is added, but this browser is NOT signed in —
+ *    only the emailed link can do that (otherwise anyone could type someone else's email and get their access);
+ *  - a new person: a record is created and this browser is signed in to it.
+ */
+export async function createOrUpdateRequest(contact: Partial<Contact>, categoryId: string): Promise<RequestResult> {
+  if (!isBlobConfigured) return { ok: false, error: 'Access requests are not set up yet.' };
+  const now = new Date().toISOString();
+  const current = await visitorRecord();
+  const email = contact.email ? cleanEmail(contact.email) : null;
+  const phone = contact.phone ? cleanPhone(contact.phone) : null;
+
+  if (current) {
+    const err = addCategory(current, categoryId);
+    if (err) return { ok: false, error: err };
+    if (!current.email) {
+      // Older records were name-only: ask for the contact details once.
+      if (!email) return { ok: false, error: 'Please enter a valid email address.' };
+      if (!phone) return { ok: false, error: 'Please enter a valid phone number.' };
+      const other = await recordByEmail(email);
+      if (other && other.id !== current.id) return { ok: false, error: 'That email is already registered — use “Sign in” instead.' };
+      current.email = email;
+      current.phone = phone;
+      await writeJson(emailPath(email), { id: current.id });
+    }
+    current.updatedAt = now;
+    await writeJson(recordPath(current.id), current);
+    return { ok: true, signedIn: true, record: current, emailTo: current.email };
+  }
+
+  const name = cleanName(contact.name ?? '');
+  if (name.length < 2) return { ok: false, error: 'Please type your name.' };
+  if (!email) return { ok: false, error: 'Please enter a valid email address.' };
+  if (!phone) return { ok: false, error: 'Please enter a valid phone number.' };
+
+  const known = await recordByEmail(email);
+  if (known) {
+    const err = addCategory(known, categoryId);
+    if (err) return { ok: false, error: err };
+    known.updatedAt = now;
+    await writeJson(recordPath(known.id), known);
+    return { ok: true, signedIn: false, record: known, emailTo: email, existingEmail: true };
+  }
+
+  if ((await listPaths(PREFIX, MAX_REQUESTS + 1)).length > MAX_REQUESTS) return { ok: false, error: 'Too many open requests right now. Please try again later.' };
   const id = randomBytes(12).toString('hex');
   const secret = randomBytes(24).toString('base64url');
-  const rec: AccessRequest = { id, name: clean, secretHash: sha(secret), requested: [categoryId], granted: [], denied: [], all: false, createdAt: now, updatedAt: now };
+  const rec: AccessRequest = { id, name, email, phone, secretHash: sha(secret), requested: [categoryId], granted: [], denied: [], all: false, createdAt: now, updatedAt: now };
   await writeJson(recordPath(id), rec);
+  await writeJson(emailPath(email), { id });
   (await cookies()).set(VISITOR_COOKIE, `${id}.${secret}`, visitorCookieOptions());
-  return { ok: true };
+  return { ok: true, signedIn: true, record: rec, emailTo: email };
+}
+
+/** "Sign in" with just an email: finds the record (if any) so a link can be sent. Never says whether it exists. */
+export const findByEmail = async (raw: string) => {
+  const email = cleanEmail(raw);
+  return email ? recordByEmail(email) : null;
+};
+
+// ---- sign-in links ----
+
+export const LINK_HOURS = 24;
+const linkKey = () => new TextEncoder().encode(process.env.ADMIN_SESSION_SECRET ?? '');
+
+/** A signed link that signs any browser in to this record. `ver` ties it to the record's email at the time. */
+export async function signInToken(rec: AccessRequest, next?: string) {
+  return new SignJWT({ next: next ?? '', em: sha(rec.email ?? '').slice(0, 16) })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setSubject(rec.id)
+    .setAudience('visitor-sign-in')
+    .setIssuedAt()
+    .setExpirationTime(`${LINK_HOURS}h`)
+    .sign(linkKey());
+}
+
+/** Opens a sign-in link: signs this browser in and marks the email as confirmed. Returns where to go next. */
+export async function redeemSignIn(token: string): Promise<{ ok: true; next: string } | { ok: false }> {
+  if ((process.env.ADMIN_SESSION_SECRET ?? '').length < 32) return { ok: false };
+  try {
+    const { payload } = await jwtVerify(token, linkKey(), { algorithms: ['HS256'], audience: 'visitor-sign-in' });
+    const id = String(payload.sub ?? '');
+    if (!ID.test(id)) return { ok: false };
+    const rec = await readJson<AccessRequest>(recordPath(id));
+    if (!rec || payload.em !== sha(rec.email ?? '').slice(0, 16)) return { ok: false };
+    rec.emailVerifiedAt ??= new Date().toISOString();
+    await signInBrowser(rec);
+    rec.updatedAt = new Date().toISOString();
+    await writeJson(recordPath(id), rec);
+    const next = typeof payload.next === 'string' && /^[a-z0-9-]{1,40}$/.test(payload.next) ? payload.next : '';
+    return { ok: true, next };
+  } catch {
+    return { ok: false };
+  }
 }
 
 // ---- admin side ----
 
 export async function listRequests(): Promise<AccessRequest[]> {
   if (!isBlobConfigured) return [];
-  const { blobs } = await list({ prefix: PREFIX, limit: MAX_REQUESTS });
-  const recs = await Promise.all(blobs.map((b) => readJson<AccessRequest>(b.pathname)));
+  const paths = await listPaths(PREFIX, MAX_REQUESTS);
+  const recs = await Promise.all(paths.map((p) => readJson<AccessRequest>(p)));
   return recs.filter((r): r is AccessRequest => Boolean(r)).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
@@ -152,5 +280,12 @@ export async function updateRequest(id: string, fn: (r: AccessRequest) => void) 
 }
 
 export async function deleteRequest(id: string) {
-  if (ID.test(id)) await del(recordPath(id));
+  if (!ID.test(id)) return;
+  const rec = await readJson<AccessRequest>(recordPath(id));
+  if (rec?.email) await removePath(emailPath(rec.email)).catch(() => {});
+  await removePath(recordPath(id));
+}
+
+export async function getRequest(id: string) {
+  return ID.test(id) ? readJson<AccessRequest>(recordPath(id)) : null;
 }
