@@ -25,7 +25,14 @@ const clean = <T extends object>(o: T): T => Object.fromEntries(Object.entries(o
 /** Resizes in the browser (max 2400px) so uploads are fast and stay well under the size limit. */
 async function prepare(file: File): Promise<{ blob: Blob; ext: string }> {
   if (file.type === 'image/gif') return { blob: file, ext: 'gif' };
-  const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
+  let bmp: ImageBitmap;
+  try {
+    bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
+  } catch {
+    // This browser can't decode it (e.g. an iPhone HEIC photo in Chrome): send common formats as they are.
+    if (/^image\/(jpeg|png|webp)$/.test(file.type) && file.size <= 15 * 1024 * 1024) return { blob: file, ext: file.type.split('/')[1].replace('jpeg', 'jpg') };
+    throw new Error(/heic|heif/i.test(file.type + file.name) ? 'iPhone HEIC photo — upload from Safari, or set iPhone Camera → Formats → Most Compatible.' : 'This file isn’t a supported image (use JPEG, PNG or WebP).');
+  }
   const scale = Math.min(1, 2400 / Math.max(bmp.width, bmp.height));
   const canvas = document.createElement('canvas');
   canvas.width = Math.round(bmp.width * scale);
