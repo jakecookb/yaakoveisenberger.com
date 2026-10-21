@@ -221,3 +221,7 @@ Because these are strictly necessary for features the visitor asked for, no cons
 - Photos (`/media/*`) have unique file names and support `ETag` / `304`: **public** photos are kept 1 day in the browser and 5 minutes in the shared CDN; **locked** photos only in the approved visitor's own browser for 10 minutes, never in a shared cache.
 - Access checks are cached on the server for a few seconds; saving in the editor refreshes them at once on the same server.
 - The audio separator keeps its AI model on the visitor's device (Cache API) after the first download.
+
+## Latest Car Reveals (`/cars`)
+
+A free, automatic feed: every 30 minutes (ISR) the page reads the public RSS feeds listed in `lib/cars/sources.ts`, keeps genuine reveals and concepts (`lib/cars/pick.ts`), pulls headline-ready specs out of the text (`lib/cars/specs.ts`) and shows about seven fresh ones for the week plus an "Earlier" list. Stories link to the original sites. The last good list is saved in the private Blob store, so the page still shows something if every site is down. To add a source, add one line to `SOURCES`.

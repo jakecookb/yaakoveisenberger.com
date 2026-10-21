@@ -4,6 +4,7 @@ import {
   Beef,
   CalendarCheck,
   Camera,
+  CarFront,
   ChefHat,
   Clapperboard,
   CodeXml,
@@ -52,6 +53,7 @@ export const categories: NavCategory[] = [
   { id: 'meatboards', gallery: true, lockable: true, title: 'Meat Boards', teaser: 'Showstopping grazing boards, made to order.', href: '/meatboards', icon: Beef, accent: '#ef4444', status: 'soon' },
   { id: 'music', gallery: true, lockable: true, title: 'Music & DJ', teaser: 'Sound and sets for simchas and events.', href: '/music', icon: Music, accent: '#e879f9', status: 'soon' },
   { id: 'separator', lockable: true, title: 'Audio Separator', teaser: 'Split any song into vocals and instrumental — free, private, right in your browser.', href: '/separator', icon: AudioLines, accent: '#a3e635', badge: 'new', external: true /* needs a full page load so the browser applies the cross-origin isolation headers (multi-threaded WebAssembly) */ },
+  { id: 'cars', lockable: true, title: 'Latest Car Reveals', teaser: 'Fresh reveals and concepts from around the web — about seven new ones every week.', href: '/cars', icon: CarFront, accent: '#818cf8', badge: 'new' },
   { id: 'contact', lockable: true, title: 'Contact & Booking', teaser: 'Start a project or check availability.', href: '/contact', icon: CalendarCheck, accent: '#fbbf24' },
 ];
 
