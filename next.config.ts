@@ -37,7 +37,8 @@ const siteCsp = [
   "img-src 'self' data: blob: https:",
   "media-src 'self' blob: data:",
   "font-src 'self' data:",
-  "connect-src 'self' blob: data: https://huggingface.co https://*.huggingface.co https://*.hf.co",
+  // Admin photo uploads go from the browser straight to Vercel Blob.
+  "connect-src 'self' blob: data: https://huggingface.co https://*.huggingface.co https://*.hf.co https://vercel.com https://*.vercel-storage.com",
   'frame-src https://www.youtube-nocookie.com https://www.youtube.com https://player.vimeo.com',
   "frame-ancestors 'none'",
   "object-src 'none'",

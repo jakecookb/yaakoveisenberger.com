@@ -66,13 +66,13 @@ export function NavDrawer({ items }: { items: DrawerItem[] }) {
   );
 }
 
-/** "← Back to Hub" on every page except the hub itself, so nobody gets stuck. */
+/** "← Return to Main Page" on every page except the hub itself, so nobody gets stuck. */
 export function BackBar() {
   const path = usePathname();
   if (path === '/') return null;
   return (
     <div className="mx-auto max-w-7xl px-4 pt-5 sm:px-6">
-      <Link href="/" className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1.5 text-sm text-neutral-300 ring-1 ring-white/10 transition hover:bg-white/10 hover:text-white"><ArrowLeft className="size-4" /> Back to Hub</Link>
+      <Link href="/" className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1.5 text-sm text-neutral-300 ring-1 ring-white/10 transition hover:bg-white/10 hover:text-white"><ArrowLeft className="size-4" /> Return to Main Page</Link>
     </div>
   );
 }

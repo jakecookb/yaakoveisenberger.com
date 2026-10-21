@@ -75,8 +75,10 @@ export function CategoryCard({ category, liveCount, cols, access, onModalClose }
   const Icon = ICONS[category.iconKey];
   // Greyed out: a faint, colourless hint of the box until this visitor is approved.
   const grey = category.greyed && access?.state !== 'approved';
-  const size = SIZES[category.iconSize];
-  const h = HEIGHTS[category.height];
+  // The editor's phone preview runs in a wide window, so drop the larger-screen (sm:) sizes there.
+  const phone = (c: string) => (cols === 1 ? c.split(' ').filter((x) => !x.startsWith('sm:')).join(' ') : c);
+  const size = { tile: phone(SIZES[category.iconSize].tile), icon: phone(SIZES[category.iconSize].icon) };
+  const h = { box: phone(HEIGHTS[category.height].box), title: phone(HEIGHTS[category.height].title), teaser: phone(HEIGHTS[category.height].teaser) };
   // Wide and full-row boxes take the whole row on a phone (two columns), as they do in the preview's phone view.
   const span = cols
     ? category.width === 'normal' ? '' : category.width === 'wide' || cols === 1 ? 'col-span-2' : 'col-span-full'
