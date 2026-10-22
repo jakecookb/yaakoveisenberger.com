@@ -4,7 +4,8 @@ import { mediaUrl, resolveCards } from '@/lib/site/settings';
 import { HeroFade } from '@/components/hub/hero-fade';
 import { HubHero } from '@/components/hub/hub-hero';
 import { CategoryGrid } from '@/components/hub/category-grid';
-import { HubSection, SectionStack } from '@/components/hub/hub-section';
+import { HubSection } from '@/components/hub/hub-section';
+import { QuoteCard } from '@/components/hub/quote-card';
 import { groupCards, HUB_SECTIONS as SECTIONS } from '@/lib/site/hub';
 
 // Cached and refreshed every minute (and instantly when the admin saves) so the "live campaigns"
@@ -21,17 +22,17 @@ export default async function HomePage() {
       <HeroFade>
         <HubHero tagline={settings.hero.tagline} logoSrc={settings.hero.logoPath ? mediaUrl(settings.hero.logoPath) : undefined} />
       </HeroFade>
-      <div className="relative z-10 mx-auto max-w-7xl overflow-x-clip space-y-16 px-4 pb-20 sm:px-6 sm:pb-28">
-        <SectionStack sections={SECTIONS.filter((s) => groups[s.id].length).map(({ id, title, accent }) => ({ id, title, accent }))} />
-        {SECTIONS.map((sec) => {
+      <div className="relative z-10 mx-auto max-w-7xl overflow-x-clip space-y-16 [&>section]:relative px-4 pb-20 sm:px-6 sm:pb-28">
+        {SECTIONS.map((sec, i) => {
           const cards = groups[sec.id];
           if (!cards.length) return null;
           return (
-            <HubSection key={sec.id} id={sec.id} title={sec.title} subtitle={sec.subtitle} accent={sec.accent}>
-              {cards.length > 0 && <CategoryGrid cards={cards} liveCampaigns={liveCampaigns} news={sec.id === 'news'} />}
+            <HubSection key={sec.id} id={sec.id} title={sec.title} subtitle={sec.subtitle} accent={sec.accent} z={i + 1}>
+              {cards.length > 0 && <CategoryGrid cards={cards} liveCampaigns={liveCampaigns} news={sec.id === 'news'} directory={sec.id === 'personal'} />}
             </HubSection>
           );
         })}
+        <div className="relative z-10"><QuoteCard /></div>
       </div>
     </>
   );
