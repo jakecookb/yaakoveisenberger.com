@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 
@@ -87,7 +88,7 @@ export function PhotoGallery({ photos }: { photos: GalleryPhoto[] }) {
         {photos.map((p, i) => (
           <figure key={p.id} className="photo-float w-36 shrink-0 sm:w-44" style={{ animationDelay: `${(i % 5) * -0.9}s` }}>
             <button type="button" onClick={(e) => { if (drag.current?.moved) { e.preventDefault(); return; } setOpen(i); }} draggable={false} className="group block w-full overflow-hidden rounded-[1.4rem] bg-neutral-900 shadow-[0_14px_30px_-14px_rgba(0,0,0,0.9)] ring-1 ring-white/15 transition duration-300 hover:scale-[1.06] hover:ring-white/40 focus-visible:ring-2 focus-visible:ring-[#c8a96a]">
-              <img src={p.src} alt={p.caption} loading={i < 6 ? 'eager' : 'lazy'} decoding="async" draggable={false} className="aspect-square w-full object-cover" />
+              <Image src={p.src} alt={p.caption} width={400} height={400} unoptimized loading="lazy" draggable={false} className="aspect-square w-full object-cover" />
             </button>
             {p.caption && <figcaption className="mt-1.5 truncate px-1 text-center text-xs text-neutral-500">{p.caption}</figcaption>}
           </figure>

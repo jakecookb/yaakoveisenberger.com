@@ -12,3 +12,4 @@ AGENTS.md
 
 # copied from node_modules by scripts/copy-ort.mjs
 /public/ort
+/.local-store

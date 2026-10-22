@@ -33,7 +33,7 @@ export async function loadTechFeed(): Promise<TechFeed> {
   const batches = await Promise.all(SOURCES.map(async (s) => { const xml = await pull(s.feed); return xml ? parseFeed(xml, s) : []; }));
   const items = batches.flat().map((r) => enrichTech(r, now)).filter((i): i is CarItem => i !== null);
   if (items.length >= 3) {
-    if (isBlobConfigured && now - lastSaved > 30 * 60_000) { lastSaved = now; writeJson(SNAPSHOT, { savedAt: now, items }).catch(() => {}); }
+    if (isBlobConfigured && now - lastSaved > 6 * 3600_000) { lastSaved = now; writeJson(SNAPSHOT, { savedAt: now, items }).catch(() => {}); }
     return { ...selectTech(items, now), updatedAt: new Date(now).toISOString(), stale: false };
   }
   const snap = await readJson<{ savedAt: number; items: CarItem[] }>(SNAPSHOT);

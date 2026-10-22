@@ -10,7 +10,7 @@ import { grants, recordFromCookie } from './visitor';
 // Short in-memory caches keep this cheap (the Cookbook loads many files per page); a lock, unlock or
 // revoke takes effect within a few seconds.
 
-const TTL = 3_000;
+const TTL = 60_000;
 const memo = new Map<string, { v: unknown; exp: number }>();
 async function cached<T>(key: string, fn: () => Promise<T>): Promise<T> {
   const hit = memo.get(key);

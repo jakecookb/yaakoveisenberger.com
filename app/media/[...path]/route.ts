@@ -13,8 +13,8 @@ const notFound = () => new Response('Not found', { status: 404 });
 // goes stale: the only reason to re-check is access (a box being locked or someone's approval being withdrawn).
 //  - public photos: a day in the visitor's browser, five minutes in the shared CDN (so a box you lock stops being served quickly)
 //  - locked photos: only the approved visitor's own browser may keep them, for ten minutes; never a shared cache
-const PUBLIC_CACHE = 'public, max-age=86400, s-maxage=300, stale-while-revalidate=300';
-const LOCKED_CACHE = 'private, max-age=600';
+const PUBLIC_CACHE = 'public, max-age=2592000, s-maxage=2592000, stale-while-revalidate=604800';
+const LOCKED_CACHE = 'private, max-age=86400, stale-while-revalidate=604800';
 
 /**
  * Serves private blobs after checking permission: photos in a locked category need the admin or an approved visitor;

@@ -66,7 +66,9 @@ export function LockedGate({ categoryId, accent, continueHref, className = 'mt-1
   const state = status.state;
   useEffect(() => {
     if (state !== 'pending' && state !== 'denied') return;
-    const t = setInterval(() => { setTick((n) => n + 1); setNow(Date.now()); }, 15_000);
+    // Every 2 minutes, only while the tab is visible, and give up after 30 minutes.
+    let n = 0;
+    const t = setInterval(() => { if (document.visibilityState !== 'visible') return; if (++n > 15) return clearInterval(t); setTick((k) => k + 1); setNow(Date.now()); }, 120_000);
     return () => clearInterval(t);
   }, [state]);
 

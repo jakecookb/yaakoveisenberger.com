@@ -47,7 +47,7 @@ export async function loadWeaponsFeed(): Promise<WeaponsFeed> {
   const batches = await Promise.all(SOURCES.map(async (s) => { const xml = await pull(s.feed); return xml ? fromSource(s, xml, now) : []; }));
   const items = batches.flat();
   if (items.length >= 8) {
-    if (isBlobConfigured && now - lastSaved > 30 * 60_000) { lastSaved = now; writeJson(SNAPSHOT, { savedAt: now, items }).catch(() => {}); }
+    if (isBlobConfigured && now - lastSaved > 6 * 3600_000) { lastSaved = now; writeJson(SNAPSHOT, { savedAt: now, items }).catch(() => {}); }
     return { ...selectWeapons(items), updatedAt: new Date(now).toISOString(), stale: false };
   }
   const snap = await readJson<{ savedAt: number; items: WeaponItem[] }>(SNAPSHOT);

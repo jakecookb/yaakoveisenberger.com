@@ -47,7 +47,7 @@ export async function loadCarFeed(): Promise<CarFeed> {
   const now = Date.now();
   const items = await live();
   if (items.length >= 3) {
-    if (isBlobConfigured && now - lastSaved > 30 * 60_000) { lastSaved = now; writeJson(SNAPSHOT, { savedAt: now, items }).catch(() => {}); }
+    if (isBlobConfigured && now - lastSaved > 6 * 3600_000) { lastSaved = now; writeJson(SNAPSHOT, { savedAt: now, items }).catch(() => {}); }
     return { ...selectFeed(items, now, 16, 0), updatedAt: new Date(now).toISOString(), stale: false };
   }
   const snap = await readJson<{ savedAt: number; items: CarItem[] }>(SNAPSHOT);
