@@ -138,7 +138,9 @@ export async function approveAction(formData: FormData) {
   await requireAdmin();
   const id = String(formData.get('id'));
   const cat = String(formData.get('cat'));
-  await updateRequest(id, (r) => {
+  // Saved first; the email only goes out when this click actually granted something new,
+  // so repeated clicks or refreshes never send it twice.
+  const changed = await updateRequest(id, (r) => {
     if (cat === '*') r.all = true;
     else {
       if (!r.granted.includes(cat)) r.granted.push(cat);
@@ -148,7 +150,7 @@ export async function approveAction(formData: FormData) {
     }
     if (r.all) r.requested = [];
   });
-  await emailApproval(id, cat);
+  if (changed && (changed.all || changed.granted.includes(cat))) await emailApproval(id, cat);
   revalidatePath('/admin/access');
 }
 

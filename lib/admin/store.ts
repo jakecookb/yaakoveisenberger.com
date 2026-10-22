@@ -12,10 +12,13 @@ const LIVE = process.env.VERCEL_ENV === 'production';
 const LOCAL = LIVE ? null : path.resolve(process.env.VERCEL ? '/tmp/ve-store' : process.env.LOCAL_STORE_DIR || '.local-store');
 export const isLiveStore = LIVE;
 
-// Reads are memoised per server instance for a minute (writes and deletes here refresh it), so busy pages don't re-read.
+// Site settings are memoised per server instance for a minute (writes here refresh it). Everything else (access records,
+// credentials) is always read fresh: an approval saved on one instance must be seen at once by every other one.
 const READ_TTL = 60_000;
+const CACHED = new Set(['site/settings.json']);
 const reads = new Map<string, { text: string | null; exp: number }>();
 async function cachedText(pathname: string, fetchText: () => Promise<string | null>) {
+  if (!CACHED.has(pathname)) return fetchText();
   const hit = reads.get(pathname);
   if (hit && hit.exp > Date.now()) return hit.text;
   const text = await fetchText();
