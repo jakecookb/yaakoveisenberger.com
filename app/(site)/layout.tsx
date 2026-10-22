@@ -2,6 +2,7 @@ import { SiteHeader } from '@/components/site/header';
 import { SiteFooter } from '@/components/site/footer';
 import { SiteBackdrop } from '@/components/site/backdrop';
 import { BackBar } from '@/components/site/nav-drawer';
+import { QuoteBar } from '@/components/site/quote-bar';
 import { Tracker } from '@/components/site/tracker';
 
 // Shared chrome for the main site's pages. Add new pages as folders next to page.tsx
@@ -14,6 +15,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
       <BackBar />
       <main>{children}</main>
       <SiteFooter />
+      <QuoteBar />
       <Tracker />
     </div>
   );

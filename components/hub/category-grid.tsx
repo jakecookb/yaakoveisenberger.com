@@ -14,16 +14,17 @@ const loadStatus = () =>
     .then((d: { states: Record<string, AccessInfo> } | null) => d?.states ?? null)
     .catch(() => null));
 
-/** Four labelled columns split by thin lines (phone: stacked, two boxes per row). `cols` pins the admin preview size. */
+/** Four labelled columns split by crisp lines (phone: one full-width box per line). `cols` pins the admin preview size. */
 export function Directory({ cards, cols, render }: { cards: CardView[]; cols?: 1 | 2 | 4; render: (c: CardView) => React.ReactNode }) {
-  const outer = cols === 1 ? 'grid-cols-1 gap-6' : cols ? 'grid-cols-4 gap-0 divide-x divide-white/[0.07]' : 'grid-cols-1 gap-6 lg:grid-cols-4 lg:gap-0 lg:divide-x lg:divide-white/[0.07]';
+  const outer = cols === 1 ? 'grid-cols-1 gap-6' : cols ? 'grid-cols-4 gap-0 divide-x divide-white/25' : 'grid-cols-1 gap-6 lg:grid-cols-4 lg:gap-0 lg:divide-x lg:divide-white/25';
   const pad = cols === 1 ? '' : cols ? 'px-4 first:pl-0 last:pr-0' : 'lg:px-4 lg:first:pl-0 lg:last:pr-0';
-  const inner = cols === 1 ? 'grid-cols-2' : cols ? 'grid-cols-1' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-1';
+  const inner = cols === 1 ? 'grid-cols-1' : cols ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-3 lg:grid-cols-1';
   return (
     <div className={`grid ${outer}`}>
       {directoryColumns(cards).map((col) => (
         <div key={col.title} className={pad}>
           <p className="mb-3 flex items-center gap-2 font-mono text-[10px] font-medium uppercase tracking-[0.25em] text-neutral-500"><span className="size-1 rounded-full bg-[#c8a96a]" />{col.title}</p>
+          <span aria-hidden className="mb-3 block h-px bg-gradient-to-r from-[#c8a96a]/60 via-white/20 to-transparent" />
           <ul className={`grid ${inner} gap-2.5 sm:gap-3`}>{col.cards.map(render)}</ul>
         </div>
       ))}
