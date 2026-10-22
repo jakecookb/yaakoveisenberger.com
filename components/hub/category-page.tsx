@@ -8,7 +8,7 @@ import { PhotoGallery } from './photo-gallery';
 import { RichText } from './rich-text';
 import { QuoteButton } from './quote-form';
 
-const QUOTABLE = ['fishboards', 'meatboards', 'events', 'photography'];
+const QUOTABLE = ['fishboards', 'meatboards', 'events', 'photography', 'music'];
 
 /**
  * A category's own page: heading and text (editable in the admin), its photo gallery, and — if the admin

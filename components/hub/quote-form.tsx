@@ -6,12 +6,12 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Check, LoaderCircle, MessageSquareQuote, Send, X } from 'lucide-react';
 import { requestQuote } from '@/app/quote-actions';
 
-export const QUOTE_CATEGORIES = [['fishboards', 'Fish Boards'], ['meatboards', 'Meat Boards'], ['events', 'Events'], ['photography', 'Photography']] as const;
+export const QUOTE_CATEGORIES = [['fishboards', 'Fish Boards'], ['meatboards', 'Meat Boards'], ['events', 'Events'], ['photography', 'Photography'], ['webdesign', 'Web Design'], ['appdesign', 'App Design'], ['music', 'Music Creation / Production']] as const;
 const f = 'h-12 w-full rounded-xl bg-neutral-950 px-4 text-base text-white ring-1 ring-white/15 outline-none placeholder:text-neutral-600 focus:ring-2 focus:ring-[var(--accent)] sm:text-sm';
 const noop = () => () => {};
 
 /** "Request a Quote" button that opens the quote form in a modal, with the category pre-filled. */
-export function QuoteButton({ category, accent }: { category: string; accent: string }) {
+export function QuoteButton({ category, accent, compact }: { category: string; accent: string; compact?: boolean }) {
   const [open, setOpen] = useState(false);
   const [state, setState] = useState<'idle' | 'busy' | 'done'>('idle');
   const [error, setError] = useState<string>();
@@ -33,8 +33,10 @@ export function QuoteButton({ category, accent }: { category: string; accent: st
   const close = () => { setOpen(false); if (state === 'done') setState('idle'); };
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} style={{ background: accent }} className="mx-auto mt-6 inline-flex h-12 items-center gap-2 rounded-full px-6 font-semibold text-neutral-950 transition hover:brightness-110 active:scale-[0.98]">
-        <MessageSquareQuote className="size-5" /> Request a Quote
+      {/* The one quote trigger used everywhere: a glass pill with a glowing accent edge and a scanning sheen. */}
+      <button type="button" onClick={() => setOpen(true)} style={{ '--accent': accent } as React.CSSProperties} className={`group relative isolate inline-flex items-center gap-2 overflow-hidden rounded-full bg-neutral-950/70 font-mono text-xs font-semibold uppercase tracking-[0.22em] text-white ring-1 ring-[color-mix(in_srgb,var(--accent)_70%,transparent)] shadow-[0_0_24px_-6px_var(--accent),inset_0_1px_0_rgba(255,255,255,0.15)] backdrop-blur-md transition hover:shadow-[0_0_36px_-4px_var(--accent),inset_0_1px_0_rgba(255,255,255,0.2)] active:scale-[0.98] ${compact ? 'h-10 px-4' : 'mx-auto mt-6 h-12 px-6'}`}>
+        <span aria-hidden className="absolute inset-y-0 -left-1/3 -z-10 w-1/3 -skew-x-12 bg-gradient-to-r from-transparent via-white/15 to-transparent transition-transform duration-700 group-hover:translate-x-[400%]" />
+        <MessageSquareQuote className="size-4" style={{ color: accent }} /> Request a Quote
       </button>
       {mounted && createPortal(
         <AnimatePresence>

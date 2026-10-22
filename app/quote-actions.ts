@@ -7,7 +7,7 @@ import { cleanEmail, cleanName, cleanPhone } from '@/lib/access/visitor';
 import { sendEmail } from '@/lib/email/send';
 import { quoteToCustomer, quoteToOwner } from '@/lib/email/templates';
 
-const BOARDS: Record<string, string> = { fishboards: 'Fish Boards', meatboards: 'Meat Boards', events: 'Events', photography: 'Photography' };
+const BOARDS: Record<string, string> = { fishboards: 'Fish Boards', meatboards: 'Meat Boards', events: 'Events', photography: 'Photography', webdesign: 'Web Design', appdesign: 'App Design', music: 'Music Creation / Production' };
 const hits = new Map<string, { n: number; t: number }>();
 const text = (v: unknown, max: number) => String(v ?? '').replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, '').trim().slice(0, max);
 
