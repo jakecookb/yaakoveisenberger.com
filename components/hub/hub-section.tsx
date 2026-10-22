@@ -1,20 +1,40 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
 
 const HEADER = 56;
 
-/** A homepage section with its label in the flow; the sticky stacked copy is drawn by <SectionStack>. */
+/**
+ * A homepage section with its label in the flow; the sticky stacked copy is drawn by <SectionStack>.
+ * Scroll motion: the section unfolds into place as it arrives, then folds back, shrinks and fades under the next one
+ * as it leaves the top of the screen (transform/opacity only, so it stays smooth on phones).
+ */
 export function HubSection({ id, title, subtitle, accent, children }: { id: string; title: string; subtitle: string; accent: string; children: React.ReactNode }) {
+  const ref = useRef<HTMLElement>(null);
+  const reduce = useReducedMotion();
+  const { scrollYProgress: inP } = useScroll({ target: ref, offset: ['start end', 'start 0.75'] });
+  const { scrollYProgress: outP } = useScroll({ target: ref, offset: ['end 0.45', 'end 0'] });
+  const opacity = useTransform([inP, outP], ([a, b]: number[]) => Math.min(0.15 + 0.85 * a, 1 - b));
+  const scale = useTransform([inP, outP], ([a, b]: number[]) => (0.96 + 0.04 * a) * (1 - 0.08 * b));
+  const rotateX = useTransform([inP, outP], ([a, b]: number[]) => 10 * (1 - a) - 16 * b);
+  const y = useTransform([inP, outP], ([a, b]: number[]) => 36 * (1 - a) + 40 * b);
+  const filter = useTransform(outP, (b) => `blur(${(b * 6).toFixed(2)}px)`);
   return (
-    <section id={id} aria-labelledby={`${id}-h`} className="scroll-mt-28">
+    <motion.section
+      ref={ref}
+      id={id}
+      aria-labelledby={`${id}-h`}
+      className="scroll-mt-28 will-change-transform"
+      style={reduce ? undefined : { opacity, scale, rotateX, y, filter, transformPerspective: 1400, transformOrigin: 'center top' }}
+    >
       <div className="mb-4 flex items-baseline gap-3 py-2">
         <span className="h-px w-8 self-center" style={{ background: accent }} />
         <h2 id={`${id}-h`} className="font-mono text-xs font-semibold uppercase tracking-[0.35em]" style={{ color: accent }}>{title}</h2>
         <p className="hidden truncate text-sm text-neutral-500 sm:block">{subtitle}</p>
       </div>
       {children}
-    </section>
+    </motion.section>
   );
 }
 

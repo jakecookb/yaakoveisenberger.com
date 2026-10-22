@@ -8,6 +8,7 @@ import { categories } from '@/data/navigation';
 import { ICON_KEYS, ICONS } from '@/data/icons';
 import { changePassword, logoutAction, saveSettings, type FormState } from '@/app/admin/actions';
 import { CategoryCard } from '@/components/hub/category-card';
+import { gridClass, groupCards, HUB_SECTIONS } from '@/lib/site/hub';
 import { RichText } from '@/components/hub/rich-text';
 import {
   BOX_HEIGHTS, BOX_WIDTHS, ICON_SIZES, mediaUrl, resolveCards, type BoxHeight, type BoxWidth, type CardOverride, type CardView, type IconSize, type SiteSettings,
@@ -467,16 +468,27 @@ function PreviewFrame({ cards, device }: { cards: CardView[]; device: 1 | 2 | 4 
     ro.observe(i);
     return () => ro.disconnect();
   }, []);
-  const virtual = { 1: 343, 2: 720, 4: 1104 }[device]; // the width of the real grid on a phone / tablet / desktop
+  const virtual = { 1: 343, 2: 720, 4: 1232 }[device]; // the width of the real grid on a phone / tablet / desktop
   const scale = Math.min(1, size.width / virtual);
-  const cols = { 1: 'grid-cols-2 gap-3', 2: 'grid-cols-2 gap-5', 4: 'grid-cols-4 gap-5' }[device];
+  const groups = groupCards(cards);
   return (
     <div className="max-h-[calc(100vh-9rem)] overflow-y-auto rounded-2xl bg-neutral-950 p-3 ring-1 ring-white/10">
       <div ref={outer} className="w-full overflow-hidden" style={{ height: size.height * scale }} aria-label="Preview of your home page tiles" role="img">
         <div ref={inner} style={{ width: virtual, transform: `scale(${scale})`, transformOrigin: 'top left' }} className="pointer-events-none select-none">
-          <ul className={`grid grid-flow-dense ${cols}`}>
-            {cards.map((c) => <CategoryCard key={c.id} category={c} cols={device} />)}
-          </ul>
+          <div className="space-y-8">
+            {HUB_SECTIONS.filter((s) => groups[s.id].length).map((s) => (
+              <section key={s.id}>
+                <div className="mb-4 flex items-baseline gap-3 py-2">
+                  <span className="h-px w-8 self-center" style={{ background: s.accent }} />
+                  <span className="font-mono text-xs font-semibold uppercase tracking-[0.35em]" style={{ color: s.accent }}>{s.title}</span>
+                  {device !== 1 && <span className="truncate text-sm text-neutral-500">{s.subtitle}</span>}
+                </div>
+                <ul className={`grid grid-flow-dense ${gridClass(s.id === 'news', device)}`}>
+                  {groups[s.id].map((c) => <CategoryCard key={c.id} category={c} cols={device} single={s.id === 'news'} />)}
+                </ul>
+              </section>
+            ))}
+          </div>
         </div>
       </div>
     </div>
