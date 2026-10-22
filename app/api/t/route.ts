@@ -1,5 +1,5 @@
 import { headers } from 'next/headers';
-import { isBlobConfigured, writeJson } from '@/lib/admin/store';
+import { isBlobConfigured, isLiveStore, writeJson } from '@/lib/admin/store';
 import { visitPath, type VisitRecord } from '@/lib/analytics/store';
 
 export const dynamic = 'force-dynamic';
@@ -15,7 +15,7 @@ export async function POST(req: Request) {
   const h = await headers();
   const ua = h.get('user-agent') ?? '';
   const raw = await req.text();
-  if (!isBlobConfigured || raw.length > 64_000 || BOT.test(ua)) return new Response(null, { status: 204 });
+  if (!isBlobConfigured || !isLiveStore || raw.length > 64_000 || BOT.test(ua)) return new Response(null, { status: 204 });
   let b: Record<string, unknown>;
   try { b = JSON.parse(raw); } catch { return new Response(null, { status: 400 }); }
   const id = str(b.id, 20), vid = str(b.vid, 20);

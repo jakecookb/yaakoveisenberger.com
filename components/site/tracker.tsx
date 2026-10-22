@@ -24,12 +24,16 @@ function closePage() {
   visit.pages.push({ path: current.path, at: current.start, ms: Date.now() - current.start });
   current = null;
 }
-function flush() {
+let lastSent = 0;
+function flush(e?: Event) {
+  // One batched beacon: when the page closes, or at most every 10 minutes when the tab is hidden. Never in dev.
+  if (process.env.NODE_ENV !== 'production') return;
+  if (e?.type !== 'pagehide' && Date.now() - lastSent < 600_000) return;
   const resume = current?.path;
   closePage();
   const body = JSON.stringify({ id: visit.id, vid: visit.vid, referrer: visit.referrer, pages: visit.pages.slice(-200), clicks: visit.clicks.slice(-300) });
   try { sessionStorage.setItem('ve_visit_data', JSON.stringify({ pages: visit.pages.slice(-200), clicks: visit.clicks.slice(-300), referrer: visit.referrer })); } catch {}
-  if (body !== visit.sent && visit.pages.length) { navigator.sendBeacon?.('/api/t', new Blob([body], { type: 'application/json' })); visit.sent = body; }
+  if (body !== visit.sent && visit.pages.length) { navigator.sendBeacon?.('/api/t', new Blob([body], { type: 'application/json' })); visit.sent = body; lastSent = Date.now(); }
   if (resume && document.visibilityState === 'visible') current = { path: resume, start: Date.now() };
 }
 
@@ -47,7 +51,7 @@ export function Tracker() {
       const target = el instanceof HTMLAnchorElement ? el.getAttribute('href') ?? '' : el.getAttribute('aria-label') || el.textContent || '';
       visit.clicks.push({ path: location.pathname, target: target.trim().replace(/\s+/g, ' ').slice(0, 80), at: Date.now() });
     };
-    const onHide = () => { if (document.visibilityState === 'hidden') flush(); else if (!current) current = { path: location.pathname, start: Date.now() }; };
+    const onHide = (e: Event) => { if (document.visibilityState === 'hidden') flush(e); else if (!current) current = { path: location.pathname, start: Date.now() }; };
     document.addEventListener('click', onClick, true);
     document.addEventListener('visibilitychange', onHide);
     window.addEventListener('pagehide', flush);
