@@ -66,7 +66,7 @@ function Badge({ category, liveCount, access }: { category: CardView; liveCount?
 }
 
 /** `cols` forces a column count (used by the editor's phone/tablet/desktop preview); the live site uses breakpoints. */
-export function CategoryCard({ category, liveCount, cols, single, access, onModalClose }: { category: CardView; liveCount?: number; cols?: 1 | 2 | 4; single?: boolean; access?: AccessInfo; onModalClose?: () => void }) {
+export function CategoryCard({ category, liveCount, cols, single, plain, access, onModalClose }: { category: CardView; liveCount?: number; cols?: 1 | 2 | 4; single?: boolean; plain?: boolean; access?: AccessInfo; onModalClose?: () => void }) {
   const reduce = useReducedMotion();
   const [asking, setAsking] = useState(false);
   // Phones have no hover, so the glow is driven by touch as well: it lights up the moment a finger lands, stays on while the
@@ -83,7 +83,7 @@ export function CategoryCard({ category, liveCount, cols, single, access, onModa
   const size = { tile: phone(SIZES[category.iconSize].tile), icon: phone(SIZES[category.iconSize].icon) };
   const h = { box: phone(HEIGHTS[category.height].box), title: phone(HEIGHTS[category.height].title), teaser: phone(HEIGHTS[category.height].teaser) };
   // Normal boxes are squares on a phone; News boxes take the full line there instead.
-  const span = phone(category.width === 'wide' ? `col-span-2${single ? ' max-md:col-span-full' : ''}` : category.width === 'full' ? 'col-span-full' : single ? '' : 'max-sm:aspect-square');
+  const span = plain ? phone('max-sm:aspect-square') : phone(category.width === 'wide' ? `col-span-2${single ? ' max-md:col-span-full' : ''}` : category.width === 'full' ? 'col-span-full' : single ? '' : 'max-sm:aspect-square');
   const className = `group relative flex h-full flex-col justify-between overflow-hidden rounded-2xl bg-neutral-900/40 ring-1 ring-white/[0.07] backdrop-blur-md outline-none [-webkit-tap-highlight-color:transparent] transition-[box-shadow,transform,--tw-ring-color] duration-300 hover:ring-[color-mix(in_srgb,var(--accent)_55%,transparent)] hover:shadow-[0_14px_40px_-22px_var(--accent)] data-[active=true]:-translate-y-1 data-[active=true]:scale-[1.01] data-[active=true]:ring-[var(--accent)] data-[active=true]:shadow-[0_14px_40px_-22px_var(--accent)] motion-reduce:data-[active=true]:translate-y-0 motion-reduce:data-[active=true]:scale-100 focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${grey ? 'grayscale' : ''} ${h.box}`;
   const style = { '--accent': grey ? '#737373' : category.accent } as React.CSSProperties;
 

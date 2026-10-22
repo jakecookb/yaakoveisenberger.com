@@ -8,6 +8,7 @@ import { categories } from '@/data/navigation';
 import { ICON_KEYS, ICONS } from '@/data/icons';
 import { changePassword, logoutAction, saveSettings, type FormState } from '@/app/admin/actions';
 import { CategoryCard } from '@/components/hub/category-card';
+import { Directory } from '@/components/hub/category-grid';
 import { gridClass, groupCards, HUB_SECTIONS } from '@/lib/site/hub';
 import { RichText } from '@/components/hub/rich-text';
 import {
@@ -483,9 +484,13 @@ function PreviewFrame({ cards, device }: { cards: CardView[]; device: 1 | 2 | 4 
                   <span className="font-mono text-xs font-semibold uppercase tracking-[0.35em]" style={{ color: s.accent }}>{s.title}</span>
                   {device !== 1 && <span className="truncate text-sm text-neutral-500">{s.subtitle}</span>}
                 </div>
-                <ul className={`grid grid-flow-dense ${gridClass(s.id === 'news', device)}`}>
-                  {groups[s.id].map((c) => <CategoryCard key={c.id} category={c} cols={device} single={s.id === 'news'} />)}
-                </ul>
+                {s.id === 'personal' ? (
+                  <Directory cards={groups[s.id]} cols={device} render={(c) => <CategoryCard key={c.id} category={c} cols={device} plain />} />
+                ) : (
+                  <ul className={`grid grid-flow-dense ${gridClass(s.id === 'news', device)}`}>
+                    {groups[s.id].map((c) => <CategoryCard key={c.id} category={c} cols={device} single={s.id === 'news'} />)}
+                  </ul>
+                )}
               </section>
             ))}
           </div>
