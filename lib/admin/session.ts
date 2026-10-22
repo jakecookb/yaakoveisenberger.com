@@ -5,7 +5,11 @@ import { jwtVerify, SignJWT } from 'jose';
 import { fingerprint, verifyPassword } from './password';
 import { isBlobConfigured, readJson } from './store';
 
-const SECRET = process.env.ADMIN_SESSION_SECRET ?? '';
+/** `next dev` on your own machine (never on Vercel): /admin/dev-login signs in as admin with no key. */
+export const LOCAL_DEV = process.env.NODE_ENV === 'development' && !process.env.VERCEL;
+/** /admin/dev-login?key=<ADMIN_BYPASS_KEY> signs in as admin wherever the key is set (32+ chars). Off unless set. */
+export const BYPASS_KEY = (process.env.ADMIN_BYPASS_KEY ?? '').length >= 32 ? process.env.ADMIN_BYPASS_KEY! : '';
+const SECRET = process.env.ADMIN_SESSION_SECRET || (LOCAL_DEV ? 'local-dev-only-session-secret-not-for-production' : '');
 const IS_PROD = process.env.NODE_ENV === 'production';
 export const ADMIN_COOKIE = IS_PROD ? '__Host-ve_admin' : 've_admin';
 const MAX_AGE = 60 * 60 * 24 * 7;
@@ -15,7 +19,7 @@ export const CREDENTIAL_PATH = 'site/admin.json';
 /** One or more admin emails, comma-separated in ADMIN_EMAIL. */
 export const adminEmails = (process.env.ADMIN_EMAIL ?? '').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean);
 
-export const isAdminConfigured = Boolean(adminEmails.length && process.env.ADMIN_PASSWORD_HASH && SECRET.length >= 32);
+export const isAdminConfigured = Boolean(SECRET.length >= 32 && ((adminEmails.length && process.env.ADMIN_PASSWORD_HASH) || LOCAL_DEV || BYPASS_KEY));
 
 /** Password hash in effect: one saved from the admin area wins over the env var. */
 async function currentHash(): Promise<string> {
