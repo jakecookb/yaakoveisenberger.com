@@ -270,13 +270,17 @@ export async function listRequests(): Promise<AccessRequest[]> {
   return recs.filter((r): r is AccessRequest => Boolean(r)).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
-export async function updateRequest(id: string, fn: (r: AccessRequest) => void) {
-  if (!ID.test(id)) return;
+/** Applies a change and saves it; returns the saved record, or null if nothing changed (or it doesn't exist). */
+export async function updateRequest(id: string, fn: (r: AccessRequest) => void): Promise<AccessRequest | null> {
+  if (!ID.test(id)) return null;
   const rec = await readJson<AccessRequest>(recordPath(id));
-  if (!rec) return;
+  if (!rec) return null;
+  const before = JSON.stringify(rec);
   fn(rec);
+  if (JSON.stringify(rec) === before) return null;
   rec.updatedAt = new Date().toISOString();
   await writeJson(recordPath(id), rec);
+  return rec;
 }
 
 export async function deleteRequest(id: string) {

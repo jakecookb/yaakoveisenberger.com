@@ -48,5 +48,9 @@ export const lockedPaths = () =>
 export async function mayEnter(id: string, visitorCookie: string | undefined, adminCookie: string | undefined): Promise<'admin' | 'visitor' | null> {
   if (adminCookie && (await cached(`admin:${adminCookie}`, () => isAdminToken(adminCookie)))) return 'admin';
   if (!visitorCookie || id === '*') return null; // "*" = settings unreadable: admin only
-  return (await cached(`visitor:${visitorCookie}:${id}`, async () => grants(await recordFromCookie(visitorCookie), id))) ? 'visitor' : null;
+  // A "yes" is remembered for a minute; a "no" only for a few seconds, so a fresh approval lets them in right away.
+  const key = `visitor:${visitorCookie}:${id}`;
+  const ok = await cached(key, async () => grants(await recordFromCookie(visitorCookie), id));
+  if (!ok) memo.set(key, { v: false, exp: Date.now() + 3_000 });
+  return ok ? 'visitor' : null;
 }
