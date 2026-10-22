@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
+import { gridClass } from '@/lib/site/hub';
 import type { CardView } from '@/lib/site/settings';
 import { CategoryCard, type AccessInfo } from './category-card';
 
@@ -13,8 +14,8 @@ const loadStatus = () =>
     .then((d: { states: Record<string, AccessInfo> } | null) => d?.states ?? null)
     .catch(() => null));
 
-/** `fullOnPhone`: one card per line below 640px (the News section). */
-export function CategoryGrid({ cards, liveCampaigns, fullOnPhone }: { cards: CardView[]; liveCampaigns?: number; fullOnPhone?: boolean }) {
+/** `news`: one card per line below 768px. */
+export function CategoryGrid({ cards, liveCampaigns, news }: { cards: CardView[]; liveCampaigns?: number; news?: boolean }) {
   const reduce = useReducedMotion();
   const [states, setStates] = useState<Record<string, AccessInfo>>({});
   const anyLocked = cards.some((c) => c.locked);
@@ -32,10 +33,10 @@ export function CategoryGrid({ cards, liveCampaigns, fullOnPhone }: { cards: Car
       initial={reduce ? false : 'hidden'}
       animate="show"
       variants={{ hidden: {}, show: { transition: { staggerChildren: 0.05, delayChildren: 0.1 } } }}
-      className={`grid grid-flow-dense ${fullOnPhone ? 'grid-cols-1' : 'grid-cols-2'} gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-2 xl:grid-cols-3`}
+      className={`grid grid-flow-dense ${gridClass(Boolean(news))}`}
     >
       {cards.map((c) => (
-        <CategoryCard key={c.id} category={c} liveCount={c.id === 'fund' ? liveCampaigns : undefined} access={states[c.id]} onModalClose={() => { statusReq = null; loadStatus().then((s) => s && setStates(s)); }} />
+        <CategoryCard key={c.id} category={c} single={news} liveCount={c.id === 'fund' ? liveCampaigns : undefined} access={states[c.id]} onModalClose={() => { statusReq = null; loadStatus().then((s) => s && setStates(s)); }} />
       ))}
     </motion.ul>
   );

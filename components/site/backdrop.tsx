@@ -21,7 +21,7 @@ export function SiteBackdrop() {
   return (
     <div
       aria-hidden
-      className="pointer-events-none fixed inset-0 -z-10 [mask-image:radial-gradient(ellipse_80%_75%_at_50%_0%,black_20%,transparent_85%)]"
+      className="pointer-events-none fixed inset-0 -z-10 overflow-hidden [mask-image:radial-gradient(ellipse_80%_75%_at_50%_0%,black_20%,transparent_85%)]"
     >
       <div
         className="absolute inset-0 opacity-[0.55] [background-image:linear-gradient(to_right,rgba(200,169,106,0.16)_1px,transparent_1px),linear-gradient(to_bottom,rgba(200,169,106,0.16)_1px,transparent_1px)] [background-position:50%_0]"
