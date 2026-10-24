@@ -6,6 +6,9 @@ import { directoryColumns, gridClass } from '@/lib/site/hub';
 import type { CardView } from '@/lib/site/settings';
 import { CategoryCard, type AccessInfo } from './category-card';
 
+// Cards rise into place once, as their section scrolls into view (a little before the edge, so nothing pops).
+const REVEAL_VIEWPORT = { once: true, amount: 0.15, margin: '0px 0px -8% 0px' } as const;
+
 // One status request per page load, shared by every grid on the page.
 let statusReq: Promise<Record<string, AccessInfo> | null> | null = null;
 const loadStatus = () =>
@@ -49,12 +52,13 @@ export function CategoryGrid({ cards, liveCampaigns, news, directory }: { cards:
   const card = (c: CardView, plain?: boolean) => (
     <CategoryCard key={c.id} category={c} single={news} plain={plain} liveCount={c.id === 'fund' ? liveCampaigns : undefined} access={states[c.id]} onModalClose={() => { statusReq = null; loadStatus().then((s) => s && setStates(s)); }} />
   );
-  if (directory) return <motion.div initial={reduce ? false : 'hidden'} animate="show" variants={{ hidden: {}, show: { transition: { staggerChildren: 0.05 } } }}><Directory cards={cards} render={(c) => card(c, true)} /></motion.div>;
+  if (directory) return <motion.div initial={reduce ? false : 'hidden'} whileInView="show" viewport={REVEAL_VIEWPORT} variants={{ hidden: {}, show: { transition: { staggerChildren: 0.09 } } }}><Directory cards={cards} render={(c) => card(c, true)} /></motion.div>;
   return (
     <motion.ul
       initial={reduce ? false : 'hidden'}
-      animate="show"
-      variants={{ hidden: {}, show: { transition: { staggerChildren: 0.05, delayChildren: 0.1 } } }}
+      whileInView="show"
+      viewport={REVEAL_VIEWPORT}
+      variants={{ hidden: {}, show: { transition: { staggerChildren: 0.09, delayChildren: 0.12 } } }}
       className={`grid grid-flow-dense ${gridClass(Boolean(news))}`}
     >
       {cards.map((c) => card(c))}

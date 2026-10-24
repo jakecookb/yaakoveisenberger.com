@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import wordmark from '@/public/images/home/wordmark-white.png';
 import { site } from '@/lib/site/content';
+import { Reveal } from './reveal';
 import { SubscribeForm } from './subscribe-form';
 
 const LEGAL: [string, string][] = [
@@ -13,7 +14,7 @@ const LEGAL: [string, string][] = [
 export function SiteFooter() {
   return (
     <footer className="border-t border-white/10 bg-neutral-950">
-      <div className="mx-auto flex max-w-6xl flex-col items-center gap-8 px-4 py-12 text-center sm:px-6">
+      <Reveal className="mx-auto flex max-w-6xl flex-col items-center gap-8 px-4 py-12 text-center sm:px-6">
         <SubscribeForm />
         <Image src={wordmark} alt="Yaakov Eisenberger" className="h-3 w-auto opacity-90" />
         <p className="text-sm text-neutral-400">
@@ -32,7 +33,7 @@ export function SiteFooter() {
             <p><span className="block text-neutral-400">PRIVACY</span>This site records visits (IP address, approximate location, referrer, pages and clicks) to understand how it’s used. Emails you give us are used only for what you asked for.</p>
           </div>
         </details>
-      </div>
+      </Reveal>
     </footer>
   );
 }
