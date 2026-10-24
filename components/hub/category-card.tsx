@@ -8,12 +8,12 @@ import { ICONS } from '@/data/icons';
 import type { BoxHeight, CardView, IconSize } from '@/lib/site/settings';
 import { AccessModal } from './access-modal';
 
-// Small, quiet boxes. Phones get a step smaller still (two per row, squared off); sm: and up is the larger size.
+// Small, quiet boxes. Phones get a step smaller still (two per row, packed tight); sm: and up is the larger size.
 const HEIGHTS: Record<BoxHeight, { box: string; title: string; teaser: string }> = {
-  compact: { box: 'min-h-24 gap-2 p-3 sm:p-3.5', title: 'text-sm', teaser: 'line-clamp-2 text-[11px] sm:text-xs' },
-  standard: { box: 'min-h-28 gap-3 p-3 sm:min-h-36 sm:gap-4 sm:p-4.5', title: 'text-sm sm:text-base', teaser: 'line-clamp-2 text-[11px] sm:text-xs' },
-  tall: { box: 'min-h-32 gap-3 p-3.5 sm:min-h-44 sm:gap-5 sm:p-5', title: 'text-base sm:text-lg', teaser: 'line-clamp-3 text-xs sm:text-sm' },
-  xl: { box: 'min-h-36 gap-4 p-4 sm:min-h-56 sm:gap-6 sm:p-6', title: 'text-base sm:text-xl', teaser: 'line-clamp-3 text-xs sm:text-sm' },
+  compact: { box: 'min-h-20 gap-1.5 p-2.5 sm:p-3.5', title: 'text-sm', teaser: 'line-clamp-2 text-[11px] sm:text-xs' },
+  standard: { box: 'min-h-24 gap-2 p-2.5 sm:min-h-36 sm:gap-4 sm:p-4.5', title: 'text-sm sm:text-base', teaser: 'line-clamp-2 text-[11px] sm:text-xs' },
+  tall: { box: 'min-h-28 gap-2 p-3 sm:min-h-44 sm:gap-5 sm:p-5', title: 'text-base sm:text-lg', teaser: 'line-clamp-3 text-xs sm:text-sm' },
+  xl: { box: 'min-h-32 gap-3 p-3.5 sm:min-h-56 sm:gap-6 sm:p-6', title: 'text-base sm:text-xl', teaser: 'line-clamp-3 text-xs sm:text-sm' },
 };
 
 const SIZES: Record<IconSize, { tile: string; icon: string }> = {
@@ -24,8 +24,8 @@ const SIZES: Record<IconSize, { tile: string; icon: string }> = {
 };
 
 export const cardVariants: Variants = {
-  hidden: { opacity: 0, y: 24 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
+  hidden: { opacity: 0, y: 36 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.9, ease: [0.16, 1, 0.3, 1] } },
 };
 
 export interface AccessInfo {
@@ -83,7 +83,7 @@ export function CategoryCard({ category, liveCount, cols, single, plain, access,
   const size = { tile: phone(SIZES[category.iconSize].tile), icon: phone(SIZES[category.iconSize].icon) };
   const h = { box: phone(HEIGHTS[category.height].box), title: phone(HEIGHTS[category.height].title), teaser: phone(HEIGHTS[category.height].teaser) };
   // Normal boxes are squares on a phone; News boxes take the full line there instead.
-  const span = plain ? '' : phone(category.width === 'wide' ? `col-span-2${single ? ' max-md:col-span-full' : ''}` : category.width === 'full' ? 'col-span-full' : single ? '' : 'max-sm:aspect-square');
+  const span = plain ? '' : phone(category.width === 'wide' ? `col-span-2${single ? ' max-md:col-span-full' : ''}` : category.width === 'full' ? 'col-span-full' : '');
   const className = `group relative flex h-full flex-col justify-between overflow-hidden rounded-2xl bg-neutral-900/95 ring-1 ring-white/20 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.9)] backdrop-blur-md outline-none [-webkit-tap-highlight-color:transparent] transition-[box-shadow,transform,--tw-ring-color] duration-300 hover:ring-[color-mix(in_srgb,var(--accent)_55%,transparent)] hover:shadow-[0_14px_40px_-22px_var(--accent)] data-[active=true]:-translate-y-1 data-[active=true]:scale-[1.01] data-[active=true]:ring-[var(--accent)] data-[active=true]:shadow-[0_14px_40px_-22px_var(--accent)] motion-reduce:data-[active=true]:translate-y-0 motion-reduce:data-[active=true]:scale-100 focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${grey ? 'grayscale' : ''} ${h.box}`;
   const style = { '--accent': grey ? '#737373' : category.accent } as React.CSSProperties;
 

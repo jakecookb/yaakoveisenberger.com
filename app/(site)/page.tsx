@@ -4,6 +4,7 @@ import { mediaUrl, resolveCards } from '@/lib/site/settings';
 import { HeroFade } from '@/components/hub/hero-fade';
 import { HubHero } from '@/components/hub/hub-hero';
 import { CategoryGrid } from '@/components/hub/category-grid';
+import { HeavyScroll } from '@/components/site/heavy-scroll';
 import { HubSection } from '@/components/hub/hub-section';
 import { directoryColumns, groupCards, HUB_SECTIONS as SECTIONS } from '@/lib/site/hub';
 
@@ -18,10 +19,11 @@ export default async function HomePage() {
   const groups = groupCards(all);
   return (
     <>
+      <HeavyScroll />
       <HeroFade>
         <HubHero tagline={settings.hero.tagline} logoSrc={settings.hero.logoPath ? mediaUrl(settings.hero.logoPath) : undefined} />
       </HeroFade>
-      <div className="relative z-10 mx-auto max-w-7xl overflow-x-clip space-y-16 px-4 pb-20 sm:px-6 sm:pb-28">
+      <div className="relative z-10 mx-auto max-w-7xl overflow-x-clip space-y-6 px-3 pb-12 sm:space-y-16 sm:px-6 sm:pb-28">
         {SECTIONS.map((sec, i) => {
           const cards = groups[sec.id];
           if (!cards.length) return null;
