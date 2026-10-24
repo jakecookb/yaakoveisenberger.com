@@ -1,7 +1,6 @@
-import { get } from '@vercel/blob';
 import { hasAccess } from '@/lib/access/visitor';
 import { isAdmin } from '@/lib/admin/session';
-import { isBlobConfigured } from '@/lib/admin/store';
+import { isBlobConfigured, readFileStream } from '@/lib/admin/store';
 import { loadSettingsFast } from '@/lib/site/load';
 import { HERO_PATH, PHOTO_PATH, resolveCards } from '@/lib/site/settings';
 
@@ -43,13 +42,13 @@ export async function GET(request: Request, { params }: { params: Promise<{ path
   }
 
   const cacheControl = locked ? LOCKED_CACHE : PUBLIC_CACHE;
-  const blob = await get(pathname, { access: 'private', ifNoneMatch: request.headers.get('if-none-match') ?? undefined }).catch(() => null);
-  if (!blob) return notFound();
-  const etag = blob.blob.etag;
-  if (blob.statusCode === 304) return new Response(null, { status: 304, headers: { 'Cache-Control': cacheControl, ...(etag ? { ETag: etag } : {}) } });
-  return new Response(blob.stream, {
+  const file = await readFileStream(pathname, request.headers.get('if-none-match') ?? undefined).catch(() => null);
+  if (!file) return notFound();
+  const etag = file.etag;
+  if (file.status === 304) return new Response(null, { status: 304, headers: { 'Cache-Control': cacheControl, ...(etag ? { ETag: etag } : {}) } });
+  return new Response(file.body, {
     headers: {
-      'Content-Type': blob.blob.contentType || 'application/octet-stream',
+      'Content-Type': file.contentType || 'application/octet-stream',
       'X-Content-Type-Options': 'nosniff',
       'Cache-Control': cacheControl,
       Vary: 'Cookie',

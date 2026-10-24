@@ -13,3 +13,10 @@ AGENTS.md
 # copied from node_modules by scripts/copy-ort.mjs
 /public/ort
 /.local-store
+
+# Cloudflare build output and the Cookbook copied in at build time
+/.open-next
+/.wrangler
+/public/cookbook
+.dev.vars
+/.cf-large

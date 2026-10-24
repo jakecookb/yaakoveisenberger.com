@@ -2,14 +2,13 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { del } from '@vercel/blob';
 import { hashPassword, verifyPassword } from '@/lib/admin/password';
 import { checkCode, startChallenge } from '@/lib/admin/otp';
 import { isTwoFactorRequired } from '@/lib/admin/whatsapp';
 import {
   checkCredentials, clientIp, CREDENTIAL_PATH, endAdminSession, isAdminConfigured, isAdminEmail, loginBlocked, recordLogin, requireAdmin, startAdminSession,
 } from '@/lib/admin/session';
-import { isBlobConfigured, readJson, writeJson } from '@/lib/admin/store';
+import { isBlobConfigured, readJson, removePath, writeJson } from '@/lib/admin/store';
 import { deleteRequest, getRequest, signInToken, updateRequest } from '@/lib/access/visitor';
 import { sendEmail } from '@/lib/email/send';
 import { approvedEmail } from '@/lib/email/templates';
@@ -96,7 +95,7 @@ export async function logoutAction() {
 
 export async function saveSettings(input: unknown): Promise<FormState> {
   await requireAdmin();
-  if (!isBlobConfigured) return { error: 'Storage (Vercel Blob) is not connected to this deployment.' };
+  if (!isBlobConfigured) return { error: 'Storage is not connected to this deployment.' };
   const parsed = settingsSchema.safeParse(input);
   if (!parsed.success) return { error: 'Some values are invalid: ' + parsed.error.issues.slice(0, 3).map((i) => i.path.join('.') + ' ' + i.message).join('; ') };
   const next = sanitizeSettings(parsed.data);
@@ -113,7 +112,7 @@ export async function saveSettings(input: unknown): Promise<FormState> {
 
   await writeJson(SETTINGS_PATH, next);
   forgetSettingsMemo();
-  if (removed.length) await del(removed).catch(() => {});
+  if (removed.length) await removePath(removed).catch(() => {});
   revalidatePath('/', 'layout');
   return { ok: true };
 }

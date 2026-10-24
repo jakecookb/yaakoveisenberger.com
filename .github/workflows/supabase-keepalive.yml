@@ -1,0 +1,17 @@
+# Free Supabase projects pause after 7 days without activity. This makes a tiny read every 3 days so they never do.
+# Uses the public URL + anon key (repo secrets VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY); skipped if they're missing.
+name: Supabase keep-alive
+on:
+  schedule: [{ cron: '17 9 */3 * *' }]
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          URL: ${{ secrets.VITE_SUPABASE_URL }}
+          KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$URL" ] || [ -z "$KEY" ]; then echo "No Supabase secrets; skipping"; exit 0; fi
+          curl -sS -o /dev/null -w "%{http_code}\n" "$URL/auth/v1/health" -H "apikey: $KEY"
+          curl -sS -o /dev/null -w "%{http_code}\n" "$URL/rest/v1/" -H "apikey: $KEY"

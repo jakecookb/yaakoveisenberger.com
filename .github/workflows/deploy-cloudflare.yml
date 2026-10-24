@@ -1,0 +1,27 @@
+# Builds the site (with the Cookbook app inside it at /cookbook) and deploys it to Cloudflare Workers.
+# Runs on every push to main, when the cookbook repo asks for it (repository_dispatch "cookbook-updated"), or by hand.
+# Repo secrets: CLOUDFLARE_API_TOKEN, VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY.
+name: Deploy to Cloudflare
+on:
+  push:
+    branches: [main]
+  repository_dispatch:
+    types: [cookbook-updated]
+  workflow_dispatch:
+concurrency: deploy
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run cookbook:build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      - name: Deploy (skipped until the CLOUDFLARE_API_TOKEN secret exists)
+        run: if [ -n "$CLOUDFLARE_API_TOKEN" ]; then npm run cf:deploy; else echo 'No CLOUDFLARE_API_TOKEN secret yet'; fi
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
