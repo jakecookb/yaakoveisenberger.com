@@ -7,7 +7,7 @@ import { cpSync, existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-const run = (cmd, cwd) => execSync(cmd, { cwd, stdio: 'inherit', env: { ...process.env, VITE_LEGACY_ORIGIN: '' } });
+const run = (cmd, cwd) => execSync(cmd, { cwd, stdio: 'inherit', env: { ...process.env, VITE_LEGACY_ORIGIN: 'https://yaakoveisenberger.com' /* old subdomain is gone: skip the one-time data copy */ } });
 let dir = process.env.COOKBOOK_DIR;
 if (!dir) {
   dir = path.join(mkdtempSync(path.join(tmpdir(), 'cookbook-')), 'cookbook');
