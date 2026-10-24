@@ -17,7 +17,9 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm }
       - run: bash scripts/ci-step.sh install npm ci
-      - run: bash scripts/ci-step.sh cookbook npm run cookbook:build
+      # The Cookbook repo is private, so its build is committed in public/cookbook (refresh: npm run cookbook:build).
+      - if: false
+        run: bash scripts/ci-step.sh cookbook npm run cookbook:build
         env:
           VITE_SUPABASE_URL: https://zikseitbcvmkuljmbpxs.supabase.co
           VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inppa3NlaXRiY3Zta3Vsam1icHhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzMjMxMzYsImV4cCI6MjEwNzg5OTEzNn0.Cso2GabI-0poCbzgVEWQRfpi1pZiFmzNfQhNGCKu1Mc

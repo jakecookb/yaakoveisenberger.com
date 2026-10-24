@@ -14,9 +14,8 @@ AGENTS.md
 /public/ort
 /.local-store
 
-# Cloudflare build output and the Cookbook copied in at build time
+# Cloudflare build output
 /.open-next
 /.wrangler
-/public/cookbook
 .dev.vars
 /.cf-large
