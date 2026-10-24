@@ -1,0 +1,27 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"main": ".open-next/worker.js",
+	"name": "yaakoveisenberger",
+	"account_id": "76a00e3c24e864fe9f357aeeb865ab57",
+	"compatibility_date": "2026-10-01",
+	"minify": true,
+	"compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+	"assets": {
+		"directory": ".open-next/assets",
+		"binding": "ASSETS",
+		// The Cookbook can be locked from the admin, so its files go through the access gate first.
+		"run_worker_first": ["/cookbook", "/cookbook/*"]
+	},
+	"services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "yaakoveisenberger" }],
+	"r2_buckets": [
+		// Site data: settings, access requests, photos, analytics (private; served through /media).
+		{ "binding": "STORE", "bucket_name": "ve-store" },
+		{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "ve-next-cache" }
+	],
+	"vars": { "STORAGE": "r2", "SITE_URL": "https://yaakoveisenberger.com" },
+	"routes": [
+		{ "pattern": "yaakoveisenberger.com", "custom_domain": true },
+		{ "pattern": "www.yaakoveisenberger.com", "custom_domain": true }
+	],
+	"observability": { "enabled": true }
+}

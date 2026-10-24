@@ -2,7 +2,6 @@
 
 import { useActionState, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
-import { upload } from '@vercel/blob/client';
 import { ArrowDown, ArrowUp, CircleDashed, Eye, EyeOff, ExternalLink, FileText, ImagePlus, Images, Link2, Lock, LogOut, Plus, RotateCcw, Save, Trash2, Unlock, Users } from 'lucide-react';
 import { categories } from '@/data/navigation';
 import { ICON_KEYS, ICONS } from '@/data/icons';
@@ -49,7 +48,10 @@ async function prepare(file: File): Promise<{ blob: Blob; ext: string }> {
 async function uploadImage(folder: string, file: File) {
   const { blob, ext } = await prepare(file);
   const name = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-  return upload(`${folder}/${name}`, blob, { access: 'private', handleUploadUrl: '/api/admin/upload', contentType: blob.type });
+  const pathname = `${folder}/${name}`;
+  const res = await fetch(`/api/admin/upload?path=${encodeURIComponent(pathname)}`, { method: 'PUT', body: blob, headers: { 'Content-Type': blob.type } });
+  if (!res.ok) throw new Error(((await res.json().catch(() => null)) as { error?: string } | null)?.error ?? 'Upload failed');
+  return { pathname };
 }
 
 type Mode = 'open' | 'locked' | 'greyed';

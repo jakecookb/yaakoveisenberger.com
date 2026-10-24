@@ -53,9 +53,6 @@ const securityHeaders = [
   { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
 ];
 
-// The Cookbook app (separate repo + Vercel project, built with base '/cookbook/') is served
-// under this site at /cookbook — Vercel proxies the requests, so it shares this domain.
-const cookbookOrigin = (process.env.COOKBOOK_ORIGIN ?? 'https://cookbook-roan-ten.vercel.app').replace(/\/$/, '');
 
 // The ONNX Runtime version names the folder its files are served from (see scripts/copy-ort.mjs), so they can be cached for a year.
 const ortVersion = (() => {
@@ -71,8 +68,9 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   async rewrites() {
     return [
-      { source: '/cookbook', destination: `${cookbookOrigin}/cookbook/` },
-      { source: '/cookbook/:path*', destination: `${cookbookOrigin}/cookbook/:path*` },
+      // The Cookbook (its own repo, a single-page app built with base '/cookbook/') ships inside this site's static files
+      // (public/cookbook, built by scripts/build-cookbook.mjs). Deeper app routes: app/cookbook/[...path]/route.ts.
+      { source: '/cookbook', destination: '/cookbook/index.html' },
     ];
   },
   async redirects() {
@@ -83,6 +81,10 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
+      // Cookbook: hashed bundles cache for a year; the app shell and service worker are always re-checked.
+      { source: '/cookbook/assets/:path*', headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }] },
+      { source: '/cookbook/:file(sw.js|index.html)', headers: [{ key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' }] },
+      { source: '/cookbook/downloads/cookbook.apk', headers: [{ key: 'Content-Type', value: 'application/vnd.android.package-archive' }, { key: 'Content-Disposition', value: 'attachment; filename="Cookbook.apk"' }] },
       {
         // Every page except /fund (its own policy above, for Stripe) and the separately-built /cookbook app.
         source: '/:path((?!fund|cookbook).*)',

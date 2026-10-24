@@ -3,7 +3,7 @@ import { isAdminToken } from '@/lib/admin/session';
 import { categories } from '@/data/navigation';
 import { readJsonStrict } from '@/lib/admin/store';
 import { SETTINGS_PATH } from '@/lib/site/load';
-import { resolveCards, sanitizeSettings, settingsSchema } from '@/lib/site/settings';
+import { defaultSettings, resolveCards, sanitizeSettings, settingsSchema } from '@/lib/site/settings';
 import { grants, recordFromCookie } from './visitor';
 
 // Used by proxy.ts: decides, for each request to a locked box, whether this browser may go in.
@@ -33,7 +33,7 @@ export const lockedPaths = () =>
       const raw = await readJsonStrict<unknown>(SETTINGS_PATH);
       const parsed = raw ? settingsSchema.safeParse(raw) : null;
       if (raw && !parsed?.success) throw new Error('settings unreadable');
-      if (parsed?.success) for (const c of resolveCards(sanitizeSettings(parsed.data), { includeHidden: true })) if (c.locked && c.href.startsWith('/')) out.set(c.href, c.id);
+      for (const c of resolveCards(parsed?.success ? sanitizeSettings(parsed.data) : defaultSettings(), { includeHidden: true })) if (c.locked && c.href.startsWith('/')) out.set(c.href, c.id);
     } catch {
       out.clear();
       // Funding stays open in this case: a storage outage must not take donations offline.

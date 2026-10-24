@@ -72,7 +72,9 @@ export const defaultSettings = (): SiteSettings => ({
   hero: { tagline: DEFAULT_TAGLINE },
   order: [],
   custom: [],
-  cards: {},
+  // Before anything is saved, every private-capable box starts locked (Funding stays open), so a fresh store never
+  // exposes private pages.
+  cards: Object.fromEntries(categories.filter((c) => c.lockable && c.id !== 'fund').map((c) => [c.id, { locked: true }])),
   pages: {},
   photos: {},
 });

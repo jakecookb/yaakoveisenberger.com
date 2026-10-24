@@ -1,8 +1,7 @@
 import 'server-only';
 import { cookies } from 'next/headers';
 import { createHash, randomBytes, randomInt, timingSafeEqual } from 'node:crypto';
-import { del, list } from '@vercel/blob';
-import { isBlobConfigured, readJson, writeJson } from './store';
+import { isBlobConfigured, listPaths, readJson, removePath, writeJson } from './store';
 import { sendWhatsAppCode } from './whatsapp';
 
 // One-time codes for the second sign-in step and for password reset. A challenge is a private blob holding only
@@ -48,12 +47,11 @@ export async function activeChallenge(purpose: Purpose) {
 export async function startChallenge(purpose: Purpose, email: string): Promise<'sent' | 'busy' | 'send-failed' | 'no-storage'> {
   if (!isBlobConfigured) return 'no-storage';
   const now = Date.now();
-  const { blobs } = await list({ prefix: PREFIX, limit: 100 });
   const live: Challenge[] = [];
-  for (const b of blobs) {
-    const c = await readJson<Challenge>(b.pathname);
+  for (const p of await listPaths(PREFIX, 100)) {
+    const c = await readJson<Challenge>(p);
     if (c && c.exp > now) live.push(c);
-    else await del(b.pathname).catch(() => {});
+    else await removePath(p).catch(() => {});
   }
   if (live.length >= MAX_ACTIVE) return 'busy';
 
@@ -85,7 +83,7 @@ export async function checkCode(purpose: Purpose, code: string): Promise<{ ok: t
     await writeJson(path(ch.id), ch);
     return { ok: false, error: ch.attempts >= MAX_ATTEMPTS ? 'Too many wrong codes. Start again.' : 'That code is not right.' };
   }
-  await del(path(ch.id)).catch(() => {});
+  await removePath(path(ch.id)).catch(() => {});
   (await cookies()).delete({ name: CHALLENGE_COOKIE, path: '/admin' });
   return { ok: true, email: ch.email };
 }
