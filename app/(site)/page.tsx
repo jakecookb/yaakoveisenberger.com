@@ -23,7 +23,7 @@ export default async function HomePage() {
       <HeroFade>
         <HubHero tagline={settings.hero.tagline} logoSrc={settings.hero.logoPath ? mediaUrl(settings.hero.logoPath) : undefined} />
       </HeroFade>
-      <div className="relative z-10 mx-auto max-w-7xl overflow-x-clip space-y-16 px-4 pb-20 sm:px-6 sm:pb-28">
+      <div className="relative z-10 mx-auto max-w-7xl overflow-x-clip space-y-6 px-3 pb-12 sm:space-y-16 sm:px-6 sm:pb-28">
         {SECTIONS.map((sec, i) => {
           const cards = groups[sec.id];
           if (!cards.length) return null;
