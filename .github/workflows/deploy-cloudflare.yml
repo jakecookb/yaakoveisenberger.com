@@ -16,8 +16,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm }
-      - run: npm ci
-      - run: npm run cookbook:build
+      - run: bash scripts/ci-step.sh install npm ci
+      - run: bash scripts/ci-step.sh cookbook npm run cookbook:build
         env:
           VITE_SUPABASE_URL: https://zikseitbcvmkuljmbpxs.supabase.co
           VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inppa3NlaXRiY3Zta3Vsam1icHhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzMjMxMzYsImV4cCI6MjEwNzg5OTEzNn0.Cso2GabI-0poCbzgVEWQRfpi1pZiFmzNfQhNGCKu1Mc
@@ -29,7 +29,9 @@ jobs:
         run: |
           npx wrangler r2 bucket create ve-store || true
           npx wrangler r2 bucket create ve-next-cache || true
-          npm run cf:deploy
+          bash scripts/ci-step.sh build npm run cf:build
+          bash scripts/ci-step.sh upload node scripts/cf-upload-large.mjs
+          bash scripts/ci-step.sh deploy npx opennextjs-cloudflare deploy
           # Secrets: a session key made once (kept across deploys), and the email key when the repo has it.
-          if ! npx wrangler secret list | grep -q ADMIN_SESSION_SECRET; then openssl rand -hex 32 | npx wrangler secret put ADMIN_SESSION_SECRET; fi
+          if ! npx wrangler secret list | grep -q ADMIN_SESSION_SECRET; then bash scripts/ci-step.sh secret bash -c 'openssl rand -hex 32 | npx wrangler secret put ADMIN_SESSION_SECRET'; fi
           if [ -n "$RESEND_API_KEY" ]; then printf '%s' "$RESEND_API_KEY" | npx wrangler secret put RESEND_API_KEY; fi
