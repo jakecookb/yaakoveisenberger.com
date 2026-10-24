@@ -18,7 +18,13 @@
 		{ "binding": "STORE", "bucket_name": "ve-store" },
 		{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "ve-next-cache" }
 	],
-	"vars": { "STORAGE": "r2", "SITE_URL": "https://yaakoveisenberger.com" },
+	// ADMIN_PASSWORD_HASH is only the starting password (a long random one); changing it in admin saves a new one in R2.
+	"vars": {
+		"STORAGE": "r2",
+		"SITE_URL": "https://yaakoveisenberger.com",
+		"ADMIN_EMAIL": "info@yaakoveisenberger.com,eisenbergerjake@gmail.com",
+		"ADMIN_PASSWORD_HASH": "scrypt:16384:ca2a63c44bf9061181ad97f57e81a85a:b47f3701342a6c34ce262641c740e336a7905d701870d814d233dc629ff689949aff6aed11f9024bc9e9d7d9fe3d93207c02133c77d29c25a25a2b6d920cdb91"
+	},
 	"routes": [
 		{ "pattern": "yaakoveisenberger.com", "custom_domain": true },
 		{ "pattern": "www.yaakoveisenberger.com", "custom_domain": true }
