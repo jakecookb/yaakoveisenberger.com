@@ -1,6 +1,6 @@
 # Builds the site (with the Cookbook app inside it at /cookbook) and deploys it to Cloudflare Workers.
 # Runs on every push to main, when the cookbook repo asks for it (repository_dispatch "cookbook-updated"), or by hand.
-# Repo secrets: CLOUDFLARE_API_TOKEN, VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY.
+# Repo secret: CLOUDFLARE_API_TOKEN (optional: RESEND_API_KEY). The Supabase URL and anon key are public values.
 name: Deploy to Cloudflare
 on:
   push:
@@ -19,9 +19,17 @@ jobs:
       - run: npm ci
       - run: npm run cookbook:build
         env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-      - name: Deploy (skipped until the CLOUDFLARE_API_TOKEN secret exists)
-        run: if [ -n "$CLOUDFLARE_API_TOKEN" ]; then npm run cf:deploy; else echo 'No CLOUDFLARE_API_TOKEN secret yet'; fi
+          VITE_SUPABASE_URL: https://zikseitbcvmkuljmbpxs.supabase.co
+          VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inppa3NlaXRiY3Zta3Vsam1icHhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzMjMxMzYsImV4cCI6MjEwNzg5OTEzNn0.Cso2GabI-0poCbzgVEWQRfpi1pZiFmzNfQhNGCKu1Mc
+      - name: Deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: 76a00e3c24e864fe9f357aeeb865ab57
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        run: |
+          npx wrangler r2 bucket create ve-store || true
+          npx wrangler r2 bucket create ve-next-cache || true
+          npm run cf:deploy
+          # Secrets: a session key made once (kept across deploys), and the email key when the repo has it.
+          if ! npx wrangler secret list | grep -q ADMIN_SESSION_SECRET; then openssl rand -hex 32 | npx wrangler secret put ADMIN_SESSION_SECRET; fi
+          if [ -n "$RESEND_API_KEY" ]; then printf '%s' "$RESEND_API_KEY" | npx wrangler secret put RESEND_API_KEY; fi
