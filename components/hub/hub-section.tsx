@@ -7,9 +7,9 @@ import { SectionRevealed } from './reveal-context';
 const HEADER = 56;
 const GAP = 0; // sections sit flush: the next one waits directly under the current one, no space between them
 // Every section gets exactly the same two beats, in screens of scroll: it sits still (the pause), then the next one rises over it.
-const PAUSE = 0.3;
-const RISE = 0.6;
-const SLACK = 0.15; // extra screens a section stays pinned past both beats, so the hand-over never races the wrapper's end
+const PAUSE = 0.2;
+const SPEED = 1.5; // the incoming section travels this many times faster than the scroll, so every hand-over moves at the same pace
+const SLACK = 0.1; // extra screens a section stays pinned past both beats, so the hand-over never races the wrapper's end
 
 const shown = (el: Element | null): HTMLElement | null => {
   while (el && !(el as HTMLElement).getClientRects().length) el = el.nextElementSibling;
@@ -25,11 +25,14 @@ const viewH = () => {
   if (!stable.h || window.innerWidth !== stable.w || Math.abs(window.innerHeight - stable.h) > 200) { stable.w = window.innerWidth; stable.h = window.innerHeight; }
   return stable.h;
 };
-const ease = (x: number) => x * x * (3 - 2 * x);
+// Mostly linear with a soft start and finish, so the pace stays even through the whole hand-over.
+const ease = (x: number) => 0.55 * x + 0.45 * x * x * (3 - 2 * x);
+// Scroll length of the hand-over that covers a section of height h: its visible travel divided by SPEED. Longer sections take longer, at the same speed.
+const rise = (h: number, vh: number) => Math.max(0.3 * vh, Math.min(h, vh - HEADER - 8)) / SPEED;
 
 /**
  * A homepage section with heavy-pin stacking. Each section sits flush under the one above (a small gap), faded and blurred;
- * once the one above is pinned it waits for PAUSE of scroll, then rises over it across RISE of scroll, coming into focus
+ * once the one above is pinned it waits for PAUSE of scroll, then rises over it at a steady pace, coming into focus
  * as it lands while the one it covers blurs, dims and fades away. Only the section being revealed is ever sharp. Every
  * section uses the same distances, so the rhythm is even. Styles are written straight to the element (no re-renders) and
  * only transform/filter/opacity change, so it stays smooth on phones.
@@ -46,13 +49,13 @@ export function HubSection({ id, title, subtitle, accent, z, first, className = 
     const aboveEl = () => shownBefore(w.previousElementSibling)?.querySelector('section') ?? null;
     // Sections always pin by their top. One taller than the screen overflows by `ov`: once pinned, its content scrolls up through that
     // distance (so every card is reachable and it's read from the top), and only then does the pause begin. The pull-up margin makes
-    // this section pin exactly PAUSE + RISE screens (+ the above's overflow) after the one above, whatever either one's height.
+    // this section pin exactly one pause and one rise (+ the above's overflow) after the one above, whatever either one's height.
     const fit = () => {
       const vh = viewH(), above = aboveEl();
       setM({
         h: el.offsetHeight, vh, ov: !shown(w.nextElementSibling)?.dataset.stack ? 0 : Math.max(0, el.offsetHeight - (vh - HEADER - 8 - 16)),
         last: !shown(w.nextElementSibling)?.dataset.stack,
-        mt: above ? (PAUSE + RISE) * vh - (above.offsetHeight + (PAUSE + RISE + SLACK) * vh) : 0,
+        mt: above ? -(above.offsetHeight + SLACK * vh) : 0,
       });
     };
     const ro = new ResizeObserver(fit);
@@ -80,7 +83,7 @@ export function HubSection({ id, title, subtitle, accent, z, first, className = 
         const aw = above.parentElement!.getBoundingClientRect();
         const aboveOv = Math.max(0, above.offsetHeight - (vh - pinTop - 16));
         const scrolled = pinTop - aw.top; // px since the section above pinned
-        const p = ease(clamp((scrolled - aboveOv - PAUSE * vh) / (RISE * vh)));
+        const p = ease(clamp((scrolled - aboveOv - PAUSE * vh) / rise(above.offsetHeight, vh)));
         // Where the section above sits by layout alone (its own fade transform must not feed back into this), after its content scrolled through.
         const aboveTop = Math.min(Math.max(pinTop, aw.top), aw.bottom - above.offsetHeight) - Math.min(aboveOv, Math.max(0, scrolled));
         const start = aboveTop + above.offsetHeight + GAP;
@@ -94,7 +97,7 @@ export function HubSection({ id, title, subtitle, accent, z, first, className = 
       let covered = 0;
       if (nextEl) {
         const nextPin = pinTop;
-        const pNext = ease(clamp((pinTop - wr.top - ov - PAUSE * vh) / (RISE * vh)));
+        const pNext = ease(clamp((pinTop - wr.top - ov - PAUSE * vh) / rise(el.offsetHeight, vh)));
         const heldTop = Math.max(pinTop, wr.top) - shift; // where it sits while pinned, ignoring the wrapper's end carrying it away
         const start = heldTop + el.offsetHeight + GAP;
         covered = pNext >= 1 ? 1 : clamp((heldTop + el.offsetHeight - (start - (start - nextPin) * pNext)) / el.offsetHeight);
@@ -125,7 +128,7 @@ export function HubSection({ id, title, subtitle, accent, z, first, className = 
       ref={wrap}
       data-stack="1"
       className={`relative ${className}`}
-      style={pinned ? { height: m.h + m.ov + (m.last ? 0 : PAUSE + RISE + SLACK) * m.vh, marginTop: first ? undefined : m.mt, zIndex: z } : { zIndex: z }}
+      style={pinned ? { height: m.h + m.ov + (m.last ? 0 : (PAUSE + SLACK) * m.vh + rise(m.h, m.vh)), marginTop: first ? undefined : m.mt, zIndex: z } : { zIndex: z }}
     >
       <SectionRevealed.Provider value={revealed}>
       <section
