@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { useReducedMotion } from 'framer-motion';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { motion, useInView, useReducedMotion, useScroll, useTransform } from 'framer-motion';
 import { SectionRevealed } from './reveal-context';
 
 const HEADER = 56;
@@ -28,7 +28,7 @@ const ease = (x: number) => x * x * (3 - 2 * x);
  * section uses the same distances, so the rhythm is even. Styles are written straight to the element (no re-renders) and
  * only transform/filter/opacity change, so it stays smooth on phones.
  */
-export function HubSection({ id, title, subtitle, accent, z, first, className = '', children }: { id: string; title: string; subtitle: string; accent: string; z: number; first?: boolean; className?: string; children: React.ReactNode }) {
+function StackedSection({ id, title, subtitle, accent, z, first, className = '', children }: { id: string; title: string; subtitle: string; accent: string; z: number; first?: boolean; className?: string; children: React.ReactNode }) {
   const wrap = useRef<HTMLDivElement>(null);
   const ref = useRef<HTMLElement>(null);
   const reduce = useReducedMotion();
@@ -145,4 +145,41 @@ export function HubSection({ id, title, subtitle, accent, z, first, className = 
       </SectionRevealed.Provider>
     </div>
   );
+}
+
+const PHONE = '(max-width: 767px)';
+const onPhone = (cb: () => void) => { const q = window.matchMedia(PHONE); q.addEventListener('change', cb); return () => q.removeEventListener('change', cb); };
+
+/**
+ * Phones: no pinning. Sections sit in normal flow, tight under each other, and each fades in, un-blurs and rises as it
+ * enters, then fades and softens slightly as it leaves. Only opacity/transform/filter change, so scrolling stays native.
+ */
+function FlowSection({ id, title, subtitle, accent, z, first, className = '', children }: { id: string; title: string; subtitle: string; accent: string; z: number; first?: boolean; className?: string; children: React.ReactNode }) {
+  const ref = useRef<HTMLElement>(null);
+  const reduce = useReducedMotion();
+  const seen = useInView(ref, { once: true, margin: '0px 0px -15% 0px' });
+  const enterP = useScroll({ target: ref, offset: ['start end', 'start 0.7'] }).scrollYProgress;
+  const exitP = useScroll({ target: ref, offset: ['end 0.3', 'end 0'] }).scrollYProgress;
+  const opacity = useTransform([enterP, exitP], ([e, x]: number[]) => (first ? 1 : e) * (1 - 0.85 * x));
+  const y = useTransform(enterP, [0, 1], [first ? 0 : 36, 0]);
+  const filter = useTransform([enterP, exitP], ([e, x]: number[]) => { const b = (first ? 0 : (1 - e) * 6) + x * 5; return b < 0.2 ? 'none' : `blur(${b.toFixed(1)}px)`; });
+  return (
+    <div className={`relative ${first ? '' : 'mt-6'} ${className}`} style={{ zIndex: z }}>
+      <SectionRevealed.Provider value={seen || Boolean(first) || Boolean(reduce)}>
+        <motion.section ref={ref} id={id} aria-labelledby={`${id}-h`} className="scroll-mt-20" style={reduce ? undefined : { opacity, y, filter }}>
+          <div className="relative mb-3 flex items-baseline gap-3 py-2">
+            <span className="h-px w-8 self-center" style={{ background: accent }} />
+            <h2 id={`${id}-h`} className="font-mono text-xs font-semibold uppercase tracking-[0.35em]" style={{ color: accent }}>{title}</h2>
+            <span aria-hidden className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-white/25 to-transparent" />
+          </div>
+          {children}
+        </motion.section>
+      </SectionRevealed.Provider>
+    </div>
+  );
+}
+
+export function HubSection(props: { id: string; title: string; subtitle: string; accent: string; z: number; first?: boolean; className?: string; children: React.ReactNode }) {
+  const phone = useSyncExternalStore(onPhone, () => window.matchMedia(PHONE).matches, () => false);
+  return phone ? <FlowSection {...props} /> : <StackedSection {...props} />;
 }
