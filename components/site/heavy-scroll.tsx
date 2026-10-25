@@ -2,8 +2,8 @@
 
 import { useEffect } from 'react';
 
-const EASE = 0.06; // fraction of the remaining distance covered per frame (lower = heavier)
-const WHEEL = 0.45; // damps each wheel notch so a flick travels a deliberate distance
+const EASE = 0.05; // fraction of the remaining distance covered per frame (lower = heavier)
+const WHEEL = 0.38; // damps each wheel notch so a flick travels a deliberate distance
 
 /**
  * Gives mouse-wheel scrolling weight: the page glides toward its target and settles instead of snapping. Desktop wheel
