@@ -5,7 +5,7 @@ import { useReducedMotion } from 'framer-motion';
 import { SectionRevealed } from './reveal-context';
 
 const HEADER = 56;
-const GAP = 44; // px (about half an inch) between one section and the next: just enough to see where one ends and the next begins
+const GAP = 0; // sections sit flush: the next one waits directly under the current one, no space between them
 // Every section gets exactly the same two beats, in screens of scroll: it sits still (the pause), then the next one rises over it.
 const PAUSE = 0.7;
 const RISE = 0.9;
@@ -99,7 +99,7 @@ export function HubSection({ id, title, subtitle, accent, z, first, className = 
       // Entrance, mask-style: the section settles up from slightly small while a curtain lifts off its top edge. Clearing the mask once
       // it lands keeps hover glows from being clipped.
       const settle = 0.95 + 0.05 * reveal;
-      el.style.transform = lift || shift || out || reveal < 1 ? `translateY(${(-lift - shift - 22 * out).toFixed(1)}px) scale(${((1 - 0.06 * out) * settle).toFixed(4)})` : '';
+      el.style.transform = lift || shift || out || reveal < 1 ? `translateY(${(-lift - shift - 90 * out).toFixed(1)}px) scale(${((1 - 0.06 * out) * settle).toFixed(4)})` : '';
       // Like lusion's media card opening up: the pane starts inset from the sides and its top edge, with rounded corners, and widens to full as it lands.
       el.style.clipPath = reveal < 1 ? `inset(${((1 - reveal) * 9).toFixed(1)}% ${((1 - reveal) * 5).toFixed(1)}% -2% ${((1 - reveal) * 5).toFixed(1)}% round ${(20 + (1 - reveal) * 12).toFixed(0)}px)` : '';
       el.style.setProperty('--p', reveal.toFixed(3));
