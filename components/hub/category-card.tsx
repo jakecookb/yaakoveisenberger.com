@@ -24,8 +24,9 @@ const SIZES: Record<IconSize, { tile: string; icon: string }> = {
 };
 
 export const cardVariants: Variants = {
-  hidden: { opacity: 0, y: 36 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.9, ease: [0.16, 1, 0.3, 1] } },
+  // Pops in: scales up from ~93% while fading up, on a soft spring that settles with the faintest overshoot.
+  hidden: { opacity: 0.3, scale: 0.93, y: 14 }, // not fully gone while waiting, so the gap under a section reads as the next section
+  show: { opacity: 1, scale: 1, y: 0, transition: { opacity: { duration: 0.5, ease: 'easeOut' }, type: 'spring', stiffness: 190, damping: 17, mass: 0.9 } },
 };
 
 export interface AccessInfo {
