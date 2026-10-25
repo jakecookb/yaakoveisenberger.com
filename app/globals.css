@@ -55,6 +55,13 @@ body:has(.site-dark) {
 .photo-float { animation: photo-float 3.6s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .photo-float { animation: none; } }
 
+/* Gold glow for the sign-up bar: a bright champagne edge that circles the pill, with a soft halo that breathes. */
+@keyframes gold-pulse { 0%, 100% { opacity: 0.35; } 50% { opacity: 0.7; } }
+.gold-ring { background: conic-gradient(from var(--glow-angle), #8a6d2f, #f5e3a8, #c8a96a, #fff7dc, #8a6d2f 60%, #c8a96a, #8a6d2f); animation: glow-spin 4s linear infinite; }
+.gold-ring::before { content: ''; position: absolute; inset: -8px; z-index: -1; border-radius: inherit; background: inherit; filter: blur(20px); animation: gold-pulse 3.2s ease-in-out infinite; }
+.gold-fill { background: linear-gradient(135deg, #f5e3a8, #c8a96a 55%, #9c7a34); box-shadow: 0 0 18px rgba(245, 227, 168, 0.45); }
+@media (prefers-reduced-motion: reduce) { .gold-ring, .gold-ring::before { animation: none; } }
+
 /* Flowing multi-colour glow (Gemini-style) for the sign-up pill. */
 @property --glow-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
 @keyframes glow-spin { to { --glow-angle: 360deg; } }

@@ -5,6 +5,7 @@ import { useReducedMotion } from 'framer-motion';
 
 const HEADER = 56;
 const HOLD = 0.6; // screens of extra scroll a section stays pinned while the next one (already right underneath it) rises over it
+const PAUSE = 0.5; // screens of scroll where the finished section just sits before the next one starts to rise: the "pause" you push through
 const GAP = 8; // px between one section and the next
 
 const shown = (el: Element | null): HTMLElement | null => {
@@ -59,7 +60,7 @@ export function HubSection({ id, title, subtitle, accent, z, first, className = 
       ref={wrap}
       data-stack="1"
       className={`relative ${className}`}
-      style={pinned ? { height: m.h + (m.last ? 0 : HOLD * m.vh), marginTop: first ? undefined : GAP - HOLD * m.vh, zIndex: z } : { zIndex: z }}
+      style={pinned ? { height: m.h + (m.last ? 0 : (HOLD + PAUSE) * m.vh), marginTop: first ? undefined : GAP - HOLD * m.vh, zIndex: z } : { zIndex: z }}
     >
       <section
         ref={ref}

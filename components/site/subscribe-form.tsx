@@ -9,7 +9,7 @@ const TOPICS = [
   ['photography', 'Photography'], ['events', 'Events'], ['devtools', 'Developer Tools'], ['news', 'Car & tech news'],
 ] as const;
 
-/** Compact sign-up pill with a flowing multi-colour glow edge and a custom topic picker. */
+/** Sign-up pill in the site's black and gold: a bright circling gold edge with a breathing halo, and a custom topic picker. */
 export function SubscribeForm() {
   const [state, setState] = useState<'idle' | 'busy' | 'done'>('idle');
   const [error, setError] = useState<string>();
@@ -33,29 +33,29 @@ export function SubscribeForm() {
   const label = TOPICS.find(([v]) => v === topic)![1];
   return (
     <div className="mx-auto w-full max-w-xl">
-      <p className="mb-2 text-xs font-medium uppercase tracking-[0.25em] text-neutral-400">Get updates</p>
-      <div className="glow-ring relative isolate rounded-full p-[1.5px]">
+      <p className="mb-3 flex items-center justify-center gap-3 font-mono text-[11px] font-semibold uppercase tracking-[0.35em] text-[#c8a96a]"><span aria-hidden className="h-px w-8 bg-[#c8a96a]/60" />Get updates<span aria-hidden className="h-px w-8 bg-[#c8a96a]/60" /></p>
+      <div className="gold-ring relative isolate rounded-full p-[2px]">
         {state === 'done' ? (
-          <p className="flex h-11 items-center justify-center gap-2 rounded-full bg-neutral-950 text-sm text-emerald-300" role="status"><Check className="size-4" /> Subscribed — check your inbox.</p>
+          <p className="flex h-12 items-center justify-center gap-2 rounded-full bg-neutral-950 text-sm text-[#f5e3a8]" role="status"><Check className="size-4" /> Subscribed — check your inbox.</p>
         ) : (
-          <form onSubmit={submit} className="flex h-11 items-center gap-1 rounded-full bg-neutral-950 pl-4 pr-1">
-            <input name="email" type="email" required maxLength={254} autoComplete="email" placeholder="you@example.com" aria-label="Email address" className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-neutral-600" />
+          <form onSubmit={submit} className="flex h-12 items-center gap-1 rounded-full bg-neutral-950 pl-5 pr-1.5">
+            <input name="email" type="email" required maxLength={254} autoComplete="email" placeholder="you@example.com" aria-label="Email address" className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-neutral-500" />
             <div ref={box} className="relative">
-              <button type="button" onClick={() => setOpen(!open)} aria-haspopup="listbox" aria-expanded={open} aria-label={`Updates about: ${label}`} className="flex h-8 items-center gap-1 rounded-full bg-white/5 px-3 text-xs text-neutral-200 ring-1 ring-white/10 transition hover:bg-white/10">
+              <button type="button" onClick={() => setOpen(!open)} aria-haspopup="listbox" aria-expanded={open} aria-label={`Updates about: ${label}`} className="flex h-8 items-center gap-1 rounded-full bg-[#c8a96a]/10 px-3 text-xs text-[#f1e2b8] ring-1 ring-[#c8a96a]/30 transition hover:bg-[#c8a96a]/20">
                 <span className="max-w-24 truncate sm:max-w-none">{label}</span><ChevronDown className={`size-3.5 transition ${open ? 'rotate-180' : ''}`} />
               </button>
               {open && (
                 <ul role="listbox" aria-label="Updates about" className="absolute right-0 top-full z-30 mt-2 w-52 overflow-hidden rounded-2xl bg-neutral-900/95 p-1 text-left shadow-2xl ring-1 ring-white/15 backdrop-blur-xl">
                   {TOPICS.map(([v, l]) => (
                     <li key={v} role="option" aria-selected={topic === v}>
-                      <button type="button" onClick={() => { setTopic(v); setOpen(false); }} className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm transition ${topic === v ? 'bg-white/10 text-white' : 'text-neutral-300 hover:bg-white/5'}`}>{l}{topic === v && <Check className="size-3.5 text-cyan-300" />}</button>
+                      <button type="button" onClick={() => { setTopic(v); setOpen(false); }} className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm transition ${topic === v ? 'bg-white/10 text-white' : 'text-neutral-300 hover:bg-white/5'}`}>{l}{topic === v && <Check className="size-3.5 text-[#c8a96a]" />}</button>
                     </li>
                   ))}
                 </ul>
               )}
             </div>
             <input name="website" tabIndex={-1} autoComplete="off" aria-hidden className="hidden" />
-            <button disabled={state === 'busy'} aria-label="Subscribe" className="glow-fill flex size-9 shrink-0 items-center justify-center rounded-full text-white transition hover:brightness-110 active:scale-95 disabled:opacity-60">
+            <button disabled={state === 'busy'} aria-label="Subscribe" className="gold-fill flex size-9 shrink-0 items-center justify-center rounded-full text-neutral-950 transition hover:brightness-110 active:scale-95 disabled:opacity-60">
               {state === 'busy' ? <LoaderCircle className="size-4 animate-spin" /> : <Send className="size-4" />}
             </button>
           </form>

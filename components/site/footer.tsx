@@ -2,6 +2,7 @@ import Image from 'next/image';
 import wordmark from '@/public/images/home/wordmark-white.png';
 import { site } from '@/lib/site/content';
 import { QuoteBar } from './quote-bar';
+import { NameReveal } from './name-reveal';
 import { Reveal } from './reveal';
 import { SubscribeForm } from './subscribe-form';
 
@@ -35,13 +36,7 @@ export function SiteFooter() {
           </div>
         </details>
       </Reveal>
-      {/* Big name, revealed as you pull past the bottom: it is fixed to the screen's foot and only shows through this clipped window. */}
-      <div aria-hidden className="relative h-[46svh] [clip-path:inset(0)]">
-        <div className="fixed inset-x-0 bottom-0 flex h-[46svh] flex-col items-center justify-end gap-5 bg-neutral-950 px-[5vw] pb-[5svh]">
-          <span className="h-px w-full bg-gradient-to-r from-transparent via-[#c8a96a] to-transparent" />
-          <Image src={wordmark} alt="" className="h-auto w-full" />
-        </div>
-      </div>
+      <NameReveal />
     </footer>
   );
 }
