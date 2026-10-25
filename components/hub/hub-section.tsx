@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useReducedMotion } from 'framer-motion';
 
 const HEADER = 56;
-const GAP = 28; // px of breathing room between one section and the next
+const GAP = 44; // px (about half an inch) between one section and the next: just enough to see where one ends and the next begins
 // Every section gets exactly the same two beats, in screens of scroll: it sits still (the pause), then the next one rises over it.
 const PAUSE = 0.7;
 const RISE = 0.9;
@@ -90,8 +90,9 @@ export function HubSection({ id, title, subtitle, accent, z, first, className = 
       // Sharpness: 0 while waiting (or leaving), 1 only once the section is fully revealed.
       const sharp = reveal * (1 - out);
       el.style.transform = lift || out ? `translateY(${(-lift - 22 * out).toFixed(1)}px) scale(${1 - 0.06 * out})` : '';
-      el.style.filter = sharp < 1 ? `blur(${((1 - sharp) * 14).toFixed(1)}px) brightness(${(1 - 0.6 * (1 - sharp)).toFixed(2)})` : '';
-      el.style.opacity = String((0.16 + 0.84 * reveal) * (1 - Math.pow(out, 0.8)));
+      // Waiting below, a section is softened but still legible (so the gap reads as the next section, not empty space); leaving, it blurs out fully.
+      el.style.filter = sharp < 1 ? `blur(${((1 - reveal) * 6 + out * 14).toFixed(1)}px) brightness(${Math.max(0.3, 1 - 0.3 * (1 - reveal) - 0.6 * out).toFixed(2)})` : '';
+      el.style.opacity = String((0.4 + 0.6 * reveal) * (1 - Math.pow(out, 0.8)));
       el.style.pointerEvents = sharp < 0.6 ? 'none' : '';
     };
     const on = () => { if (!raf) raf = requestAnimationFrame(paint); };
