@@ -4,10 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useReducedMotion } from 'framer-motion';
 
 const HEADER = 56;
-// Phones: each section fills the screen (no blank below it) and stays pinned for a long, heavy hold.
-const BUDGET = { phone: 2.4, wide: 3 }; // extra scroll (in screen heights) a section stays pinned for
-const OVERLAP = { phone: 0.9, wide: 0.9 }; // how early (in screen heights) the next section starts rising over the pinned one
-const FADE = { phone: 1.1, wide: 1.1 }; // screen heights over which the pinned section shrinks, blurs and fades
+const HOLD = 0.6; // screens of extra scroll a section stays pinned while the next one (already right underneath it) rises over it
+const GAP = 8; // px between one section and the next
 
 const shown = (el: Element | null): HTMLElement | null => {
   while (el && !(el as HTMLElement).getClientRects().length) el = el.nextElementSibling;
@@ -24,12 +22,12 @@ export function HubSection({ id, title, subtitle, accent, z, first, className = 
   const wrap = useRef<HTMLDivElement>(null);
   const ref = useRef<HTMLElement>(null);
   const reduce = useReducedMotion();
-  const [m, setM] = useState({ top: HEADER + 8, h: 0, vh: 800, last: false, phone: false });
+  const [m, setM] = useState({ top: HEADER + 8, h: 0, vh: 800, last: false });
   useEffect(() => {
     const el = ref.current, w = wrap.current;
     if (!el || !w || reduce) return;
     // A section taller than the screen scrolls normally until its bottom is in view, then holds there.
-    const fit = () => setM({ top: Math.min(HEADER + 8, window.innerHeight - el.offsetHeight - 16), h: el.offsetHeight, vh: window.innerHeight, last: !shown(w.nextElementSibling)?.dataset.stack, phone: window.innerWidth < 640 });
+    const fit = () => setM({ top: Math.min(HEADER + 8, window.innerHeight - el.offsetHeight - 16), h: el.offsetHeight, vh: window.innerHeight, last: !shown(w.nextElementSibling)?.dataset.stack });
     const ro = new ResizeObserver(fit);
     ro.observe(el);
     window.addEventListener('resize', fit);
@@ -40,7 +38,9 @@ export function HubSection({ id, title, subtitle, accent, z, first, className = 
       const clamp = (x: number) => Math.min(1, Math.max(0, x));
       const enter = first ? 1 : clamp((vh - w.getBoundingClientRect().top) / (vh * 0.6));
       const next = shown(w.nextElementSibling);
-      const out = next?.dataset.stack ? clamp((vh - next.getBoundingClientRect().top) / (vh * (window.innerWidth < 640 ? FADE.phone : FADE.wide))) : 0;
+      // How far the next section has risen over this one. Nothing fades while it just sits underneath; the fade only builds as you push it in.
+      const covered = next?.dataset.stack ? clamp((el.getBoundingClientRect().top + el.offsetHeight - next.getBoundingClientRect().top) / el.offsetHeight) : 0;
+      const out = clamp((covered - 0.1) / 0.9);
       // Eased, so the fade starts slow and silky: the section drifts up and back, dims into the dark and softens.
       const e = out * out * (3 - 2 * out);
       el.style.transform = out ? `translateY(${(-28 * e).toFixed(1)}px) scale(${1 - 0.08 * e})` : enter < 1 ? `translateY(${(1 - enter) * 40}px)` : '';
@@ -54,19 +54,18 @@ export function HubSection({ id, title, subtitle, accent, z, first, className = 
     return () => { ro.disconnect(); window.removeEventListener('resize', fit); window.removeEventListener('scroll', on); cancelAnimationFrame(raf); };
   }, [reduce, first]);
   const pinned = !reduce && m.h > 0;
-  const k = m.phone ? 'phone' : 'wide';
   return (
     <div
       ref={wrap}
       data-stack="1"
       className={`relative ${className}`}
-      style={pinned ? { height: m.h + (m.last ? 0 : BUDGET[k] * m.vh), marginTop: first ? undefined : -OVERLAP[k] * m.vh, zIndex: z } : { zIndex: z }}
+      style={pinned ? { height: m.h + (m.last ? 0 : HOLD * m.vh), marginTop: first ? undefined : GAP - HOLD * m.vh, zIndex: z } : { zIndex: z }}
     >
       <section
         ref={ref}
         id={id}
         aria-labelledby={`${id}-h`}
-        className="flex scroll-mt-28 origin-top flex-col will-change-[transform,filter,opacity] max-sm:min-h-[calc(100svh-4.5rem)]"
+        className="scroll-mt-28 origin-top will-change-[transform,filter,opacity]"
         style={reduce ? undefined : { position: 'sticky', top: m.top }}
       >
         <div className="mb-2 flex items-baseline sm:mb-4 gap-3 py-2">
@@ -74,7 +73,7 @@ export function HubSection({ id, title, subtitle, accent, z, first, className = 
           <h2 id={`${id}-h`} className="font-mono text-xs font-semibold uppercase tracking-[0.35em]" style={{ color: accent }}>{title}</h2>
           <p className="hidden truncate text-sm text-neutral-500 sm:block">{subtitle}</p>
         </div>
-        <div className="flex flex-1 flex-col [&>*]:flex-1">{children}</div>
+        {children}
       </section>
     </div>
   );

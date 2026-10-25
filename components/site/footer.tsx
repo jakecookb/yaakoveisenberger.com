@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import wordmark from '@/public/images/home/wordmark-white.png';
 import { site } from '@/lib/site/content';
+import { QuoteBar } from './quote-bar';
 import { Reveal } from './reveal';
 import { SubscribeForm } from './subscribe-form';
 
@@ -14,9 +15,9 @@ const LEGAL: [string, string][] = [
 export function SiteFooter() {
   return (
     <footer className="border-t border-white/10 bg-neutral-950">
+      <QuoteBar />
       <Reveal className="mx-auto flex max-w-6xl flex-col items-center gap-8 px-4 py-12 text-center sm:px-6">
         <SubscribeForm />
-        <Image src={wordmark} alt="Yaakov Eisenberger" className="h-3 w-auto opacity-90" />
         <p className="text-sm text-neutral-400">
           <a href={`mailto:${site.email}`} className="hover:text-white">{site.email}</a>
           <span className="mx-2 text-neutral-600">·</span>
@@ -34,6 +35,13 @@ export function SiteFooter() {
           </div>
         </details>
       </Reveal>
+      {/* Big name, revealed as you pull past the bottom: it is fixed to the screen's foot and only shows through this clipped window. */}
+      <div aria-hidden className="relative h-[46svh] [clip-path:inset(0)]">
+        <div className="fixed inset-x-0 bottom-0 flex h-[46svh] flex-col items-center justify-end gap-5 bg-neutral-950 px-[5vw] pb-[5svh]">
+          <span className="h-px w-full bg-gradient-to-r from-transparent via-[#c8a96a] to-transparent" />
+          <Image src={wordmark} alt="" className="h-auto w-full" />
+        </div>
+      </div>
     </footer>
   );
 }

@@ -2,8 +2,10 @@
 
 import { useEffect } from 'react';
 
-const EASE = 0.05; // fraction of the remaining distance covered per frame (lower = heavier)
-const WHEEL = 0.38; // damps each wheel notch so a flick travels a deliberate distance
+const EASE = 0.08; // fraction of the remaining distance covered per frame (lower = heavier)
+const WHEEL = 0.6; // damps each wheel notch so a flick travels a deliberate distance
+const MAX_STEP = 140; // largest single wheel event counted (px), so a hard flick can't dump a huge distance at once
+const MAX_LEAD = 600; // furthest (px) the glide target may run ahead of the page: a fast spin can't make the page rush off
 
 /**
  * Gives mouse-wheel scrolling weight: the page glides toward its target and settles instead of snapping. Desktop wheel
@@ -35,7 +37,8 @@ export function HeavyScroll() {
       e.preventDefault();
       if (!raf) { current = window.scrollY; target = current; }
       const unit = e.deltaMode === 1 ? 32 : e.deltaMode === 2 ? window.innerHeight : 1;
-      target = clamp(target + e.deltaY * unit * WHEEL);
+      const step = Math.max(-MAX_STEP, Math.min(MAX_STEP, e.deltaY * unit)) * WHEEL;
+      target = clamp(Math.max(current - MAX_LEAD, Math.min(current + MAX_LEAD, target + step)));
       if (!raf) raf = requestAnimationFrame(tick);
     };
     // Anything else that moves the page (keys, anchors, scrollbar) wins: resync and stop gliding.
