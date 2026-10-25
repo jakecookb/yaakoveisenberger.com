@@ -24,7 +24,7 @@ export function groupCards<T extends { id: string }>(cards: T[]): Record<HubSect
 export function gridClass(news: boolean, device?: 1 | 2 | 4) {
   if (device === 1) return news ? 'grid-cols-1 gap-2.5' : 'grid-cols-2 gap-2.5';
   if (device) return news ? 'grid-cols-3 gap-4' : device === 2 ? 'grid-cols-3 gap-4' : 'grid-cols-4 gap-4';
-  return news ? 'grid-cols-1 gap-1.5 md:grid-cols-3 md:gap-4' : 'grid-cols-2 gap-1.5 sm:grid-cols-3 sm:gap-4 xl:grid-cols-4';
+  return news ? 'grid-cols-1 gap-1.5 max-md:auto-rows-fr md:grid-cols-3 md:gap-4' : 'grid-cols-2 gap-1.5 max-sm:auto-rows-fr sm:grid-cols-3 sm:gap-4 xl:grid-cols-4';
 }
 
 /** The Personal & Boards section as a four-column directory. Boxes not listed here (e.g. custom pages) join the sandbox column. */

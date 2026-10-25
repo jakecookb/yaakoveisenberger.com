@@ -4,10 +4,10 @@ import { useEffect, useRef, useState } from 'react';
 import { useReducedMotion } from 'framer-motion';
 
 const HEADER = 56;
-// Phones get a tighter hold, so sections fade away after a short, firm scroll instead of a long drift.
-const BUDGET = { phone: 0.9, wide: 2.2 }; // extra scroll (in screen heights) a section stays pinned for
-const OVERLAP = { phone: 0.55, wide: 0.9 }; // how early (in screen heights) the next section starts rising over the pinned one
-const FADE = { phone: 0.55, wide: 0.9 }; // screen heights over which the pinned section shrinks, blurs and fades
+// Phones: each section fills the screen (no blank below it) and stays pinned for a long, heavy hold.
+const BUDGET = { phone: 1.6, wide: 2.2 }; // extra scroll (in screen heights) a section stays pinned for
+const OVERLAP = { phone: 0.9, wide: 0.9 }; // how early (in screen heights) the next section starts rising over the pinned one
+const FADE = { phone: 0.9, wide: 0.9 }; // screen heights over which the pinned section shrinks, blurs and fades
 
 const shown = (el: Element | null): HTMLElement | null => {
   while (el && !(el as HTMLElement).getClientRects().length) el = el.nextElementSibling;
@@ -64,7 +64,7 @@ export function HubSection({ id, title, subtitle, accent, z, first, className = 
         ref={ref}
         id={id}
         aria-labelledby={`${id}-h`}
-        className="scroll-mt-28 origin-top will-change-[transform,filter,opacity]"
+        className="flex scroll-mt-28 origin-top flex-col will-change-[transform,filter,opacity] max-sm:min-h-[calc(100svh-4.5rem)]"
         style={reduce ? undefined : { position: 'sticky', top: m.top }}
       >
         <div className="mb-2 flex items-baseline sm:mb-4 gap-3 py-2">
@@ -72,7 +72,7 @@ export function HubSection({ id, title, subtitle, accent, z, first, className = 
           <h2 id={`${id}-h`} className="font-mono text-xs font-semibold uppercase tracking-[0.35em]" style={{ color: accent }}>{title}</h2>
           <p className="hidden truncate text-sm text-neutral-500 sm:block">{subtitle}</p>
         </div>
-        {children}
+        <div className="flex flex-1 flex-col [&>*]:flex-1">{children}</div>
       </section>
     </div>
   );
