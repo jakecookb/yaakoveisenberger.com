@@ -5,11 +5,16 @@ import { useReducedMotion } from 'framer-motion';
 
 const HEADER = 56;
 const HOLD = 0.6; // screens of extra scroll a section stays pinned while the next one (already right underneath it) rises over it
-const PAUSE = 0.5; // screens of scroll where the finished section just sits before the next one starts to rise: the "pause" you push through
+const PAUSE = 0.7; // screens of scroll where the finished section just sits before the next one starts to rise: the "pause" you push through
 const GAP = 8; // px between one section and the next
 
 const shown = (el: Element | null): HTMLElement | null => {
   while (el && !(el as HTMLElement).getClientRects().length) el = el.nextElementSibling;
+  return el as HTMLElement | null;
+};
+
+const shownBefore = (el: Element | null): HTMLElement | null => {
+  while (el && !(el as HTMLElement).getClientRects().length) el = el.previousElementSibling;
   return el as HTMLElement | null;
 };
 
@@ -37,16 +42,20 @@ export function HubSection({ id, title, subtitle, accent, z, first, className = 
       raf = 0;
       const vh = window.innerHeight;
       const clamp = (x: number) => Math.min(1, Math.max(0, x));
-      const enter = first ? 1 : clamp((vh - w.getBoundingClientRect().top) / (vh * 0.6));
-      const next = shown(w.nextElementSibling);
-      // How far the next section has risen over this one. Nothing fades while it just sits underneath; the fade only builds as you push it in.
-      const covered = next?.dataset.stack ? clamp((el.getBoundingClientRect().top + el.offsetHeight - next.getBoundingClientRect().top) / el.offsetHeight) : 0;
-      const out = clamp((covered - 0.1) / 0.9);
-      // Eased, so the fade starts slow and silky: the section drifts up and back, dims into the dark and softens.
+      // As the "next" section: sit flush under the one above it (no physical gap) and hold there while that one is pinned;
+      // only once the pause is scrolled through does it move on and rise over it.
+      const above = shownBefore(w.previousElementSibling)?.querySelector('section');
+      const lift = above ? Math.max(0, w.getBoundingClientRect().top - (above.getBoundingClientRect().top + above.offsetHeight) - GAP) : 0;
+      // As the section being covered: fade only once the next one actually starts to rise over it.
+      const nextEl = shown(w.nextElementSibling)?.querySelector('section');
+      const covered = nextEl ? clamp((el.getBoundingClientRect().top + el.offsetHeight - nextEl.getBoundingClientRect().top) / el.offsetHeight) : 0;
+      const out = clamp((covered - 0.08) / 0.8);
       const e = out * out * (3 - 2 * out);
-      el.style.transform = out ? `translateY(${(-28 * e).toFixed(1)}px) scale(${1 - 0.08 * e})` : enter < 1 ? `translateY(${(1 - enter) * 40}px)` : '';
-      el.style.filter = out ? `blur(${(e * 14).toFixed(1)}px) brightness(${(1 - 0.55 * e).toFixed(2)})` : '';
-      el.style.opacity = String((0.2 + 0.8 * enter) * (1 - Math.pow(e, 1.4)));
+      const enter = first ? 1 : clamp((vh - el.getBoundingClientRect().top) / (vh * 0.25));
+      // A clean, light fade: the covered section eases back and dims a little, softening just enough to read as depth.
+      el.style.transform = lift || out ? `translateY(${(-lift - 18 * e).toFixed(1)}px) scale(${1 - 0.04 * e})` : '';
+      el.style.filter = out ? `blur(${(e * 6).toFixed(1)}px) brightness(${(1 - 0.35 * e).toFixed(2)})` : '';
+      el.style.opacity = String((0.3 + 0.7 * enter) * (1 - Math.pow(e, 1.3)));
       el.style.pointerEvents = out > 0.9 ? 'none' : '';
     };
     const on = () => { if (!raf) raf = requestAnimationFrame(paint); };
