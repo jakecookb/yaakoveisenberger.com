@@ -96,7 +96,8 @@ export function HubSection({ id, title, subtitle, accent, z, first, className = 
       // it lands keeps hover glows from being clipped.
       const settle = 0.95 + 0.05 * reveal;
       el.style.transform = lift || out || reveal < 1 ? `translateY(${(-lift - 22 * out).toFixed(1)}px) scale(${((1 - 0.06 * out) * settle).toFixed(4)})` : '';
-      el.style.clipPath = reveal < 1 ? `inset(${((1 - reveal) * 9).toFixed(1)}% -2% -2% -2% round 20px)` : '';
+      // Like lusion's media card opening up: the pane starts inset from the sides and its top edge, with rounded corners, and widens to full as it lands.
+      el.style.clipPath = reveal < 1 ? `inset(${((1 - reveal) * 9).toFixed(1)}% ${((1 - reveal) * 5).toFixed(1)}% -2% ${((1 - reveal) * 5).toFixed(1)}% round ${(20 + (1 - reveal) * 12).toFixed(0)}px)` : '';
       el.style.setProperty('--p', reveal.toFixed(3));
       // Waiting below, a section is softened but still legible (so the gap reads as the next section, not empty space); leaving, it blurs out fully.
       el.style.filter = sharp < 1 ? `blur(${((1 - reveal) * 6 + out * 14).toFixed(1)}px) brightness(${Math.max(0.3, 1 - 0.3 * (1 - reveal) - 0.6 * out).toFixed(2)})` : '';
@@ -125,10 +126,15 @@ export function HubSection({ id, title, subtitle, accent, z, first, className = 
         className="scroll-mt-28 origin-top will-change-[transform,filter,opacity]"
         style={reduce ? undefined : { position: 'sticky', top: m.top }}
       >
-        <div className="mb-2 flex items-baseline sm:mb-4 gap-3 py-2">
+        <div className="relative mb-2 flex items-baseline gap-3 py-2 sm:mb-4">
           <span className="h-px w-8 origin-left self-center" style={{ background: accent, transform: reduce ? undefined : 'scaleX(var(--p, 1))' }} />
-          <h2 id={`${id}-h`} className="font-mono text-xs font-semibold uppercase tracking-[0.35em]" style={{ color: accent }}>{title}</h2>
-          <p className="hidden truncate text-sm text-neutral-500 sm:block">{subtitle}</p>
+          {/* The title is cut from a mask line by line, darkroom-style: it rises into place as the section lands. */}
+          <span className="overflow-hidden">
+            <h2 id={`${id}-h`} className="font-mono text-xs font-semibold uppercase tracking-[0.35em]" style={{ color: accent, transform: reduce ? undefined : 'translateY(calc((1 - var(--p, 1)) * 110%))' }}>{title}</h2>
+          </span>
+          <p className="hidden truncate text-sm text-neutral-500 sm:block" style={{ opacity: reduce ? undefined : 'var(--p, 1)' }}>{subtitle}</p>
+          {/* A hairline rule under the header that draws across with the reveal. */}
+          <span aria-hidden className="absolute inset-x-0 bottom-0 h-px origin-left bg-gradient-to-r from-white/25 to-transparent" style={{ transform: reduce ? undefined : 'scaleX(var(--p, 1))' }} />
         </div>
         {children}
       </section>
