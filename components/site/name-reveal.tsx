@@ -15,9 +15,10 @@ export function NameReveal() {
   const name = useRef<HTMLDivElement>(null);
   const rule = useRef<HTMLSpanElement>(null);
   const mark = useRef<HTMLDivElement>(null);
+  const end = useRef<HTMLSpanElement>(null);
   useEffect(() => {
-    const w = win.current, n = name.current, l = rule.current, m = mark.current;
-    if (!w || !n || !l || !m || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const w = win.current, n = name.current, l = rule.current, m = mark.current, z = end.current;
+    if (!w || !n || !l || !m || !z || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     let raf = 0;
     const paint = () => {
       raf = 0;
@@ -28,6 +29,7 @@ export function NameReveal() {
       const body = out((p - 0.2) / 0.8); // the wordmark follows
       l.style.transform = `scaleX(${line.toFixed(3)})`;
       l.style.opacity = line.toFixed(3);
+      z.style.transform = `scaleX(${out((p - 0.55) / 0.45).toFixed(3)})`; // the closing line draws last, marking the end of the page
       n.style.opacity = Math.min(1, body * 1.6).toFixed(3);
       m.style.clipPath = `inset(${((1 - body) * 100).toFixed(1)}% 0 0 0)`;
       m.style.transform = `translateY(${((1 - body) * 36).toFixed(1)}px) scale(${(1 + (1 - body) * 0.06).toFixed(4)})`;
@@ -40,17 +42,23 @@ export function NameReveal() {
     return () => { window.removeEventListener('scroll', on); window.removeEventListener('resize', on); cancelAnimationFrame(raf); };
   }, []);
   return (
-    <div ref={win} aria-hidden className="relative h-[6.5rem] sm:h-[max(15svh,9rem)] [clip-path:inset(0)]">
-      <div className="fixed inset-x-0 bottom-0 flex h-[6.5rem] sm:h-[max(15svh,9rem)] items-end justify-center bg-neutral-950 px-[5vw] pb-5 sm:pb-[3svh]">
+    <div ref={win} aria-hidden className="relative h-[13rem] sm:h-[max(17svh,10rem)] [clip-path:inset(0)]">
+      <div className="fixed inset-x-0 bottom-0 flex h-[13rem] sm:h-[max(17svh,10rem)] items-end justify-center bg-neutral-950 px-[5vw] pb-4 sm:pb-[2.5svh]">
         <div ref={name} className="relative w-full will-change-[opacity,transform]">
           <span ref={rule} className="mb-4 block h-px w-full origin-center bg-gradient-to-r from-transparent via-[#c8a96a] to-transparent" />
           <div ref={mark} className="origin-bottom will-change-[transform,clip-path,filter]">
-            <Image src={wordmark} alt="" className="h-auto w-full" />
+            {/* Phones: the name is set on two lines, each filling the width, so it reads large. Wider screens keep the single line. */}
+            <Image src={wordmark} alt="" className="hidden h-auto w-full sm:block" />
+            <div className="flex flex-col gap-[0.9rem] sm:hidden">
+              <span className="block w-full" style={{ aspectRatio: '516 / 84', backgroundImage: `url(${wordmark.src})`, backgroundSize: `${(1500 / 516) * 100}% 100%`, backgroundPosition: '0 0' }} />
+              <span className="block w-full" style={{ aspectRatio: '885 / 84', backgroundImage: `url(${wordmark.src})`, backgroundSize: `${(1500 / 885) * 100}% 100%`, backgroundPosition: '100% 0' }} />
+            </div>
           </div>
+          <span ref={end} className="mt-4 block h-[2px] w-full origin-center bg-gradient-to-r from-transparent via-[#c8a96a] to-transparent sm:mt-5" />
         </div>
         {/* Black fades on either side, so the name melts into the page. */}
-        <span className="pointer-events-none absolute inset-y-0 left-0 w-[7%] sm:w-[22%] bg-gradient-to-r from-neutral-950 via-neutral-950/70 to-transparent" />
-        <span className="pointer-events-none absolute inset-y-0 right-0 w-[7%] sm:w-[22%] bg-gradient-to-l from-neutral-950 via-neutral-950/70 to-transparent" />
+        <span className="pointer-events-none absolute inset-y-0 left-0 w-0 sm:w-[22%] bg-gradient-to-r from-neutral-950 via-neutral-950/70 to-transparent" />
+        <span className="pointer-events-none absolute inset-y-0 right-0 w-0 sm:w-[22%] bg-gradient-to-l from-neutral-950 via-neutral-950/70 to-transparent" />
       </div>
     </div>
   );
