@@ -3,7 +3,7 @@
 import Image, { type StaticImageData } from 'next/image';
 import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } from 'framer-motion';
 
-const SIZE = 'size-40 sm:size-48 lg:size-52';
+const SIZE = 'size-32 sm:size-40 lg:size-44';
 
 /**
  * The logo on a floating slab of "liquid glass": frosted translucent pane with a bright rim, a specular
