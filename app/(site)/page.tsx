@@ -6,7 +6,7 @@ import { HubHero } from '@/components/hub/hub-hero';
 import { CategoryGrid } from '@/components/hub/category-grid';
 import { HeavyScroll } from '@/components/site/heavy-scroll';
 import { HubSection } from '@/components/hub/hub-section';
-import { groupCards, HUB_SECTIONS as SECTIONS } from '@/lib/site/hub';
+import { directoryColumns, groupCards, HUB_SECTIONS as SECTIONS } from '@/lib/site/hub';
 
 // Cached and refreshed every minute (and instantly when the admin saves) so the "live campaigns"
 // badge stays current without making `/` dynamic.
@@ -28,7 +28,17 @@ export default async function HomePage() {
           const cards = groups[sec.id];
           if (!cards.length) return null;
           const grid = <CategoryGrid cards={cards} liveCampaigns={liveCampaigns} news={sec.id === 'news'} directory={sec.id === 'personal'} />;
-          return <HubSection key={sec.id} id={sec.id} title={sec.title} subtitle={sec.subtitle} accent={sec.accent} z={i + 1} first={i === 0}>{grid}</HubSection>;
+          if (sec.id !== 'personal')
+            return <HubSection key={sec.id} id={sec.id} title={sec.title} subtitle={sec.subtitle} accent={sec.accent} z={i + 1} first={i === 0}>{grid}</HubSection>;
+          // Personal & Boards: one four-column directory on tablet/desktop; on phones each column is its own stacking layer.
+          return [
+            <HubSection key={sec.id} id={sec.id} title={sec.title} subtitle={sec.subtitle} accent={sec.accent} z={i + 1} className="max-md:hidden">{grid}</HubSection>,
+            ...directoryColumns(cards).map((col, j) => (
+              <HubSection key={col.title} id={`${sec.id}-${j}`} title={col.title} subtitle={sec.title} accent={sec.accent} z={i + 1 + j} className="md:hidden">
+                <CategoryGrid cards={col.cards} liveCampaigns={liveCampaigns} news />
+              </HubSection>
+            )),
+          ];
         })}
       </div>
     </>
