@@ -4,61 +4,98 @@ import { useEffect, useRef, useState } from 'react';
 import { useReducedMotion } from 'framer-motion';
 
 const HEADER = 56;
-const HOLD = 0.6; // screens of extra scroll a section stays pinned while the next one (already right underneath it) rises over it
-const PAUSE = 0.7; // screens of scroll where the finished section just sits before the next one starts to rise: the "pause" you push through
-const GAP = 8; // px between one section and the next
+const GAP = 28; // px of breathing room between one section and the next
+// Every section gets exactly the same two beats, in screens of scroll: it sits still (the pause), then the next one rises over it.
+const PAUSE = 0.7;
+const RISE = 0.9;
+const SLACK = 0.3; // extra screens a section stays pinned past both beats, so the hand-over never races the wrapper's end
 
 const shown = (el: Element | null): HTMLElement | null => {
   while (el && !(el as HTMLElement).getClientRects().length) el = el.nextElementSibling;
   return el as HTMLElement | null;
 };
-
 const shownBefore = (el: Element | null): HTMLElement | null => {
   while (el && !(el as HTMLElement).getClientRects().length) el = el.previousElementSibling;
   return el as HTMLElement | null;
 };
+const ease = (x: number) => x * x * (3 - 2 * x);
 
 /**
- * A homepage section with heavy-pin stacking. Its wrapper is taller than the section by BUDGET screens, so the section
- * waits in place (sticky) while you keep scrolling; during that time the next section rises over it, fading in, while
- * this one stays put and sinks back — shrinking, blurring and fading. Styles are written straight to the element (no
- * re-renders) and only transform/filter/opacity change, so it stays smooth on phones.
+ * A homepage section with heavy-pin stacking. Each section sits flush under the one above (a small gap), faded and blurred;
+ * once the one above is pinned it waits for PAUSE of scroll, then rises over it across RISE of scroll, coming into focus
+ * as it lands while the one it covers blurs, dims and fades away. Only the section being revealed is ever sharp. Every
+ * section uses the same distances, so the rhythm is even. Styles are written straight to the element (no re-renders) and
+ * only transform/filter/opacity change, so it stays smooth on phones.
  */
 export function HubSection({ id, title, subtitle, accent, z, first, className = '', children }: { id: string; title: string; subtitle: string; accent: string; z: number; first?: boolean; className?: string; children: React.ReactNode }) {
   const wrap = useRef<HTMLDivElement>(null);
   const ref = useRef<HTMLElement>(null);
   const reduce = useReducedMotion();
-  const [m, setM] = useState({ top: HEADER + 8, h: 0, vh: 800, last: false });
+  const [m, setM] = useState({ top: HEADER + 8, h: 0, vh: 800, last: false, mt: 0 });
   useEffect(() => {
     const el = ref.current, w = wrap.current;
     if (!el || !w || reduce) return;
-    // A section taller than the screen scrolls normally until its bottom is in view, then holds there.
-    const fit = () => setM({ top: Math.min(HEADER + 8, window.innerHeight - el.offsetHeight - 16), h: el.offsetHeight, vh: window.innerHeight, last: !shown(w.nextElementSibling)?.dataset.stack });
+    const aboveEl = () => shownBefore(w.previousElementSibling)?.querySelector('section') ?? null;
+    // A section taller than the screen scrolls normally until its bottom is in view, then holds there. The pull-up margin makes
+    // this section pin exactly PAUSE + RISE screens after the one above, whatever either one's height.
+    const fit = () => {
+      const vh = window.innerHeight, above = aboveEl();
+      setM({
+        top: Math.min(HEADER + 8, vh - el.offsetHeight - 16), h: el.offsetHeight, vh,
+        last: !shown(w.nextElementSibling)?.dataset.stack,
+        mt: above ? (PAUSE + RISE) * vh - (above.offsetHeight + (PAUSE + RISE + SLACK) * vh) : 0,
+      });
+    };
     const ro = new ResizeObserver(fit);
     ro.observe(el);
+    const a0 = aboveEl();
+    if (a0) ro.observe(a0);
     window.addEventListener('resize', fit);
     let raf = 0;
     const paint = () => {
       raf = 0;
       const vh = window.innerHeight;
       const clamp = (x: number) => Math.min(1, Math.max(0, x));
-      // As the "next" section: sit flush under the one above it (no physical gap) and hold there while that one is pinned;
-      // only once the pause is scrolled through does it move on and rise over it.
-      const above = shownBefore(w.previousElementSibling)?.querySelector('section');
-      const lift = above ? Math.max(0, w.getBoundingClientRect().top - (above.getBoundingClientRect().top + above.offsetHeight) - GAP) : 0;
-      // As the section being covered: fade only once the next one actually starts to rise over it.
+      const pinTop = Math.min(HEADER + 8, vh - el.offsetHeight - 16);
+      const wr = w.getBoundingClientRect();
+      // Layout position of the (sticky) section before any transform of ours.
+      const layoutTop = Math.min(Math.max(pinTop, wr.top), wr.bottom - el.offsetHeight);
+      // As the incoming section: flush under the one above, still, until that one is pinned and the pause is scrolled through.
+      let lift = 0, reveal = 1;
+      const above = aboveEl();
+      if (above && !first) {
+        const aw = above.parentElement!.getBoundingClientRect();
+        const abovePin = Math.min(HEADER + 8, vh - above.offsetHeight - 16);
+        const scrolled = abovePin - aw.top; // px since the section above pinned
+        const p = ease(clamp((scrolled - PAUSE * vh) / (RISE * vh)));
+        // Where the section above sits by layout alone (its own fade transform must not feed back into this).
+        const aboveTop = Math.min(Math.max(abovePin, aw.top), aw.bottom - above.offsetHeight);
+        const start = aboveTop + above.offsetHeight + GAP;
+        const curTop = start - (start - pinTop) * p;
+        lift = p >= 1 ? 0 : layoutTop - curTop; // once risen, the section is left to the wrapper's own sticky behaviour
+        reveal = p;
+      }
+      // As the section being covered: fade and blur out once the next one actually rises over it. The next one's position is worked
+      // out from scroll (same formula it uses itself), never read back from its element, so the two can't lag a frame behind each other.
       const nextEl = shown(w.nextElementSibling)?.querySelector('section');
-      const covered = nextEl ? clamp((el.getBoundingClientRect().top + el.offsetHeight - nextEl.getBoundingClientRect().top) / el.offsetHeight) : 0;
-      const out = clamp((covered - 0.05) / 0.6);
-      const e = out * out * (3 - 2 * out);
-      const enter = first ? 1 : clamp((vh - el.getBoundingClientRect().top) / (vh * 0.25));
-      // The covered section blurs, dims and fades out decisively, so the section rising over it reads clearly.
-      el.style.transform = lift || out ? `translateY(${(-lift - 22 * e).toFixed(1)}px) scale(${1 - 0.06 * e})` : '';
-      el.style.filter = out ? `blur(${(e * 16).toFixed(1)}px) brightness(${(1 - 0.6 * e).toFixed(2)})` : '';
-      el.style.opacity = String((0.3 + 0.7 * enter) * (1 - Math.pow(e, 0.8)));
-      el.style.pointerEvents = out > 0.9 ? 'none' : '';
+      let covered = 0;
+      if (nextEl) {
+        const nextPin = Math.min(HEADER + 8, vh - nextEl.offsetHeight - 16);
+        const pNext = ease(clamp((pinTop - wr.top - PAUSE * vh) / (RISE * vh)));
+        const heldTop = Math.max(pinTop, wr.top); // where it sits while pinned, ignoring the wrapper's end carrying it away
+        const start = heldTop + el.offsetHeight + GAP;
+        covered = pNext >= 1 ? 1 : clamp((heldTop + el.offsetHeight - (start - (start - nextPin) * pNext)) / el.offsetHeight);
+      }
+      const out = covered >= 1 ? 1 : ease(clamp((covered - 0.05) / 0.6));
+      // Sharpness: 0 while waiting (or leaving), 1 only once the section is fully revealed.
+      const sharp = reveal * (1 - out);
+      el.style.transform = lift || out ? `translateY(${(-lift - 22 * out).toFixed(1)}px) scale(${1 - 0.06 * out})` : '';
+      el.style.filter = sharp < 1 ? `blur(${((1 - sharp) * 14).toFixed(1)}px) brightness(${(1 - 0.6 * (1 - sharp)).toFixed(2)})` : '';
+      el.style.opacity = String((0.16 + 0.84 * reveal) * (1 - Math.pow(out, 0.8)));
+      el.style.pointerEvents = sharp < 0.6 ? 'none' : '';
     };
     const on = () => { if (!raf) raf = requestAnimationFrame(paint); };
+    fit();
     paint();
     window.addEventListener('scroll', on, { passive: true });
     return () => { ro.disconnect(); window.removeEventListener('resize', fit); window.removeEventListener('scroll', on); cancelAnimationFrame(raf); };
@@ -69,7 +106,7 @@ export function HubSection({ id, title, subtitle, accent, z, first, className = 
       ref={wrap}
       data-stack="1"
       className={`relative ${className}`}
-      style={pinned ? { height: m.h + (m.last ? 0 : (HOLD + PAUSE) * m.vh), marginTop: first ? undefined : GAP - HOLD * m.vh, zIndex: z } : { zIndex: z }}
+      style={pinned ? { height: m.h + (m.last ? PAUSE : PAUSE + RISE + SLACK) * m.vh, marginTop: first ? undefined : m.mt, zIndex: z } : { zIndex: z }}
     >
       <section
         ref={ref}
