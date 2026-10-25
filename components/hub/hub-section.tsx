@@ -7,9 +7,9 @@ import { SectionRevealed } from './reveal-context';
 const HEADER = 56;
 const GAP = 0; // sections sit flush: the next one waits directly under the current one, no space between them
 // Every section gets exactly the same two beats, in screens of scroll: it sits still (the pause), then the next one rises over it.
-const PAUSE = 0.7;
-const RISE = 0.9;
-const SLACK = 0.3; // extra screens a section stays pinned past both beats, so the hand-over never races the wrapper's end
+const PAUSE = 0.3;
+const RISE = 0.6;
+const SLACK = 0.15; // extra screens a section stays pinned past both beats, so the hand-over never races the wrapper's end
 
 const shown = (el: Element | null): HTMLElement | null => {
   while (el && !(el as HTMLElement).getClientRects().length) el = el.nextElementSibling;
