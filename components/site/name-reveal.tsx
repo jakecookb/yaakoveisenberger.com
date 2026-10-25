@@ -40,8 +40,8 @@ export function NameReveal() {
     return () => { window.removeEventListener('scroll', on); window.removeEventListener('resize', on); cancelAnimationFrame(raf); };
   }, []);
   return (
-    <div ref={win} aria-hidden className="relative h-[max(17svh,8rem)] sm:h-[max(26svh,10rem)] [clip-path:inset(0)]">
-      <div className="fixed inset-x-0 bottom-0 flex h-[max(17svh,8rem)] sm:h-[max(26svh,10rem)] items-end justify-center bg-neutral-950 px-[5vw] pb-[4svh]">
+    <div ref={win} aria-hidden className="relative h-[6.5rem] sm:h-[max(15svh,9rem)] [clip-path:inset(0)]">
+      <div className="fixed inset-x-0 bottom-0 flex h-[6.5rem] sm:h-[max(15svh,9rem)] items-end justify-center bg-neutral-950 px-[5vw] pb-5 sm:pb-[3svh]">
         <div ref={name} className="relative w-full will-change-[opacity,transform]">
           <span ref={rule} className="mb-4 block h-px w-full origin-center bg-gradient-to-r from-transparent via-[#c8a96a] to-transparent" />
           <div ref={mark} className="origin-bottom will-change-[transform,clip-path,filter]">
