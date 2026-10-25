@@ -19,6 +19,12 @@ const shownBefore = (el: Element | null): HTMLElement | null => {
   while (el && !(el as HTMLElement).getClientRects().length) el = el.previousElementSibling;
   return el as HTMLElement | null;
 };
+// Phone browsers grow and shrink the viewport as their toolbar hides; treat that as noise so layouts don't jump mid-scroll.
+const stable = { w: 0, h: 0 };
+const viewH = () => {
+  if (!stable.h || window.innerWidth !== stable.w || Math.abs(window.innerHeight - stable.h) > 200) { stable.w = window.innerWidth; stable.h = window.innerHeight; }
+  return stable.h;
+};
 const ease = (x: number) => x * x * (3 - 2 * x);
 
 /**
@@ -42,9 +48,9 @@ export function HubSection({ id, title, subtitle, accent, z, first, className = 
     // distance (so every card is reachable and it's read from the top), and only then does the pause begin. The pull-up margin makes
     // this section pin exactly PAUSE + RISE screens (+ the above's overflow) after the one above, whatever either one's height.
     const fit = () => {
-      const vh = window.innerHeight, above = aboveEl();
+      const vh = viewH(), above = aboveEl();
       setM({
-        h: el.offsetHeight, vh, ov: Math.max(0, el.offsetHeight - (vh - HEADER - 8 - 16)),
+        h: el.offsetHeight, vh, ov: !shown(w.nextElementSibling)?.dataset.stack ? 0 : Math.max(0, el.offsetHeight - (vh - HEADER - 8 - 16)),
         last: !shown(w.nextElementSibling)?.dataset.stack,
         mt: above ? (PAUSE + RISE) * vh - (above.offsetHeight + (PAUSE + RISE + SLACK) * vh) : 0,
       });
@@ -57,10 +63,11 @@ export function HubSection({ id, title, subtitle, accent, z, first, className = 
     let raf = 0;
     const paint = () => {
       raf = 0;
-      const vh = window.innerHeight;
+      const vh = viewH();
       const clamp = (x: number) => Math.min(1, Math.max(0, x));
       const pinTop = HEADER + 8;
-      const ov = Math.max(0, el.offsetHeight - (vh - pinTop - 16));
+      // The last section never pins or scrolls its content through: it just scrolls away into the footer, with no empty gap left behind.
+      const ov = shown(w.nextElementSibling)?.dataset.stack ? Math.max(0, el.offsetHeight - (vh - pinTop - 16)) : 0;
       const wr = w.getBoundingClientRect();
       // How far an over-tall section's content has scrolled up since it pinned.
       const shift = ov ? Math.min(ov, Math.max(0, pinTop - wr.top)) : 0;
@@ -100,8 +107,6 @@ export function HubSection({ id, title, subtitle, accent, z, first, className = 
       // it lands keeps hover glows from being clipped.
       const settle = 0.95 + 0.05 * reveal;
       el.style.transform = lift || shift || out || reveal < 1 ? `translateY(${(-lift - shift - 90 * out).toFixed(1)}px) scale(${((1 - 0.06 * out) * settle).toFixed(4)})` : '';
-      // Like lusion's media card opening up: the pane starts inset from the sides and its top edge, with rounded corners, and widens to full as it lands.
-      el.style.clipPath = reveal < 1 ? `inset(${((1 - reveal) * 9).toFixed(1)}% ${((1 - reveal) * 5).toFixed(1)}% -2% ${((1 - reveal) * 5).toFixed(1)}% round ${(20 + (1 - reveal) * 12).toFixed(0)}px)` : '';
       el.style.setProperty('--p', reveal.toFixed(3));
       // Waiting below, a section is softened but still legible (so the gap reads as the next section, not empty space); leaving, it blurs out fully.
       el.style.filter = sharp < 1 ? `blur(${((1 - reveal) * 6 + out * 14).toFixed(1)}px) brightness(${Math.max(0.3, 1 - 0.3 * (1 - reveal) - 0.6 * out).toFixed(2)})` : '';
@@ -120,7 +125,7 @@ export function HubSection({ id, title, subtitle, accent, z, first, className = 
       ref={wrap}
       data-stack="1"
       className={`relative ${className}`}
-      style={pinned ? { height: m.h + m.ov + (m.last ? PAUSE : PAUSE + RISE + SLACK) * m.vh, marginTop: first ? undefined : m.mt, zIndex: z } : { zIndex: z }}
+      style={pinned ? { height: m.h + m.ov + (m.last ? 0 : PAUSE + RISE + SLACK) * m.vh, marginTop: first ? undefined : m.mt, zIndex: z } : { zIndex: z }}
     >
       <SectionRevealed.Provider value={revealed}>
       <section
