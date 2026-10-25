@@ -84,7 +84,7 @@ export function CategoryCard({ category, liveCount, cols, single, plain, access,
   const h = { box: phone(HEIGHTS[category.height].box), title: phone(HEIGHTS[category.height].title), teaser: phone(HEIGHTS[category.height].teaser) };
   // Normal boxes are squares on a phone; News boxes take the full line there instead.
   const span = plain ? '' : phone(category.width === 'wide' ? `col-span-2${single ? ' max-md:col-span-full' : ''}` : category.width === 'full' ? 'col-span-full' : '');
-  const className = `group relative flex h-full flex-col justify-between overflow-hidden rounded-2xl bg-neutral-900/95 ring-1 ring-white/20 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.9)] backdrop-blur-md outline-none [-webkit-tap-highlight-color:transparent] transition-[box-shadow,transform,--tw-ring-color] duration-300 hover:ring-[color-mix(in_srgb,var(--accent)_55%,transparent)] hover:shadow-[0_14px_40px_-22px_var(--accent)] data-[active=true]:-translate-y-1 data-[active=true]:scale-[1.01] data-[active=true]:ring-[var(--accent)] data-[active=true]:shadow-[0_14px_40px_-22px_var(--accent)] motion-reduce:data-[active=true]:translate-y-0 motion-reduce:data-[active=true]:scale-100 focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${grey ? 'grayscale' : ''} ${h.box}`;
+  const className = `group relative flex h-full flex-col justify-between overflow-hidden rounded-2xl bg-neutral-900/95 ring-1 ring-white/20 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.9)] backdrop-blur-md outline-none [-webkit-tap-highlight-color:transparent] transition-[box-shadow,transform,--tw-ring-color] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:ring-[color-mix(in_srgb,var(--accent)_80%,transparent)] hover:shadow-[0_20px_50px_-16px_color-mix(in_srgb,var(--accent)_60%,transparent),0_0_32px_-8px_color-mix(in_srgb,var(--accent)_50%,transparent)] data-[active=true]:-translate-y-1 data-[active=true]:scale-[1.03] data-[active=true]:ring-[var(--accent)] data-[active=true]:shadow-[0_20px_50px_-16px_color-mix(in_srgb,var(--accent)_60%,transparent),0_0_32px_-8px_color-mix(in_srgb,var(--accent)_50%,transparent)] motion-reduce:data-[active=true]:translate-y-0 motion-reduce:data-[active=true]:scale-100 focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${grey ? 'grayscale' : ''} ${h.box}`;
   const style = { '--accent': grey ? '#737373' : category.accent } as React.CSSProperties;
 
   const inner = (
@@ -92,7 +92,7 @@ export function CategoryCard({ category, liveCount, cols, single, plain, access,
       {/* pointer-follow highlight */}
       <span
         className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-data-[active=true]:opacity-100"
-        style={{ background: 'radial-gradient(420px circle at var(--mx,50%) var(--my,0%), color-mix(in srgb, var(--accent) 18%, transparent), transparent 60%)' }}
+        style={{ background: 'radial-gradient(420px circle at var(--mx,50%) var(--my,0%), color-mix(in srgb, var(--accent) 26%, transparent), transparent 60%)' }}
         aria-hidden
       />
       <span className="relative flex flex-wrap items-start justify-between gap-2">
@@ -154,9 +154,9 @@ export function CategoryCard({ category, liveCount, cols, single, plain, access,
   return (
     <motion.li
       variants={cardVariants}
-      whileHover={reduce ? undefined : { y: -3, scale: 1.01 }}
+      whileHover={reduce ? undefined : { y: -4, scale: 1.03 }}
       whileTap={reduce ? undefined : { scale: 0.99 }}
-      transition={{ type: 'spring', stiffness: 320, damping: 24 }}
+      transition={{ type: 'spring', stiffness: 260, damping: 26 }}
       className={span || undefined}
     >
       {category.external ? (
