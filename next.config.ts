@@ -39,8 +39,8 @@ const siteCsp = [
   "font-src 'self' data:",
   // Admin photo uploads go from the browser straight to Vercel Blob.
   "connect-src 'self' blob: data: https://huggingface.co https://*.huggingface.co https://*.hf.co https://vercel.com https://*.vercel-storage.com",
-  'frame-src https://www.youtube-nocookie.com https://www.youtube.com https://player.vimeo.com',
-  "frame-ancestors 'none'",
+  "frame-src 'self' https://www.youtube-nocookie.com https://www.youtube.com https://player.vimeo.com",
+  "frame-ancestors 'self'",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -88,7 +88,7 @@ const nextConfig: NextConfig = {
       {
         // Every page except /fund (its own policy above, for Stripe) and the separately-built /cookbook app.
         source: '/:path((?!fund|cookbook).*)',
-        headers: [...securityHeaders, { key: 'Content-Security-Policy', value: siteCsp }, { key: 'X-Frame-Options', value: 'DENY' }],
+        headers: [...securityHeaders, { key: 'Content-Security-Policy', value: siteCsp }, { key: 'X-Frame-Options', value: 'SAMEORIGIN' }],
       },
       {
         // Everything under /fund except the big screen (which OBS / signage players may embed).

@@ -27,6 +27,8 @@ const cardOverride = z.object({
   iconKey: z.enum(ICON_KEYS).optional(),
   iconSize: z.enum(ICON_SIZES).optional(),
   accent: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+  /** A short pill on the tile (e.g. "New", "Beta"). Empty = the built-in badge, if any. */
+  tag: z.string().trim().max(14).optional(),
 });
 
 /** A box the owner created in the editor: either its own page (text + photos) or a link to another website. */
@@ -50,11 +52,45 @@ const photo = z.object({
   caption: z.string().trim().max(200).default(''),
 });
 
+export const SECTION_IDS = ['news', 'productivity', 'personal'] as const;
+export const TONES = ['info', 'good', 'warn'] as const;
+export type Tone = (typeof TONES)[number];
+
+/** Site-wide switches and wording the owner controls from the editor. Every field is optional: unset = how the site always looked. */
+const siteBlock = z.object({
+  /** Emergency switch: every lockable box (except Funding) is locked without touching its own setting. */
+  lockdown: z.boolean().optional(),
+  announcement: z.object({
+    enabled: z.boolean().optional(),
+    text: z.string().trim().max(200).optional(),
+    link: z.string().trim().max(500).optional(),
+    tone: z.enum(TONES).optional(),
+  }).optional(),
+  sections: z.partialRecord(z.enum(SECTION_IDS), z.object({
+    title: z.string().trim().max(40).optional(),
+    subtitle: z.string().trim().max(120).optional(),
+    hidden: z.boolean().optional(),
+  })).optional(),
+  footer: z.object({
+    email: z.string().trim().max(120).optional(),
+    phone: z.string().trim().max(40).optional(),
+    note: z.string().trim().max(160).optional(),
+    hideQuoteBar: z.boolean().optional(),
+    hideSubscribe: z.boolean().optional(),
+    hideLegal: z.boolean().optional(),
+    hideNameReveal: z.boolean().optional(),
+  }).optional(),
+});
+export type SiteBlock = z.infer<typeof siteBlock>;
+
 export const settingsSchema = z.object({
   hero: z.object({
     tagline: z.string().trim().max(160),
     logoPath: z.string().regex(HERO_PATH).optional(),
+    hideLogo: z.boolean().optional(),
+    hideTagline: z.boolean().optional(),
   }),
+  site: siteBlock.default({}),
   order: z.array(z.string().max(40)).max(80),
   custom: z.array(customBox).max(40).default([]),
   cards: z.record(z.string().max(40), cardOverride),
@@ -70,6 +106,7 @@ export const DEFAULT_TAGLINE = 'Video, projects, food and fundraising — everyt
 
 export const defaultSettings = (): SiteSettings => ({
   hero: { tagline: DEFAULT_TAGLINE },
+  site: {},
   order: [],
   custom: [],
   // Before anything is saved, every private-capable box starts locked (Funding stays open), so a fresh store never
@@ -97,6 +134,26 @@ function bases(s: SiteSettings): (NavCategory & { custom?: CustomBox })[] {
   return [...categories, ...extra];
 }
 
+const keep = <T extends object>(o: T | undefined): T | undefined => {
+  if (!o) return undefined;
+  const e = Object.entries(o).filter(([, v]) => v !== undefined && v !== '' && v !== false);
+  return e.length ? (Object.fromEntries(e) as T) : undefined;
+};
+
+/** Removes empty/false switches so a default site stores as `{}` and unknown junk never persists. */
+function cleanSite(site: SiteBlock | undefined): SiteBlock {
+  const s = site ?? {};
+  const a = keep(s.announcement);
+  const sections = s.sections && Object.fromEntries(Object.entries(s.sections).map(([k, v]) => [k, keep(v)]).filter(([, v]) => v));
+  const out: SiteBlock = {};
+  if (s.lockdown) out.lockdown = true;
+  if (a && (a.text || a.enabled)) out.announcement = { ...a, link: a.link && isSafeUrl(a.link) ? a.link : undefined };
+  if (sections && Object.keys(sections).length) out.sections = sections as SiteBlock['sections'];
+  const f = keep(s.footer);
+  if (f) out.footer = f;
+  return out;
+}
+
 /** Drops anything that isn't a known box so stale or tampered ids never persist. */
 export function sanitizeSettings(input: SiteSettings): SiteSettings {
   const seen = new Set<string>();
@@ -117,6 +174,7 @@ export function sanitizeSettings(input: SiteSettings): SiteSettings {
   }
   return {
     hero: input.hero,
+    site: cleanSite(input.site),
     order: input.order.filter((id, i, a) => known.has(id) && a.indexOf(id) === i),
     custom,
     cards,
@@ -137,6 +195,8 @@ export interface CardView {
   accent: string;
   external: boolean;
   badge?: 'live' | 'new';
+  /** Owner-written pill text, shown instead of the built-in badge. */
+  tag?: string;
   /** A live news feed (shows a "news" pill on its tile). */
   news: boolean;
   status: 'live' | 'soon';
@@ -160,7 +220,8 @@ export function resolveCards(s: SiteSettings, opts: { includeHidden?: boolean } 
   const views = ids.map((id): CardView => {
     const c = byId.get(id)!;
     const o = s.cards[id] ?? {};
-    const locked = Boolean(c.lockable && (o.locked || o.greyed));
+    // Lockdown (site.lockdown) locks every lockable box except Funding, which must stay reachable for donors.
+    const locked = Boolean(c.lockable && (o.locked || o.greyed || (s.site.lockdown && id !== 'fund')));
     const kind = c.custom ? c.custom.kind : 'builtin';
     // A locked link goes through /go/<id> so the real URL is only revealed to approved visitors.
     const href = locked && kind === 'link' ? `/go/${id}` : c.href;
@@ -174,6 +235,7 @@ export function resolveCards(s: SiteSettings, opts: { includeHidden?: boolean } 
       accent: o.accent ?? c.accent,
       external: Boolean(c.external),
       badge: c.badge,
+      tag: o.tag?.trim() || undefined,
       news: Boolean(c.news),
       status: o.status ?? c.status ?? 'live',
       width: o.width ?? (o.wide || c.featured ? 'wide' : 'normal'),

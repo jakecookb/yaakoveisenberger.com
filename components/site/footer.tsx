@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import wordmark from '@/public/images/home/wordmark-white.png';
 import { site } from '@/lib/site/content';
+import { loadSettings } from '@/lib/site/load';
 import { QuoteBar } from './quote-bar';
 import { NameReveal } from './name-reveal';
 import { Reveal } from './reveal';
@@ -13,30 +14,37 @@ const LEGAL: [string, string][] = [
   ['§ 4. APPLICABLE LAW & JURISDICTION', 'Any disputes arising from the use of this domain shall be governed under local jurisdiction, standard internet courtesy standards, and common sense. By remaining on this page, the user hereby waives all rights to claim this design was anything short of well-crafted.'],
 ];
 
-export function SiteFooter() {
+/** tel: link for a phone number typed by the owner. */
+const telHref = (p: string) => `tel:${p.replace(/[^\d+]/g, '')}`;
+
+export async function SiteFooter() {
+  const f = (await loadSettings()).site.footer ?? {};
+  const email = f.email || site.email;
+  const phone = f.phone || site.phone;
+  const phoneHref = f.phone ? telHref(f.phone) : site.phoneHref;
   return (
     <footer className="border-t border-white/10 bg-neutral-950">
-      <QuoteBar />
+      {!f.hideQuoteBar && <QuoteBar />}
       <Reveal className="mx-auto flex max-w-6xl flex-col items-center gap-8 px-4 py-12 text-center sm:px-6">
-        <SubscribeForm />
+        {!f.hideSubscribe && <SubscribeForm />}
         <p className="text-sm text-neutral-400">
-          <a href={`mailto:${site.email}`} className="hover:text-white">{site.email}</a>
+          <a href={`mailto:${email}`} className="hover:text-white">{email}</a>
           <span className="mx-2 text-neutral-600">·</span>
-          <a href={site.phoneHref} className="hover:text-white">{site.phone}</a>
+          <a href={phoneHref} className="hover:text-white">{phone}</a>
         </p>
         <div className="text-xs text-neutral-500">
           <p>© 2026 YaakovEisenberger.com. All Rights Reserved.</p>
-          <p className="mt-1">Designed &amp; built with precision for the modern web.</p>
+          <p className="mt-1">{f.note || 'Designed & built with precision for the modern web.'}</p>
         </div>
-        <details className="w-full max-w-3xl text-left">
+        {!f.hideLegal && <details className="w-full max-w-3xl text-left">
           <summary className="cursor-pointer text-center font-mono text-[11px] tracking-wider text-neutral-500 hover:text-neutral-300">LEGAL NOTICE &amp; REGULATORY DISCLOSURES — DOC REF #8841-A</summary>
           <div className="mt-4 space-y-4 font-mono text-[11px] leading-relaxed text-neutral-500">
             {LEGAL.map(([h, t]) => <p key={h}><span className="block text-neutral-400">{h}</span>{t}</p>)}
             <p><span className="block text-neutral-400">PRIVACY</span>This site records visits (IP address, approximate location, referrer, pages and clicks) to understand how it’s used. Emails you give us are used only for what you asked for.</p>
           </div>
-        </details>
+        </details>}
       </Reveal>
-      <NameReveal />
+      {!f.hideNameReveal && <NameReveal />}
     </footer>
   );
 }
