@@ -114,7 +114,7 @@ export function HubSection({ id, title, subtitle, accent, z, first, className = 
       // Waiting below, a section is softened but still legible (so the gap reads as the next section, not empty space); leaving, it blurs out fully.
       el.style.filter = sharp < 1 ? `blur(${((1 - reveal) * 6 + out * 14).toFixed(1)}px) brightness(${Math.max(0.3, 1 - 0.3 * (1 - reveal) - 0.6 * out).toFixed(2)})` : '';
       el.style.opacity = String((0.4 + 0.6 * reveal) * (1 - Math.pow(out, 0.8)));
-      el.style.pointerEvents = sharp < 0.6 ? 'none' : '';
+      el.style.pointerEvents = sharp < 0.35 ? 'none' : 'auto';
     };
     const on = () => { if (!raf) raf = requestAnimationFrame(paint); };
     fit();
@@ -128,14 +128,14 @@ export function HubSection({ id, title, subtitle, accent, z, first, className = 
       ref={wrap}
       data-stack="1"
       className={`relative ${className}`}
-      style={pinned ? { height: m.h + m.ov + (m.last ? 0 : (PAUSE + SLACK) * m.vh + rise(m.h, m.vh)), marginTop: first ? undefined : m.mt, zIndex: z } : { zIndex: z }}
+      style={pinned ? { height: m.h + m.ov + (m.last ? 0 : (PAUSE + SLACK) * m.vh + rise(m.h, m.vh)), marginTop: first ? undefined : m.mt, zIndex: z, pointerEvents: 'none' } : { zIndex: z, pointerEvents: 'none' }}
     >
       <SectionRevealed.Provider value={revealed}>
       <section
         ref={ref}
         id={id}
         aria-labelledby={`${id}-h`}
-        className="scroll-mt-28 origin-top will-change-[transform,filter,opacity]"
+        className="pointer-events-auto scroll-mt-28 origin-top will-change-[transform,filter,opacity]"
         style={reduce ? undefined : { position: 'sticky', top: HEADER + 8 }}
       >
         <div className="relative mb-2 flex items-baseline gap-3 py-2 sm:mb-4">
