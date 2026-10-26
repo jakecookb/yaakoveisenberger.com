@@ -30,13 +30,13 @@ async function emailLink(rec: AccessRequest, categoryId: string, box?: string) {
 }
 
 /** A visitor asks for access to one locked box with their name, email and phone. A sign-in link is emailed to them. */
-export async function requestAccess(input: { name?: string; email?: string; phone?: string; code?: string }, categoryId: string, website: string): Promise<RequestReply> {
+export async function requestAccess(input: { name?: string; email?: string; phone?: string }, categoryId: string, website: string): Promise<RequestReply> {
   if (website) return { ok: true }; // honeypot: bots fill hidden fields
   const box = await lockableTitle(categoryId);
   if (!box) return { ok: false, error: 'That page can’t be requested.' };
   if (tooMany(`ip:${await clientIp()}`, 6, 10 * 60_000)) return { ok: false, error: 'Too many requests. Please try again in a few minutes.' };
   try {
-    const res = await createOrUpdateRequest({ name: String(input.name ?? ''), email: String(input.email ?? ''), phone: String(input.phone ?? ''), code: String(input.code ?? '') }, categoryId);
+    const res = await createOrUpdateRequest({ name: String(input.name ?? ''), email: String(input.email ?? ''), phone: String(input.phone ?? '') }, categoryId);
     if (!res.ok) return res;
     const emailed = res.emailTo ? await emailLink(res.record, categoryId, box) : false;
     return { ok: true, sentTo: res.emailTo, emailed };

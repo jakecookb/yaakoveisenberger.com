@@ -31,11 +31,11 @@ function Who({ r, right }: { r: AccessRequest; right?: React.ReactNode }) {
   return (
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div className="min-w-0">
-        <p className="font-medium text-white">{r.name} <span className="ml-1 rounded-full bg-white/5 px-2 py-0.5 text-[11px] font-medium text-neutral-400 ring-1 ring-white/10">{overallStatus(r)}</span></p>
+        <p className="font-medium text-white">{r.name} <span className="ml-1 rounded-full bg-white/5 px-2 py-0.5 text-[11px] font-medium text-neutral-400 ring-1 ring-white/10">{overallStatus(r)}</span>{r.codeGranted?.length ? <span className="ml-1 rounded-full bg-emerald-400/10 px-2 py-0.5 text-[11px] font-medium text-emerald-300 ring-1 ring-emerald-400/30">Approved via code</span> : null}</p>
         <p className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-neutral-400">
           {r.email ? (
             <a href={`mailto:${r.email}`} className="inline-flex items-center gap-1.5 break-all hover:text-white"><Mail className="size-3.5 shrink-0" /> {r.email}{r.emailVerifiedAt && <BadgeCheck className="size-3.5 shrink-0 text-emerald-400" aria-label="Email confirmed" />}</a>
-          ) : <span className="text-neutral-600">No email (older request)</span>}
+          ) : <span className="text-neutral-600">{r.codeGranted?.length ? 'No email (joined with the access code)' : 'No email (older request)'}</span>}
           {r.phone && <a href={`tel:${r.phone.replace(/[^\d+]/g, '')}`} className="inline-flex items-center gap-1.5 hover:text-white"><Phone className="size-3.5" /> {r.phone}</a>}
         </p>
         <p className="mt-1 text-xs text-neutral-500">Requested {when(r.createdAt)}{r.emailVerifiedAt ? ' · email confirmed' : r.email ? ' · email not confirmed yet' : ''}</p>
@@ -96,7 +96,7 @@ export default async function AccessPage() {
             <Who r={r} right={<Act action={removeVisitorAction} id={r.id} cat="" className={neutral}><Trash2 className="size-3.5" /> Remove</Act>} />
             <div className="mt-2 flex flex-wrap gap-2">
               {r.all && <Act action={revokeAction} id={r.id} cat="*" className={ok}>Everything <X className="size-3" /></Act>}
-              {r.granted.map((c) => <Act key={c} action={revokeAction} id={r.id} cat={c} className={ok}>{title(c)} <X className="size-3" /></Act>)}
+              {r.granted.map((c) => <Act key={c} action={revokeAction} id={r.id} cat={c} className={ok}>{title(c)}{r.codeGranted?.includes(c) ? ' (code)' : ''} <X className="size-3" /></Act>)}
               {r.denied.map((c) => <span key={c} className={`${btn} bg-red-400/10 text-red-300 ring-1 ring-red-400/20`}>Denied: {title(c)}</span>)}
               {!r.all && r.granted.length === 0 && r.denied.length === 0 && <span className="text-sm text-neutral-500">No access</span>}
             </div>

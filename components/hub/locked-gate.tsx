@@ -29,7 +29,6 @@ export function LockedGate({ categoryId, accent, continueHref, className = 'mt-1
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [code, setCode] = useState('');
   const [mode, setMode] = useState<'request' | 'signin'>('request');
   const [sent, setSent] = useState<{ to?: string; emailed: boolean }>({ emailed: false });
   const [website, setWebsite] = useState(''); // honeypot
@@ -77,7 +76,7 @@ export function LockedGate({ categoryId, accent, continueHref, className = 'mt-1
     e.preventDefault();
     setBusy(true);
     setError(undefined);
-    const res = mode === 'signin' ? await signInByEmail(email, categoryId, website) : await requestAccess({ name, email, phone, code }, categoryId, website);
+    const res = mode === 'signin' ? await signInByEmail(email, categoryId, website) : await requestAccess({ name, email, phone }, categoryId, website);
     setBusy(false);
     if (!res.ok) return setError(res.error);
     if (res.sentTo) setSent({ to: res.sentTo, emailed: Boolean(res.emailed) });
@@ -157,15 +156,11 @@ export function LockedGate({ categoryId, accent, continueHref, className = 'mt-1
               )}
               <div>
                 <label className="block text-sm font-medium text-neutral-200" htmlFor="visitor-email">Email address</label>
-                <input id="visitor-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} maxLength={254} required autoComplete="email" inputMode="email" placeholder="you@example.com" className={`mt-1.5 ${input}`} />
+                <input id="visitor-email" type="text" value={email} onChange={(e) => setEmail(e.target.value)} maxLength={254} required autoComplete="email" inputMode="email" placeholder="you@example.com" className={`mt-1.5 ${input}`} />
               </div>
               <div>
                 <label className="block text-sm font-medium text-neutral-200" htmlFor="visitor-phone">Phone number <span className="font-normal text-neutral-500">(optional)</span></label>
                 <input id="visitor-phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={25} autoComplete="tel" inputMode="tel" placeholder="(555) 123-4567" className={`mt-1.5 ${input}`} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-neutral-200" htmlFor="visitor-code">Access code <span className="font-normal text-neutral-500">(optional)</span></label>
-                <input id="visitor-code" value={code} onChange={(e) => setCode(e.target.value)} maxLength={40} autoComplete="off" autoCapitalize="off" spellCheck={false} className={`mt-1.5 ${input}`} />
               </div>
             </>
           )}

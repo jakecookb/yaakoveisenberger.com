@@ -10,7 +10,7 @@ import { isAdmin } from '@/lib/admin/session';
 // the secrets are stored. A sign-in link emailed to the visitor signs in any other device (and proves the
 // email is theirs). The admin approves per category or for everything.
 
-/** Typing this code (case-insensitive, leading # optional) when requesting access grants it immediately. Change it here. */
+/** Typing this code in the email field (case-insensitive, leading # optional) grants access immediately. Change it here. */
 const INSTANT_ACCESS_CODE = 'YaakovAccess';
 export const isInstantCode = (raw: string | undefined) => (raw ?? '').trim().replace(/^#/, '').toLowerCase() === INSTANT_ACCESS_CODE.toLowerCase();
 
@@ -50,6 +50,8 @@ export interface AccessRequest {
   requested: string[];
   granted: string[];
   denied: string[];
+  /** Boxes that were opened by typing the instant-access code instead of being approved by the owner. */
+  codeGranted?: string[];
   /** When each box was declined (ISO). A visitor may ask again RETRY_MINUTES later. */
   deniedAt?: Record<string, string>;
   all: boolean;
@@ -138,7 +140,7 @@ export async function accessStates(ids: string[]): Promise<Record<string, Access
 
 export const hasAccess = async (categoryId: string) => (await accessState(categoryId)).state === 'approved';
 
-export interface Contact { name: string; email: string; phone: string; code: string }
+export interface Contact { name: string; email: string; phone: string }
 export type RequestResult =
   | { ok: true; signedIn: boolean; record: AccessRequest; emailTo?: string; existingEmail?: boolean }
   | { ok: false; error: string };
@@ -146,6 +148,7 @@ export type RequestResult =
 function addCategory(rec: AccessRequest, categoryId: string, instant = false): string | null {
   if (instant) {
     if (!rec.granted.includes(categoryId)) rec.granted.push(categoryId);
+    if (!(rec.codeGranted ??= []).includes(categoryId)) rec.codeGranted.push(categoryId);
     rec.requested = rec.requested.filter((c) => c !== categoryId);
     rec.denied = rec.denied.filter((c) => c !== categoryId);
     if (rec.deniedAt) delete rec.deniedAt[categoryId];
@@ -185,15 +188,15 @@ export async function createOrUpdateRequest(contact: Partial<Contact>, categoryI
   if (!isBlobConfigured) return { ok: false, error: 'Access requests are not set up yet.' };
   const now = new Date().toISOString();
   const current = await visitorRecord();
-  const email = contact.email ? cleanEmail(contact.email) : null;
+  const instant = isInstantCode(contact.email);
+  const email = !instant && contact.email ? cleanEmail(contact.email) : null;
   const phone = contact.phone?.trim() ? cleanPhone(contact.phone) : null;
   if (contact.phone?.trim() && !phone) return { ok: false, error: 'Please enter a valid phone number, or leave it blank.' };
-  const instant = isInstantCode(contact.code);
 
   if (current) {
     const err = addCategory(current, categoryId, instant);
     if (err) return { ok: false, error: err };
-    if (!current.email) {
+    if (!current.email && !instant) {
       // Older records were name-only: ask for the contact details once.
       if (!email) return { ok: false, error: 'Please enter a valid email address.' };
       const other = await recordByEmail(email);
@@ -209,25 +212,25 @@ export async function createOrUpdateRequest(contact: Partial<Contact>, categoryI
 
   const name = cleanName(contact.name ?? '');
   if (name.length < 2) return { ok: false, error: 'Please type your name.' };
-  if (!email) return { ok: false, error: 'Please enter a valid email address.' };
+  if (!email && !instant) return { ok: false, error: 'Please enter a valid email address.' };
 
-  const known = await recordByEmail(email);
+  const known = email ? await recordByEmail(email) : null;
   if (known) {
     const err = addCategory(known, categoryId, instant);
     if (err) return { ok: false, error: err };
     known.updatedAt = now;
     await writeJson(recordPath(known.id), known);
-    return { ok: true, signedIn: false, record: known, emailTo: email, existingEmail: true };
+    return { ok: true, signedIn: false, record: known, emailTo: email ?? undefined, existingEmail: true };
   }
 
   if ((await listPaths(PREFIX, MAX_REQUESTS + 1)).length > MAX_REQUESTS) return { ok: false, error: 'Too many open requests right now. Please try again later.' };
   const id = randomBytes(12).toString('hex');
   const secret = randomBytes(24).toString('base64url');
-  const rec: AccessRequest = { id, name, email, ...(phone ? { phone } : {}), secretHash: sha(secret), requested: instant ? [] : [categoryId], granted: instant ? [categoryId] : [], denied: [], all: false, createdAt: now, updatedAt: now };
+  const rec: AccessRequest = { id, name, ...(email ? { email } : {}), ...(phone ? { phone } : {}), secretHash: sha(secret), requested: instant ? [] : [categoryId], granted: instant ? [categoryId] : [], ...(instant ? { codeGranted: [categoryId] } : {}), denied: [], all: false, createdAt: now, updatedAt: now };
   await writeJson(recordPath(id), rec);
-  await writeJson(emailPath(email), { id });
+  if (email) await writeJson(emailPath(email), { id });
   (await cookies()).set(VISITOR_COOKIE, `${id}.${secret}`, visitorCookieOptions());
-  return { ok: true, signedIn: true, record: rec, emailTo: email };
+  return { ok: true, signedIn: true, record: rec, emailTo: email ?? undefined };
 }
 
 /** "Sign in" with just an email: finds the record (if any) so a link can be sent. Never says whether it exists. */
