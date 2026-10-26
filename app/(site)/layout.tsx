@@ -6,6 +6,11 @@ import { Tracker } from '@/components/site/tracker';
 import { Announcement } from '@/components/site/announcement';
 import { loadSettings } from '@/lib/site/load';
 
+// Everything here reads the owner's saved settings (locks, tiles, announcement, footer). The Cloudflare deploy has no
+// background re-render for statically cached pages, so a prerendered page would show whatever was saved at build time
+// forever. Rendering per request reads the settings from storage (briefly memoised), so a save shows up within seconds.
+export const dynamic = 'force-dynamic';
+
 // Shared chrome for the main site's pages. Add new pages as folders next to page.tsx
 // (e.g. app/(site)/about/page.tsx → /about). The /fund platform has its own layout.
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
