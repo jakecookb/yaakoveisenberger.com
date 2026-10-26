@@ -198,7 +198,7 @@ export async function revokeAction(formData: FormData) {
   const cat = String(formData.get('cat'));
   await updateRequest(id, (r) => {
     if (cat === '*') r.all = false;
-    else r.granted = r.granted.filter((c) => c !== cat);
+    else { r.granted = r.granted.filter((c) => c !== cat); r.codeGranted = r.codeGranted?.filter((c) => c !== cat); }
   });
   revalidatePath('/admin/access');
 }

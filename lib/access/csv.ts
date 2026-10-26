@@ -17,7 +17,7 @@ const cell = (v: string) => {
 };
 
 export function toCsv(rows: AccessRequest[], title: (id: string) => string) {
-  const head = ['Name', 'Email', 'Phone', 'Email confirmed', 'Requested on', 'Last updated', 'Status', 'Approved for', 'Waiting for', 'Declined for'];
+  const head = ['Name', 'Email', 'Phone', 'Email confirmed', 'Requested on', 'Last updated', 'Status', 'Approved for', 'Approved via code', 'Waiting for', 'Declined for'];
   const date = (iso?: string) => (iso ? new Date(iso).toISOString().replace('T', ' ').slice(0, 16) + ' UTC' : '');
   const lines = rows.map((r) => [
     r.name,
@@ -28,6 +28,7 @@ export function toCsv(rows: AccessRequest[], title: (id: string) => string) {
     date(r.updatedAt),
     overallStatus(r),
     r.all ? 'Everything' : r.granted.map(title).join('; '),
+    (r.codeGranted ?? []).map(title).join('; '),
     r.requested.map(title).join('; '),
     r.denied.map(title).join('; '),
   ]);
