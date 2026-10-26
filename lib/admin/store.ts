@@ -31,9 +31,9 @@ const local = (pathname: string) => {
   return p;
 };
 
-// Site settings are memoised per server instance for a minute (writes here refresh it). Everything else (access records,
+// Site settings are memoised per server instance for 10 seconds (writes here refresh it). Everything else (access records,
 // credentials) is always read fresh: an approval saved on one instance must be seen at once by every other one.
-const READ_TTL = 60_000;
+const READ_TTL = 10_000;
 const CACHED = new Set(['site/settings.json']);
 const reads = new Map<string, { text: string | null; exp: number }>();
 async function cachedText(pathname: string, fetchText: () => Promise<string | null>) {

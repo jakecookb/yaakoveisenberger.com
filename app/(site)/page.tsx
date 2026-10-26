@@ -8,10 +8,6 @@ import { HeavyScroll } from '@/components/site/heavy-scroll';
 import { HubSection } from '@/components/hub/hub-section';
 import { groupCards, HUB_SECTIONS as SECTIONS } from '@/lib/site/hub';
 
-// Cached and refreshed every minute (and instantly when the admin saves) so the "live campaigns"
-// badge stays current without making `/` dynamic.
-export const revalidate = 60;
-
 export default async function HomePage() {
   const [settings, liveCampaigns] = await Promise.all([loadSettings(), listPublicCampaigns().then((c) => c.length).catch(() => 0)]);
   // A greyed-out box's description is private too: it never reaches the page.
