@@ -21,14 +21,15 @@ export default async function HomePage() {
     <>
       <HeavyScroll />
       <HeroFade>
-        <HubHero tagline={settings.hero.tagline} logoSrc={settings.hero.logoPath ? mediaUrl(settings.hero.logoPath) : undefined} />
+        <HubHero tagline={settings.hero.tagline} logoSrc={settings.hero.logoPath ? mediaUrl(settings.hero.logoPath) : undefined} hideLogo={settings.hero.hideLogo} hideTagline={settings.hero.hideTagline} />
       </HeroFade>
       <div className="relative z-10 mx-auto max-w-7xl overflow-x-clip space-y-0 px-3 pb-6 sm:space-y-0 sm:px-6 sm:pb-12">
         {SECTIONS.map((sec, i) => {
           const cards = groups[sec.id];
-          if (!cards.length) return null;
+          const o = settings.site.sections?.[sec.id];
+          if (!cards.length || o?.hidden) return null;
           const grid = <CategoryGrid cards={cards} liveCampaigns={liveCampaigns} news={sec.id === 'news'} directory={sec.id === 'personal'} />;
-          return <HubSection key={sec.id} id={sec.id} title={sec.title} subtitle={sec.subtitle} accent={sec.accent} z={i + 1} first={i === 0}>{grid}</HubSection>;
+          return <HubSection key={sec.id} id={sec.id} title={o?.title || sec.title} subtitle={o?.subtitle ?? sec.subtitle} accent={sec.accent} z={i + 1} first={i === 0}>{grid}</HubSection>;
         })}
       </div>
     </>

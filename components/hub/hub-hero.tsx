@@ -3,7 +3,7 @@ import { HeroLogo } from './hero-logo';
 import logo from '@/public/images/home/logo-hd.png';
 import wordmark from '@/public/images/home/wordmark-white.png';
 
-export function HubHero({ tagline, logoSrc }: { tagline: string; logoSrc?: string }) {
+export function HubHero({ tagline, logoSrc, hideLogo, hideTagline }: { tagline: string; logoSrc?: string; hideLogo?: boolean; hideTagline?: boolean }) {
   return (
     <section className="relative overflow-hidden">
       <div
@@ -11,11 +11,11 @@ export function HubHero({ tagline, logoSrc }: { tagline: string; logoSrc?: strin
         aria-hidden
       />
       <div className="relative mx-auto flex max-w-6xl flex-col items-center px-4 pb-10 pt-12 text-center sm:px-6 sm:pb-14 sm:pt-20">
-        <HeroLogo logo={logo} customSrc={logoSrc} />
+        {!hideLogo && <HeroLogo logo={logo} customSrc={logoSrc} />}
         <h1 className="mt-6 sm:mt-8">
           <Image src={wordmark} alt="Yaakov Eisenberger" priority className="mx-auto h-4 w-auto sm:h-6" />
         </h1>
-        <p className="mt-5 max-w-md text-balance text-neutral-400">{tagline}</p>
+        {!hideTagline && <p className="mt-5 max-w-md text-balance text-neutral-400">{tagline}</p>}
       </div>
     </section>
   );

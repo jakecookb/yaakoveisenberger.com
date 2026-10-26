@@ -46,6 +46,7 @@ function Badge({ category, liveCount, access }: { category: CardView; liveCount?
     if (st === 'denied') return <span title="Request declined" className={`${DOT} bg-red-400/10 text-red-300 ring-red-400/30`}><ShieldX className="size-2.5" /><span className="sr-only">Declined</span></span>;
     return <span title="Private" className={`${DOT} bg-white/5 text-neutral-400 ring-white/15`}><Lock className="size-2.5" /><span className="sr-only">Private</span></span>;
   }
+  if (category.tag) return <span className="rounded-full bg-[#c8a96a]/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#e6cf9a] ring-1 ring-[#c8a96a]/40">{category.tag}</span>;
   if (category.badge === 'live') {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-300 ring-1 ring-emerald-400/30">

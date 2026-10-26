@@ -13,7 +13,7 @@ import { deleteRequest, getRequest, signInToken, updateRequest } from '@/lib/acc
 import { sendEmail } from '@/lib/email/send';
 import { approvedEmail } from '@/lib/email/templates';
 import { siteUrl } from '@/lib/site/url';
-import { forgetSettingsMemo, loadSettings, SETTINGS_PATH } from '@/lib/site/load';
+import { forgetSettingsMemo, loadSettings, PREVIOUS_PATH, SETTINGS_PATH } from '@/lib/site/load';
 import { resolveCards, sanitizeSettings, settingsSchema } from '@/lib/site/settings';
 
 export interface FormState {
@@ -110,11 +110,27 @@ export async function saveSettings(input: unknown): Promise<FormState> {
     if (photos.some((p) => !p.pathname.startsWith(`photos/${cat}/`))) return { error: 'A photo is filed under the wrong category.' };
   }
 
+  // Keep the version being replaced, so a bad save can be undone from the editor.
+  const before = await readJson<unknown>(SETTINGS_PATH);
+  if (before) await writeJson(PREVIOUS_PATH, before).catch(() => {});
   await writeJson(SETTINGS_PATH, next);
   forgetSettingsMemo();
   if (removed.length) await removePath(removed).catch(() => {});
   revalidatePath('/', 'layout');
   return { ok: true };
+}
+
+/** Brings back the version saved before the latest one (the latest becomes the new "previous", so it can be flipped back). */
+export async function restorePrevious(): Promise<FormState & { settings?: unknown }> {
+  await requireAdmin();
+  const prev = settingsSchema.safeParse(await readJson<unknown>(PREVIOUS_PATH));
+  if (!prev.success) return { error: 'There is no earlier version to restore.' };
+  const current = await readJson<unknown>(SETTINGS_PATH);
+  await writeJson(SETTINGS_PATH, sanitizeSettings(prev.data));
+  if (current) await writeJson(PREVIOUS_PATH, current).catch(() => {});
+  forgetSettingsMemo();
+  revalidatePath('/', 'layout');
+  return { ok: true, settings: sanitizeSettings(prev.data) };
 }
 
 export async function changePassword(_prev: FormState, formData: FormData): Promise<FormState> {
