@@ -10,6 +10,10 @@ import { isAdmin } from '@/lib/admin/session';
 // the secrets are stored. A sign-in link emailed to the visitor signs in any other device (and proves the
 // email is theirs). The admin approves per category or for everything.
 
+/** Typing this code (case-insensitive, leading # optional) when requesting access grants it immediately. Change it here. */
+const INSTANT_ACCESS_CODE = 'YaakovAccess';
+export const isInstantCode = (raw: string | undefined) => (raw ?? '').trim().replace(/^#/, '').toLowerCase() === INSTANT_ACCESS_CODE.toLowerCase();
+
 export const VISITOR_COOKIE = 've_visitor';
 /** About 13 months: the longest a browser will keep a cookie (Chrome caps it at 400 days). Renewed on every visit. */
 export const VISITOR_MAX_AGE = 60 * 60 * 24 * 400;
@@ -134,12 +138,19 @@ export async function accessStates(ids: string[]): Promise<Record<string, Access
 
 export const hasAccess = async (categoryId: string) => (await accessState(categoryId)).state === 'approved';
 
-export interface Contact { name: string; email: string; phone: string }
+export interface Contact { name: string; email: string; phone: string; code: string }
 export type RequestResult =
   | { ok: true; signedIn: boolean; record: AccessRequest; emailTo?: string; existingEmail?: boolean }
   | { ok: false; error: string };
 
-function addCategory(rec: AccessRequest, categoryId: string): string | null {
+function addCategory(rec: AccessRequest, categoryId: string, instant = false): string | null {
+  if (instant) {
+    if (!rec.granted.includes(categoryId)) rec.granted.push(categoryId);
+    rec.requested = rec.requested.filter((c) => c !== categoryId);
+    rec.denied = rec.denied.filter((c) => c !== categoryId);
+    if (rec.deniedAt) delete rec.deniedAt[categoryId];
+    return null;
+  }
   const info = stateFrom(rec, categoryId);
   if (info.state === 'denied' && info.retryAt && new Date(info.retryAt).getTime() > Date.now()) {
     const mins = Math.max(1, Math.ceil((new Date(info.retryAt).getTime() - Date.now()) / 60_000));
@@ -175,19 +186,20 @@ export async function createOrUpdateRequest(contact: Partial<Contact>, categoryI
   const now = new Date().toISOString();
   const current = await visitorRecord();
   const email = contact.email ? cleanEmail(contact.email) : null;
-  const phone = contact.phone ? cleanPhone(contact.phone) : null;
+  const phone = contact.phone?.trim() ? cleanPhone(contact.phone) : null;
+  if (contact.phone?.trim() && !phone) return { ok: false, error: 'Please enter a valid phone number, or leave it blank.' };
+  const instant = isInstantCode(contact.code);
 
   if (current) {
-    const err = addCategory(current, categoryId);
+    const err = addCategory(current, categoryId, instant);
     if (err) return { ok: false, error: err };
     if (!current.email) {
       // Older records were name-only: ask for the contact details once.
       if (!email) return { ok: false, error: 'Please enter a valid email address.' };
-      if (!phone) return { ok: false, error: 'Please enter a valid phone number.' };
       const other = await recordByEmail(email);
       if (other && other.id !== current.id) return { ok: false, error: 'That email is already registered — use “Sign in” instead.' };
       current.email = email;
-      current.phone = phone;
+      if (phone) current.phone = phone;
       await writeJson(emailPath(email), { id: current.id });
     }
     current.updatedAt = now;
@@ -198,11 +210,10 @@ export async function createOrUpdateRequest(contact: Partial<Contact>, categoryI
   const name = cleanName(contact.name ?? '');
   if (name.length < 2) return { ok: false, error: 'Please type your name.' };
   if (!email) return { ok: false, error: 'Please enter a valid email address.' };
-  if (!phone) return { ok: false, error: 'Please enter a valid phone number.' };
 
   const known = await recordByEmail(email);
   if (known) {
-    const err = addCategory(known, categoryId);
+    const err = addCategory(known, categoryId, instant);
     if (err) return { ok: false, error: err };
     known.updatedAt = now;
     await writeJson(recordPath(known.id), known);
@@ -212,7 +223,7 @@ export async function createOrUpdateRequest(contact: Partial<Contact>, categoryI
   if ((await listPaths(PREFIX, MAX_REQUESTS + 1)).length > MAX_REQUESTS) return { ok: false, error: 'Too many open requests right now. Please try again later.' };
   const id = randomBytes(12).toString('hex');
   const secret = randomBytes(24).toString('base64url');
-  const rec: AccessRequest = { id, name, email, phone, secretHash: sha(secret), requested: [categoryId], granted: [], denied: [], all: false, createdAt: now, updatedAt: now };
+  const rec: AccessRequest = { id, name, email, ...(phone ? { phone } : {}), secretHash: sha(secret), requested: instant ? [] : [categoryId], granted: instant ? [categoryId] : [], denied: [], all: false, createdAt: now, updatedAt: now };
   await writeJson(recordPath(id), rec);
   await writeJson(emailPath(email), { id });
   (await cookies()).set(VISITOR_COOKIE, `${id}.${secret}`, visitorCookieOptions());
