@@ -9,7 +9,8 @@ import { extractSpecs } from '@/lib/cars/specs';
 import { extractWeaponSpecs } from '@/lib/weapons/pick';
 import type { CarSpec } from '@/lib/cars/types';
 import { condense, type Condensed } from './condense';
-import { urlOf, type NewsTopic } from './slug';
+import { cached } from './cache';
+import { hashOf, urlOf, type NewsTopic } from './slug';
 
 export const TOPICS: Record<NewsTopic, { name: string; path: string; accent: string; sources: CarSource[] }> = {
   cars: { name: 'Latest Car Reveals', path: '/cars', accent: '#818cf8', sources: CAR_SOURCES },
@@ -43,6 +44,14 @@ const meta = (html: string, name: string) =>
   html.match(new RegExp(`<meta[^>]+(?:property|name)=["']${name}["'][^>]*content=["']([^"']*)["']`, 'i'))?.[1] ??
   html.match(new RegExp(`<meta[^>]+content=["']([^"']*)["'][^>]*(?:property|name)=["']${name}["']`, 'i'))?.[1];
 
+/** The text from `open` to the next `close` (no regex: this runs over whole pages). */
+function between(html: string, open: string, close: string): string | undefined {
+  const a = html.indexOf(open);
+  if (a < 0) return undefined;
+  const b = html.indexOf(close, a);
+  return html.slice(a, b < 0 ? undefined : b + close.length);
+}
+
 interface Page { blocks: Block[]; title?: string; image?: string; publishedAt?: string }
 
 /** Many feeds only carry a teaser. For those, read the story's own page and take its article text and pictures (server side, cached like the feeds). */
@@ -55,9 +64,9 @@ async function fromPage(url: string): Promise<Page> {
     });
     const type = res.headers.get('content-type') ?? '';
     if (!res.ok || !/html/i.test(type)) return { blocks: [] };
-    const page = (await res.text()).slice(0, 2_000_000);
+    const page = (await res.text()).slice(0, 1_200_000);
     const title = stripHtml(decodeEntities(meta(page, 'og:title') ?? page.match(/<title[^>]*>([^<]*)/i)?.[1] ?? ''));
-    const body = page.match(/<article\b[\s\S]*?<\/article>/i)?.[0] ?? page.match(/<main\b[\s\S]*?<\/main>/i)?.[0];
+    const body = between(page, '<article', '</article>') ?? between(page, '<main', '</main>');
     const when = new Date(meta(page, 'article:published_time') ?? meta(page, 'datePublished') ?? '');
     return {
       blocks: body ? toBlocks(body, title, res.url || url) : [],
@@ -86,25 +95,23 @@ function tidy(blocks: Block[]): Block[] {
 
 const host = (u: string) => new URL(u).hostname.replace(/^www\./, '');
 
-/**
- * The story behind a card: its address carries the original link, so only that link's publisher is contacted (its feed, for the
- * headline, picture, date and text, and the story's own page, for the full text). Only publishers on the topic's own list are ever
- * fetched. Every change in the feeds flows through here automatically: nothing is stored by hand.
- */
-export async function loadStory(topic: NewsTopic, slug: string): Promise<Story | null> {
+async function build(topic: NewsTopic, url: string): Promise<Story | null> {
   const cfg = TOPICS[topic];
-  const url = cfg && urlOf(slug);
-  if (!cfg || !url) return null;
   const h = host(url);
   const source = cfg.sources.find((s) => { const sh = host(s.home); return h === sh || h.endsWith(`.${sh}`); });
   if (!source) return null;
-  const [xml, page] = await Promise.all([pull(source.feed), fromPage(url)]);
-  const art = xml ? parseArticles(xml, source).find((a) => a.url === url) : undefined;
-  const title = art?.title ?? page.title;
+  // The story's own page usually has everything (text, pictures, headline); the publisher's feed is only read when it doesn't.
+  const page = await fromPage(url);
+  let blocks = tidy(page.blocks);
+  let art: Article | undefined;
+  if (!page.title || words(blocks) < 150) {
+    const xml = await pull(source.feed);
+    art = xml ? parseArticles(xml, source).find((a) => a.url === url) : undefined;
+    const feedBlocks = tidy(art?.blocks ?? []);
+    if (words(feedBlocks) >= words(blocks)) blocks = feedBlocks;
+  }
+  const title = art?.title ?? page.title?.replace(new RegExp(`\\s*[|–—-]\\s*${source.name.replace(/[^\w ]/g, '.')}.*$`, 'i'), '');
   if (!title) return null;
-  let blocks = tidy(art?.blocks ?? []);
-  const fuller = tidy(page.blocks);
-  if (words(blocks) < 150 && words(fuller) > words(blocks) * 1.5) blocks = fuller;
   const text = [title, ...blocks.map((b) => (b.t === 'img' ? '' : b.v))].join('. ');
   const facts = topic === 'cars' ? extractSpecs(text, 6) : topic === 'weapons' ? extractWeaponSpecs(text, /\b(knife|blade|folder)\b/i.test(title)) : [];
   const image = art?.image ?? page.image;
@@ -112,4 +119,15 @@ export async function loadStory(topic: NewsTopic, slug: string): Promise<Story |
     url, title, source: source.name, home: source.home, publishedAt: art?.publishedAt ?? page.publishedAt ?? new Date().toISOString(), image,
     ...condense(blocks, title, image), facts: facts.length >= 2 || (facts.length === 1 && facts[0].kind !== 'drive') ? facts : [], partial: words(blocks) < 150,
   };
+}
+
+/**
+ * The story behind a card: its address carries the original link, so only that link's publisher is contacted, and only
+ * publishers on the topic's own list. A built story is kept for an hour (in memory and in the store), so opening it again,
+ * or a crowd opening it, costs almost nothing. Every change in the feeds flows through here automatically.
+ */
+export async function loadStory(topic: NewsTopic, slug: string): Promise<Story | null> {
+  const url = TOPICS[topic] && urlOf(slug);
+  if (!url) return null;
+  return cached<Story>(`news-cache/story-${topic}-${hashOf(url)}.json`, 3600_000, () => build(topic, url));
 }
