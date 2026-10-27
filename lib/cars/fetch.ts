@@ -1,60 +1,27 @@
 import 'server-only';
-import { isBlobConfigured, readJson, writeJson } from '@/lib/admin/store';
-import { cached } from '@/lib/news/cache';
-import { parseFeed } from './parse';
-import { enrich, selectFeed, type Selection } from './pick';
-import { SOURCES } from './sources';
-import type { CarItem } from './types';
-
-/** Backups are written at most every 30 minutes (each write is a storage operation). */
-let lastSaved = 0;
-const SNAPSHOT = 'cars/latest.json';
-
-async function pull(url: string): Promise<string | null> {
-  try {
-    const res = await fetch(url, {
-      headers: { 'user-agent': 'Mozilla/5.0 (compatible; yaakoveisenberger.com car feed)', accept: 'application/rss+xml, application/xml, text/xml' },
-      signal: AbortSignal.timeout(8000),
-      next: { revalidate: 1800 },
-    });
-    return res.ok ? await res.text() : null;
-  } catch {
-    return null;
-  }
-}
-
-/** Pulls every source's feed in parallel; a site that is down is just skipped. */
-async function live(): Promise<CarItem[]> {
-  const now = Date.now();
-  const batches = await Promise.all(
-    SOURCES.map(async (s) => {
-      const xml = await pull(s.feed);
-      return xml ? parseFeed(xml, s) : [];
-    }),
-  );
-  return batches.flat().map((r) => enrich(r, now)).filter((i): i is CarItem => i !== null);
-}
+import { isLiveStore } from '@/lib/admin/store';
+import { buildCars } from '@/lib/news/build';
+import { readNews } from '@/lib/news/article';
+import type { Selection } from './pick';
 
 export interface CarFeed extends Selection {
   updatedAt: string;
   stale: boolean;
 }
 
+const STALE_MS = 3 * 3600_000;
+
 /**
- * The feed for /cars. Pages that call this are cached for 30 minutes (ISR). If every site is unreachable, the last good
- * snapshot saved in the private Blob store is shown instead, so the page is never empty.
+ * The feed for /cars. On the live site this only reads the saved list that the scheduled GitHub Action rebuilds every 30
+ * minutes (a visitor's request must stay far under the Cloudflare free plan's 10 ms CPU limit). Local development builds live.
  */
 export async function loadCarFeed(): Promise<CarFeed> {
-  const now = Date.now();
-  // Rebuilt at most every 20 minutes; every visit in between is served from the saved result.
-  const fresh = await cached<CarFeed>('news-cache/cars-feed.json', 20 * 60_000, async () => {
-    const items = await live();
-    if (items.length < 3) return null;
-    if (isBlobConfigured && now - lastSaved > 6 * 3600_000) { lastSaved = now; writeJson(SNAPSHOT, { savedAt: now, items }).catch(() => {}); }
-    return { ...selectFeed(items, now, 16, 0), updatedAt: new Date(now).toISOString(), stale: false };
-  });
-  if (fresh) return fresh;
-  const snap = await readJson<{ savedAt: number; items: CarItem[] }>(SNAPSHOT);
-  if (snap?.items?.length) return { ...selectFeed(snap.items, snap.savedAt, 16, 0), updatedAt: new Date(snap.savedAt).toISOString(), stale: true };
-  return { thisWeek: [], earlier: [], updatedAt: new Date(now).toISOString(), stale: true };
+  if (!isLiveStore) {
+    const sel = await buildCars();
+    if (sel) return { ...sel, updatedAt: new Date().toISOString(), stale: false };
+  } else {
+    const saved = await readNews<{ at: number; v: Selection }>('news/cars-feed.json');
+    if (saved) return { ...saved.v, updatedAt: new Date(saved.at).toISOString(), stale: Date.now() - saved.at > STALE_MS };
+  }
+  return { thisWeek: [], earlier: [], updatedAt: new Date().toISOString(), stale: true };
 }
