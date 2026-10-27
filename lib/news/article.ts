@@ -6,9 +6,12 @@ import { SOURCES as WEAPON_SOURCES } from '@/lib/weapons/sources';
 import type { CarSource } from '@/lib/cars/types';
 import { extractSpecs } from '@/lib/cars/specs';
 import { extractWeaponSpecs } from '@/lib/weapons/pick';
-import type { CarSpec } from '@/lib/cars/types';
+import type { CarItem, CarSpec } from '@/lib/cars/types';
 import { condense, type Condensed } from './condense';
-import { slugOf, type NewsTopic } from './slug';
+import { isRedirect, slugOf, type NewsTopic } from './slug';
+import { loadCarFeed } from '@/lib/cars/fetch';
+import { loadTechFeed } from '@/lib/tech/fetch';
+import { loadWeaponsFeed } from '@/lib/weapons/fetch';
 
 export const TOPICS: Record<NewsTopic, { name: string; path: string; accent: string; sources: CarSource[] }> = {
   cars: { name: 'Latest Car Reveals', path: '/cars', accent: '#818cf8', sources: CAR_SOURCES },
@@ -70,25 +73,39 @@ function tidy(blocks: Block[]): Block[] {
   return out;
 }
 
-/** Finds a story by the id in its address, in its topic's feeds, and returns it as the feed gave it: all of the text, in order, with its pictures. */
+/** Every story the topic page is showing (the same lists the cards come from, saved copy included), so a card always finds its story. */
+async function listed(topic: NewsTopic): Promise<CarItem[]> {
+  if (topic === 'cars') { const f = await loadCarFeed(); return [...f.thisWeek, ...f.earlier]; }
+  if (topic === 'tech') { const f = await loadTechFeed(); return [...f.samsung, ...f.apple, ...f.more]; }
+  const f = await loadWeaponsFeed();
+  return [...f.handguns, ...f.longguns, ...f.knives, ...f.rights];
+}
+
+/**
+ * The story behind a card, found by the id in its address. The card list gives the headline, picture, source and date, so a story
+ * always opens; the text comes from the publisher's feed, or failing that from the story's own page, or failing that is the
+ * excerpt the card showed. Every change in the feeds flows through here automatically: nothing is stored by hand.
+ */
 export async function loadStory(topic: NewsTopic, slug: string): Promise<Story | null> {
   const cfg = TOPICS[topic];
   if (!cfg || !/^[a-z0-9]{4,20}$/.test(slug)) return null;
-  for (const batch of await Promise.all(cfg.sources.map(async (s) => { const xml = await pull(s.feed); return xml ? parseArticles(xml, s) : []; }))) {
-    const hit = batch.find((a) => slugOf(a.url) === slug);
-    if (hit) {
-      let blocks = tidy(hit.blocks);
-      if (words(blocks) < 150 && !/^https?:\/\/news\.google\./i.test(hit.url)) {
-        const page = tidy(await fromPage(hit.url, hit.title));
-        if (words(page) > words(blocks) * 1.5) blocks = page;
-      }
-      const text = blocks.map((b) => (b.t === 'img' ? '' : b.v)).join(' ');
-      let facts = topic === 'cars' ? extractSpecs(text) : topic === 'weapons' ? extractWeaponSpecs(text, /\b(knife|blade|folder)\b/i.test(hit.title)) : [];
-      if (facts.length < 2) facts = [];
-      const { blocks: _raw, ...rest } = hit;
-      void _raw;
-      return { ...rest, ...condense(blocks, hit.title, hit.image), facts: facts.slice(0, 6), partial: words(blocks) < 150 };
-    }
+  const item = (await listed(topic)).find((i) => slugOf(i.url) === slug);
+  if (!item) return null;
+  const source = cfg.sources.find((x) => x.name === item.source);
+  let blocks: Block[] = [];
+  if (source) {
+    const xml = await pull(source.feed);
+    blocks = tidy((xml ? parseArticles(xml, source).find((a) => a.url === item.url)?.blocks : undefined) ?? []);
   }
-  return null;
+  if (words(blocks) < 150 && !isRedirect(item.url)) {
+    const page = tidy(await fromPage(item.url, item.title));
+    if (words(page) > words(blocks) * 1.5) blocks = page;
+  }
+  if (!blocks.some((b) => b.t === 'p') && item.excerpt) blocks = [{ t: 'p', v: item.excerpt }];
+  const text = [item.title, ...blocks.map((b) => (b.t === 'img' ? '' : b.v))].join('. ');
+  const facts = topic === 'cars' ? extractSpecs(text, 6) : topic === 'weapons' ? extractWeaponSpecs(text, /\b(knife|blade|folder)\b/i.test(item.title)) : [];
+  return {
+    url: item.url, title: item.title, source: item.source, home: source?.home ?? new URL(item.url).origin, publishedAt: item.publishedAt, image: item.image,
+    ...condense(blocks, item.title, item.image), facts: facts.length >= 2 || (facts.length === 1 && facts[0].kind !== 'drive') ? facts : [], partial: words(blocks) < 150,
+  };
 }
