@@ -15,9 +15,12 @@ export function decodeEntities(s: string): string {
   });
 }
 
+// A tag, however its quoted attributes look (a '>' inside quotes does not end it).
+export const TAG = /<[a-zA-Z/!][^>"']*(?:(?:"[^"]*"|'[^']*')[^>"']*)*>/g;
+
 export function stripHtml(html: string): string {
   const noBlocks = html.replace(/<(script|style|iframe|noscript)[\s\S]*?<\/\1>/gi, ' ');
-  const text = decodeEntities(noBlocks.replace(/<[^>]*>/g, ' '));
+  const text = decodeEntities(noBlocks.replace(TAG, ' '));
   // Decoding can reveal new angle brackets (&lt;script&gt;): that is fine, it is only ever shown as text.
   return text
     .replace(/The post .{0,160}? appeared first on .{0,80}?\.?\s*$/i, '')

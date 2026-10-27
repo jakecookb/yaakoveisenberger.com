@@ -70,7 +70,7 @@ export function CarCard({ car, topic, featured, accent = '#818cf8', className = 
           </ul>
         )}
         <span className={`items-center gap-1 text-sm font-medium text-[var(--accent)] inline-flex`}>
-          {external ? 'Read the full story' : 'Read the summary'} <ArrowUpRight className="size-4 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" aria-hidden />
+          {external ? 'Read the full story' : 'Read the story'} <ArrowUpRight className="size-4 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" aria-hidden />
         </span>
       </div>
     </Tag>
