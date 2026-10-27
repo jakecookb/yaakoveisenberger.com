@@ -1,5 +1,6 @@
 import 'server-only';
 import { isBlobConfigured, readJson, writeJson } from '@/lib/admin/store';
+import { cached } from '@/lib/news/cache';
 import { parseFeed } from '@/lib/cars/parse';
 import type { CarItem } from '@/lib/cars/types';
 import { enrichTech, selectTech, type TechSelection } from './pick';
@@ -30,12 +31,14 @@ export interface TechFeed extends TechSelection {
 /** Same approach as the car feed: pages are cached for 30 minutes; if every site is down the last saved list is shown. */
 export async function loadTechFeed(): Promise<TechFeed> {
   const now = Date.now();
-  const batches = await Promise.all(SOURCES.map(async (s) => { const xml = await pull(s.feed); return xml ? parseFeed(xml, s) : []; }));
-  const items = batches.flat().map((r) => enrichTech(r, now)).filter((i): i is CarItem => i !== null);
-  if (items.length >= 3) {
+  const fresh = await cached<TechFeed>('news-cache/tech-feed.json', 20 * 60_000, async () => {
+    const batches = await Promise.all(SOURCES.map(async (s) => { const xml = await pull(s.feed); return xml ? parseFeed(xml, s) : []; }));
+    const items = batches.flat().map((r) => enrichTech(r, now)).filter((i): i is CarItem => i !== null);
+    if (items.length < 3) return null;
     if (isBlobConfigured && now - lastSaved > 6 * 3600_000) { lastSaved = now; writeJson(SNAPSHOT, { savedAt: now, items }).catch(() => {}); }
     return { ...selectTech(items, now), updatedAt: new Date(now).toISOString(), stale: false };
-  }
+  });
+  if (fresh) return fresh;
   const snap = await readJson<{ savedAt: number; items: CarItem[] }>(SNAPSHOT);
   if (snap?.items?.length) return { ...selectTech(snap.items, snap.savedAt), updatedAt: new Date(snap.savedAt).toISOString(), stale: true };
   return { samsung: [], apple: [], more: [], updatedAt: new Date(now).toISOString(), stale: true };

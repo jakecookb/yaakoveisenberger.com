@@ -10,6 +10,13 @@ export function slugOf(url: string): string {
   return btoa(url).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
+/** A short hash of a link, for cache file names. */
+export function hashOf(url: string): string {
+  let a = 0x811c9dc5, b = 5381;
+  for (let i = 0; i < url.length; i++) { const c = url.charCodeAt(i); a = Math.imul(a ^ c, 16777619); b = Math.imul(b, 33) ^ c; }
+  return (a >>> 0).toString(36) + (b >>> 0).toString(36);
+}
+
 /** The original link inside a story address, or undefined if it isn't one. */
 export function urlOf(slug: string): string | undefined {
   try {

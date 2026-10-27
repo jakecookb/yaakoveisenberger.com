@@ -1,5 +1,6 @@
 import 'server-only';
 import { isBlobConfigured, readJson, writeJson } from '@/lib/admin/store';
+import { cached } from '@/lib/news/cache';
 import { parseFeed } from './parse';
 import { enrich, selectFeed, type Selection } from './pick';
 import { SOURCES } from './sources';
@@ -45,11 +46,14 @@ export interface CarFeed extends Selection {
  */
 export async function loadCarFeed(): Promise<CarFeed> {
   const now = Date.now();
-  const items = await live();
-  if (items.length >= 3) {
+  // Rebuilt at most every 20 minutes; every visit in between is served from the saved result.
+  const fresh = await cached<CarFeed>('news-cache/cars-feed.json', 20 * 60_000, async () => {
+    const items = await live();
+    if (items.length < 3) return null;
     if (isBlobConfigured && now - lastSaved > 6 * 3600_000) { lastSaved = now; writeJson(SNAPSHOT, { savedAt: now, items }).catch(() => {}); }
     return { ...selectFeed(items, now, 16, 0), updatedAt: new Date(now).toISOString(), stale: false };
-  }
+  });
+  if (fresh) return fresh;
   const snap = await readJson<{ savedAt: number; items: CarItem[] }>(SNAPSHOT);
   if (snap?.items?.length) return { ...selectFeed(snap.items, snap.savedAt, 16, 0), updatedAt: new Date(snap.savedAt).toISOString(), stale: true };
   return { thisWeek: [], earlier: [], updatedAt: new Date(now).toISOString(), stale: true };

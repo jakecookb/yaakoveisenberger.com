@@ -1,5 +1,6 @@
 import 'server-only';
 import { isBlobConfigured, readJson, writeJson } from '@/lib/admin/store';
+import { cached } from '@/lib/news/cache';
 import { parseFeed } from '@/lib/cars/parse';
 import { enrichWeapon, selectWeapons, type WeaponItem, type WeaponsSelection } from './pick';
 import { SOURCES, type WeaponSource } from './sources';
@@ -44,12 +45,14 @@ export interface WeaponsFeed extends WeaponsSelection {
 /** Same approach as the car feed: cached for 30 minutes; if every site is down, the last saved list is shown. */
 export async function loadWeaponsFeed(): Promise<WeaponsFeed> {
   const now = Date.now();
-  const batches = await Promise.all(SOURCES.map(async (s) => { const xml = await pull(s.feed); return xml ? fromSource(s, xml, now) : []; }));
-  const items = batches.flat();
-  if (items.length >= 8) {
+  const fresh = await cached<WeaponsFeed>('news-cache/weapons-feed.json', 20 * 60_000, async () => {
+    const batches = await Promise.all(SOURCES.map(async (s) => { const xml = await pull(s.feed); return xml ? fromSource(s, xml, now) : []; }));
+    const items = batches.flat();
+    if (items.length < 8) return null;
     if (isBlobConfigured && now - lastSaved > 6 * 3600_000) { lastSaved = now; writeJson(SNAPSHOT, { savedAt: now, items }).catch(() => {}); }
     return { ...selectWeapons(items), updatedAt: new Date(now).toISOString(), stale: false };
-  }
+  });
+  if (fresh) return fresh;
   const snap = await readJson<{ savedAt: number; items: WeaponItem[] }>(SNAPSHOT);
   if (snap?.items?.length) return { ...selectWeapons(snap.items), updatedAt: new Date(snap.savedAt).toISOString(), stale: true };
   return { handguns: [], longguns: [], knives: [], rights: [], updatedAt: new Date(now).toISOString(), stale: true };
