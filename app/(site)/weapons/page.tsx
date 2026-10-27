@@ -21,7 +21,7 @@ export default async function WeaponsPage() {
         </div>
         <WeaponsFeed feed={feed} />
         <p className="mt-12 text-xs leading-relaxed text-neutral-500">
-          Headlines link to the original stories at {names.join(', ')}, plus Google News searches for knife-law and permit-reciprocity coverage.
+          Each story opens a short summary here, with a link to the original at {names.join(', ')}, plus Google News searches for knife-law and permit-reciprocity coverage.
           News only — not legal advice; laws change, so check your state’s current rules before you carry or travel. Updated automatically every 30 minutes{feed.stale ? ' (showing the last saved list right now)' : ''}.
         </p>
       </div>

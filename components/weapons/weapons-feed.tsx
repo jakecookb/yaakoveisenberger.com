@@ -45,7 +45,7 @@ export function WeaponsFeed({ feed }: { feed: WeaponsSelection }) {
       <p className="mt-4 text-sm text-neutral-500">{info.hint}</p>
       <div id="weapons-panel" role="tabpanel" aria-label={info.label} className={`mt-5 ${NEWS_GRID}`}>
         {items.length === 0 && <p className="col-span-full rounded-3xl bg-neutral-900/70 p-8 text-center text-neutral-400 ring-1 ring-white/10">No fresh stories in this section right now — check back soon.</p>}
-        {items.map((c, i) => <CarCard key={c.id} car={c} accent={ACCENT} featured={i === 0 && items.length > 2} className={phoneOrphan(i, items.length, items.length > 2)} />)}
+        {items.map((c, i) => <CarCard topic="weapons" key={c.id} car={c} accent={ACCENT} featured={i === 0 && items.length > 2} className={phoneOrphan(i, items.length, items.length > 2)} />)}
       </div>
     </div>
   );
