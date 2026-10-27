@@ -1,17 +1,15 @@
 import 'server-only';
 import { parseArticles, toBlocks, type Article, type Block } from '@/lib/cars/parse';
+import { decodeEntities, safeUrl, stripHtml } from '@/lib/cars/text';
 import { SOURCES as CAR_SOURCES } from '@/lib/cars/sources';
 import { SOURCES as TECH_SOURCES } from '@/lib/tech/sources';
 import { SOURCES as WEAPON_SOURCES } from '@/lib/weapons/sources';
 import type { CarSource } from '@/lib/cars/types';
 import { extractSpecs } from '@/lib/cars/specs';
 import { extractWeaponSpecs } from '@/lib/weapons/pick';
-import type { CarItem, CarSpec } from '@/lib/cars/types';
+import type { CarSpec } from '@/lib/cars/types';
 import { condense, type Condensed } from './condense';
-import { isRedirect, slugOf, type NewsTopic } from './slug';
-import { loadCarFeed } from '@/lib/cars/fetch';
-import { loadTechFeed } from '@/lib/tech/fetch';
-import { loadWeaponsFeed } from '@/lib/weapons/fetch';
+import { urlOf, type NewsTopic } from './slug';
 
 export const TOPICS: Record<NewsTopic, { name: string; path: string; accent: string; sources: CarSource[] }> = {
   cars: { name: 'Latest Car Reveals', path: '/cars', accent: '#818cf8', sources: CAR_SOURCES },
@@ -23,7 +21,7 @@ async function pull(url: string): Promise<string | null> {
   try {
     const res = await fetch(url, {
       headers: { 'user-agent': 'Mozilla/5.0 (compatible; yaakoveisenberger.com news pages)', accept: 'application/rss+xml, application/xml, text/xml' },
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(6000),
       next: { revalidate: 1800 }, // the same cached copy the topic pages use
     });
     return res.ok ? await res.text() : null;
@@ -41,21 +39,34 @@ export interface Story extends Omit<Article, 'blocks'>, Condensed {
 
 const words = (blocks: Block[]) => blocks.reduce((n, b) => n + (b.t === 'p' ? b.v.split(/\s+/).length : 0), 0);
 
+const meta = (html: string, name: string) =>
+  html.match(new RegExp(`<meta[^>]+(?:property|name)=["']${name}["'][^>]*content=["']([^"']*)["']`, 'i'))?.[1] ??
+  html.match(new RegExp(`<meta[^>]+content=["']([^"']*)["'][^>]*(?:property|name)=["']${name}["']`, 'i'))?.[1];
+
+interface Page { blocks: Block[]; title?: string; image?: string; publishedAt?: string }
+
 /** Many feeds only carry a teaser. For those, read the story's own page and take its article text and pictures (server side, cached like the feeds). */
-async function fromPage(url: string, title: string): Promise<Block[]> {
+async function fromPage(url: string): Promise<Page> {
   try {
     const res = await fetch(url, {
       headers: { 'user-agent': 'Mozilla/5.0 (compatible; yaakoveisenberger.com news pages)', accept: 'text/html' },
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(6000),
       next: { revalidate: 1800 },
     });
     const type = res.headers.get('content-type') ?? '';
-    if (!res.ok || !/html/i.test(type)) return [];
+    if (!res.ok || !/html/i.test(type)) return { blocks: [] };
     const page = (await res.text()).slice(0, 2_000_000);
+    const title = stripHtml(decodeEntities(meta(page, 'og:title') ?? page.match(/<title[^>]*>([^<]*)/i)?.[1] ?? ''));
     const body = page.match(/<article\b[\s\S]*?<\/article>/i)?.[0] ?? page.match(/<main\b[\s\S]*?<\/main>/i)?.[0];
-    return body ? toBlocks(body, title, res.url || url) : [];
+    const when = new Date(meta(page, 'article:published_time') ?? meta(page, 'datePublished') ?? '');
+    return {
+      blocks: body ? toBlocks(body, title, res.url || url) : [],
+      title: title || undefined,
+      image: safeUrl(meta(page, 'og:image') ? decodeEntities(meta(page, 'og:image')!) : undefined),
+      publishedAt: Number.isNaN(when.getTime()) ? undefined : when.toISOString(),
+    };
   } catch {
-    return [];
+    return { blocks: [] };
   }
 }
 
@@ -73,39 +84,32 @@ function tidy(blocks: Block[]): Block[] {
   return out;
 }
 
-/** Every story the topic page is showing (the same lists the cards come from, saved copy included), so a card always finds its story. */
-async function listed(topic: NewsTopic): Promise<CarItem[]> {
-  if (topic === 'cars') { const f = await loadCarFeed(); return [...f.thisWeek, ...f.earlier]; }
-  if (topic === 'tech') { const f = await loadTechFeed(); return [...f.samsung, ...f.apple, ...f.more]; }
-  const f = await loadWeaponsFeed();
-  return [...f.handguns, ...f.longguns, ...f.knives, ...f.rights];
-}
+const host = (u: string) => new URL(u).hostname.replace(/^www\./, '');
 
 /**
- * The story behind a card, found by the id in its address. The card list gives the headline, picture, source and date, so a story
- * always opens; the text comes from the publisher's feed, or failing that from the story's own page, or failing that is the
- * excerpt the card showed. Every change in the feeds flows through here automatically: nothing is stored by hand.
+ * The story behind a card: its address carries the original link, so only that link's publisher is contacted (its feed, for the
+ * headline, picture, date and text, and the story's own page, for the full text). Only publishers on the topic's own list are ever
+ * fetched. Every change in the feeds flows through here automatically: nothing is stored by hand.
  */
 export async function loadStory(topic: NewsTopic, slug: string): Promise<Story | null> {
   const cfg = TOPICS[topic];
-  if (!cfg || !/^[a-z0-9]{4,20}$/.test(slug)) return null;
-  const item = (await listed(topic)).find((i) => slugOf(i.url) === slug);
-  if (!item) return null;
-  const source = cfg.sources.find((x) => x.name === item.source);
-  let blocks: Block[] = [];
-  if (source) {
-    const xml = await pull(source.feed);
-    blocks = tidy((xml ? parseArticles(xml, source).find((a) => a.url === item.url)?.blocks : undefined) ?? []);
-  }
-  if (words(blocks) < 150 && !isRedirect(item.url)) {
-    const page = tidy(await fromPage(item.url, item.title));
-    if (words(page) > words(blocks) * 1.5) blocks = page;
-  }
-  if (!blocks.some((b) => b.t === 'p') && item.excerpt) blocks = [{ t: 'p', v: item.excerpt }];
-  const text = [item.title, ...blocks.map((b) => (b.t === 'img' ? '' : b.v))].join('. ');
-  const facts = topic === 'cars' ? extractSpecs(text, 6) : topic === 'weapons' ? extractWeaponSpecs(text, /\b(knife|blade|folder)\b/i.test(item.title)) : [];
+  const url = cfg && urlOf(slug);
+  if (!cfg || !url) return null;
+  const h = host(url);
+  const source = cfg.sources.find((s) => { const sh = host(s.home); return h === sh || h.endsWith(`.${sh}`); });
+  if (!source) return null;
+  const [xml, page] = await Promise.all([pull(source.feed), fromPage(url)]);
+  const art = xml ? parseArticles(xml, source).find((a) => a.url === url) : undefined;
+  const title = art?.title ?? page.title;
+  if (!title) return null;
+  let blocks = tidy(art?.blocks ?? []);
+  const fuller = tidy(page.blocks);
+  if (words(blocks) < 150 && words(fuller) > words(blocks) * 1.5) blocks = fuller;
+  const text = [title, ...blocks.map((b) => (b.t === 'img' ? '' : b.v))].join('. ');
+  const facts = topic === 'cars' ? extractSpecs(text, 6) : topic === 'weapons' ? extractWeaponSpecs(text, /\b(knife|blade|folder)\b/i.test(title)) : [];
+  const image = art?.image ?? page.image;
   return {
-    url: item.url, title: item.title, source: item.source, home: source?.home ?? new URL(item.url).origin, publishedAt: item.publishedAt, image: item.image,
-    ...condense(blocks, item.title, item.image), facts: facts.length >= 2 || (facts.length === 1 && facts[0].kind !== 'drive') ? facts : [], partial: words(blocks) < 150,
+    url, title, source: source.name, home: source.home, publishedAt: art?.publishedAt ?? page.publishedAt ?? new Date().toISOString(), image,
+    ...condense(blocks, title, image), facts: facts.length >= 2 || (facts.length === 1 && facts[0].kind !== 'drive') ? facts : [], partial: words(blocks) < 150,
   };
 }
