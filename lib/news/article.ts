@@ -1,6 +1,5 @@
 import 'server-only';
-import { parseArticles, type Article } from '@/lib/cars/parse';
-import { excerpt } from '@/lib/cars/text';
+import { parseArticles, toBlocks, type Article, type Block } from '@/lib/cars/parse';
 import { SOURCES as CAR_SOURCES } from '@/lib/cars/sources';
 import { SOURCES as TECH_SOURCES } from '@/lib/tech/sources';
 import { SOURCES as WEAPON_SOURCES } from '@/lib/weapons/sources';
@@ -16,7 +15,7 @@ export const TOPICS: Record<NewsTopic, { name: string; path: string; accent: str
 async function pull(url: string): Promise<string | null> {
   try {
     const res = await fetch(url, {
-      headers: { 'user-agent': 'Mozilla/5.0 (compatible; yaakoveisenberger.com news summaries)', accept: 'application/rss+xml, application/xml, text/xml' },
+      headers: { 'user-agent': 'Mozilla/5.0 (compatible; yaakoveisenberger.com news pages)', accept: 'application/rss+xml, application/xml, text/xml' },
       signal: AbortSignal.timeout(8000),
       next: { revalidate: 1800 }, // the same cached copy the topic pages use
     });
@@ -26,45 +25,58 @@ async function pull(url: string): Promise<string | null> {
   }
 }
 
-const BUDGET = 950; // characters of summary: the opening of the story, not the story
+export interface Story extends Article {
+  /** True when the feed only gave a line or two, so the page points readers to the original for the rest. */
+  partial: boolean;
+}
 
-/** Keeps whole paragraphs until the budget is used, trimming the last one at a sentence end. */
-function summarize(paragraphs: string[]): string[] {
-  const out: string[] = [];
-  let used = 0;
-  for (const p of paragraphs) {
-    if (used >= BUDGET || out.length >= 5) break;
-    const room = BUDGET - used;
-    if (p.length <= room + 80) { out.push(p); used += p.length; continue; }
-    const cut = p.slice(0, room);
-    const end = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('! '), cut.lastIndexOf('? '));
-    out.push(end > 120 ? cut.slice(0, end + 1) : excerpt(p, room));
-    break;
+const words = (blocks: Block[]) => blocks.reduce((n, b) => n + (b.t === 'p' ? b.v.split(/\s+/).length : 0), 0);
+
+/** Many feeds only carry a teaser. For those, read the story's own page and take its article text and pictures (server side, cached like the feeds). */
+async function fromPage(url: string, title: string): Promise<Block[]> {
+  try {
+    const res = await fetch(url, {
+      headers: { 'user-agent': 'Mozilla/5.0 (compatible; yaakoveisenberger.com news pages)', accept: 'text/html' },
+      signal: AbortSignal.timeout(8000),
+      next: { revalidate: 1800 },
+    });
+    const type = res.headers.get('content-type') ?? '';
+    if (!res.ok || !/html/i.test(type)) return [];
+    const page = (await res.text()).slice(0, 2_000_000);
+    const body = page.match(/<article\b[\s\S]*?<\/article>/i)?.[0] ?? page.match(/<main\b[\s\S]*?<\/main>/i)?.[0];
+    return body ? toBlocks(body, title, res.url || url) : [];
+  } catch {
+    return [];
   }
-  // A feed that cuts its text off mid-sentence would leave a stray fragment ("...too. A"): end on the last whole sentence instead.
-  const last = out[out.length - 1];
-  if (last && !/[.!?"”’)]$/.test(last)) {
-    const end = Math.max(last.lastIndexOf('. '), last.lastIndexOf('! '), last.lastIndexOf('? '));
-    if (end > 40) out[out.length - 1] = last.slice(0, end + 1);
-    else if (out.length > 1) out.pop();
+}
+
+/** A feed that cuts its text off mid-sentence would leave a stray fragment ("...too. A"): end on the last whole sentence instead. */
+function tidy(blocks: Block[]): Block[] {
+  const out = [...blocks];
+  while (out.length && out[out.length - 1].t === 'h') out.pop(); // never end on a subheading
+  const i = out.map((b) => b.t).lastIndexOf('p');
+  const last = out[i];
+  if (last && last.t === 'p' && !/[.!?"”’)]$/.test(last.v)) {
+    const end = Math.max(last.v.lastIndexOf('. '), last.v.lastIndexOf('! '), last.v.lastIndexOf('? '));
+    if (end > 40) out[i] = { t: 'p', v: last.v.slice(0, end + 1) };
+    else out.splice(i, 1);
   }
   return out;
 }
 
-export interface Summary extends Omit<Article, 'paragraphs' | 'images'> {
-  summary: string[];
-  images: string[];
-}
-
-/** Finds a story by the id in its address, in its topic's feeds, and returns the opening of it as a short summary. */
-export async function loadSummary(topic: NewsTopic, slug: string): Promise<Summary | null> {
+/** Finds a story by the id in its address, in its topic's feeds, and returns it as the feed gave it: all of the text, in order, with its pictures. */
+export async function loadStory(topic: NewsTopic, slug: string): Promise<Story | null> {
   const cfg = TOPICS[topic];
   if (!cfg || !/^[a-z0-9]{4,20}$/.test(slug)) return null;
   for (const batch of await Promise.all(cfg.sources.map(async (s) => { const xml = await pull(s.feed); return xml ? parseArticles(xml, s) : []; }))) {
     const hit = batch.find((a) => slugOf(a.url) === slug);
     if (hit) {
-      const { paragraphs, ...rest } = hit;
-      return { ...rest, summary: summarize(paragraphs), images: hit.images };
+      let blocks = tidy(hit.blocks);
+      if (words(blocks) < 150 && !/^https?:\/\/news\.google\./i.test(hit.url)) {
+        const page = tidy(await fromPage(hit.url, hit.title));
+        if (words(page) > words(blocks) * 1.5) blocks = page;
+      }
+      return { ...hit, blocks, partial: words(blocks) < 150 };
     }
   }
   return null;

@@ -1,5 +1,5 @@
 import { XMLParser } from 'fast-xml-parser';
-import { decodeEntities, excerpt, safeUrl, stripHtml } from './text';
+import { decodeEntities, excerpt, safeUrl, stripHtml, TAG } from './text';
 import type { CarItem, CarSource } from './types';
 
 const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '@_', textNodeName: '#text', trimValues: true, processEntities: true, htmlEntities: true });
@@ -59,6 +59,8 @@ export function parseFeed(xml: string, source: CarSource): (Omit<CarItem, 'tags'
   return out;
 }
 
+export type Block = { t: 'p' | 'h'; v: string } | { t: 'img'; v: string };
+
 export interface Article {
   url: string;
   title: string;
@@ -66,15 +68,69 @@ export interface Article {
   home: string;
   publishedAt: string;
   image?: string;
-  images: string[];
-  /** The opening of the story as plain paragraphs, never HTML. */
-  paragraphs: string[];
+  /** The story as the feed gives it, in order: paragraphs, subheadings and pictures. Plain text and validated URLs only, never HTML. */
+  blocks: Block[];
 }
 
-const PARA_SPLIT = /<\/(?:p|h[1-6]|li|div|blockquote)>|<br\s*\/?>/i;
+const PARA_SPLIT = /<\/(?:p|h[1-6]|li|div|blockquote|figure)>|<br\s*\/?>/i;
 const BOILERPLATE = /appeared first on|^read (?:more|the full)|^source:|^(?:via|credit|image|photo)\b|^(?:subscribe|sign up|follow us|advertisement)|\bnewsletter\b/i;
+const NOT_A_PICTURE = /pixel|tracker|spacer|1x1|logo|avatar|icon|emoji|gravatar|badge|sprite|\.svg|\.gif(\?|$)/i;
+const MARK = '\u0001';
 
-/** Like parseFeed, but keeps each story's paragraphs and pictures so a summary page can be built. Plain text and validated URLs only. */
+/** Turns story HTML into ordered blocks. Pictures become markers in the text, and subheadings get one too, so the order survives the tag-stripping. */
+export function toBlocks(html: string, title: string, base?: string): Block[] {
+  const marked = html
+    .replace(TAG, (tag) => tag.replace(/\s+/g, ' ')) // a tag split over several lines must stay one tag
+    .replace(/<(script|style|figcaption|aside|iframe|noscript|table|form|button|nav|header|footer|svg|video|audio)[\s\S]*?<\/\1>/gi, ' ')
+    .replace(/<source\b[^>]*>/gi, ' ')
+    .replace(new RegExp(TAG.source.replace('[a-zA-Z/!]', 'img\\b'), 'gi'), (tag) => {
+      const pick = (name: string) => tag.match(new RegExp(`\\b${name}=["']([^"']+)["']`, 'i'))?.[1];
+      const set = (pick('srcset') ?? pick('data-srcset'))?.split(',').map((x) => x.trim().split(/\s+/)[0]).pop();
+      const raw = pick('data-src') ?? pick('data-lazy-src') ?? pick('src') ?? set;
+      let src: string | undefined;
+      try { src = safeUrl(raw && base ? new URL(decodeEntities(raw), base).toString() : raw); } catch { src = undefined; }
+      const w = Number(pick('width') ?? 999), h = Number(pick('height') ?? 999);
+      return src && !NOT_A_PICTURE.test(src) && w >= 200 && h >= 120 ? `\n${MARK}I${src}${MARK}\n` : ' ';
+    })
+    .replace(/<h[1-6][^>]*>/gi, `\n${MARK}H`);
+  const blocks: Block[] = [];
+  const seen = new Set<string>();
+  for (const chunk of marked.split(PARA_SPLIT)) {
+    for (const part of chunk.split('\n')) {
+      if (part.startsWith(`${MARK}I`)) {
+        const src = part.slice(2).replace(new RegExp(`${MARK}$`), '');
+        if (!seen.has(src)) { seen.add(src); blocks.push({ t: 'img', v: src }); }
+        continue;
+      }
+      const heading = part.startsWith(`${MARK}H`);
+      const v = stripHtml(heading ? part.slice(2) : part);
+      if (heading ? v.length > 2 && v.length < 140 : v.length > 40 && !BOILERPLATE.test(v) && v.toLowerCase() !== title.toLowerCase()) blocks.push({ t: heading ? 'h' : 'p', v });
+    }
+  }
+  return cleanBlocks(blocks);
+}
+
+// Where a page's article ends and its "more stories" furniture begins.
+const FURNITURE = /^(?:related|most popular|more from|you (?:may|might) also|read next|read more|recommended|trending|comments?|latest (?:news|stories)|popular|newsletter|about the author|share this|tags?:?)\b/i;
+const JUNK = /\b(?:class|data-[a-z-]+|srcset|sizes|href)=|we may earn a commission|affiliate|^(?:[\w&.'’-]+(?: [\w&.'’-]+)* , ){2,}/i;
+
+/** Drops page furniture: junk lines, everything from a "Related/Most Popular" heading on, and a trailing run of bare headlines. */
+function cleanBlocks(blocks: Block[]): Block[] {
+  let out = blocks.filter((b) => b.t === 'img' || !JUNK.test(b.v));
+  const cut = out.findIndex((b) => b.t === 'h' && FURNITURE.test(b.v));
+  if (cut > 3) out = out.slice(0, cut);
+  // Story text is sentences; the "more stories" list is Title Case headlines. Tell them apart by length and how many words are capitalised.
+  const sentence = (b: Block) => {
+    if (b.t !== 'p' || !/[.!?"”’)]$/.test(b.v)) return false;
+    const w = b.v.split(/\s+/);
+    return w.length >= 14 && w.filter((x) => /^[A-Z0-9]/.test(x)).length / w.length < 0.55;
+  };
+  let end = out.length;
+  while (end > 0 && !sentence(out[end - 1])) end--; // trailing headlines, pictures and subheadings are not the story
+  return end >= 2 ? out.slice(0, end) : out;
+}
+
+/** Like parseFeed, but keeps each story's text and pictures in reading order so a page can be built from it. */
 export function parseArticles(xml: string, source: CarSource): Article[] {
   let doc: Node;
   try {
@@ -93,15 +149,9 @@ export function parseArticles(xml: string, source: CarSource): Article[] {
     const descHtml = decodeEntities(text(it.description) || text(it.summary));
     const bodyHtml = decodeEntities(text(it['content:encoded']) || text(it.content));
     const html = bodyHtml.length > descHtml.length ? bodyHtml : descHtml;
-    const paragraphs = html
-      .replace(/<(script|style|figure|figcaption|aside|iframe|noscript|table)[\s\S]*?<\/\1>/gi, ' ')
-      .split(PARA_SPLIT)
-      .map(stripHtml)
-      .filter((p) => p.length > 40 && !BOILERPLATE.test(p) && p.toLowerCase() !== title.toLowerCase());
     const image = pickImage(it, html);
-    const images = [image, ...[...html.matchAll(/<img[^>]+src=["']([^"']+)["']/gi)].map((m) => safeUrl(m[1]))]
-      .filter((u): u is string => Boolean(u) && !/pixel|tracker|spacer|1x1|logo|avatar|icon|emoji|gravatar|badge/i.test(u!));
-    out.push({ url, title, source: source.name, home: source.home, publishedAt: when.toISOString(), image, images: [...new Set(images)].slice(0, 4), paragraphs });
+    const blocks = toBlocks(html, title, url);
+    out.push({ url, title, source: source.name, home: source.home, publishedAt: when.toISOString(), image, blocks });
   }
   return out;
 }

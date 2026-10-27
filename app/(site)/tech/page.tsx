@@ -54,7 +54,7 @@ export default async function TechPage() {
         )}
 
         <p className="mt-12 text-xs leading-relaxed text-neutral-500">
-          Each story opens a short summary here, with a link to the original at {SOURCES.map((s) => s.name).join(', ')}. Rumours and leaks are tagged as such and aren&apos;t confirmed. Updated automatically every 30 minutes{feed.stale ? ' (showing the last saved list right now)' : ''}.
+          Each story opens here on the site, with a link to the original at {SOURCES.map((s) => s.name).join(', ')}. Rumours and leaks are tagged as such and aren&apos;t confirmed. Updated automatically every 30 minutes{feed.stale ? ' (showing the last saved list right now)' : ''}.
         </p>
       </div>
     </section>
