@@ -33,6 +33,7 @@ export function CarCard({ car, topic, featured, accent = '#818cf8', className = 
   return (
     <Tag
       href={articleHref(topic, car.url)}
+      {...(external ? {} : { prefetch: false })}
       {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
       data-active={touched}
       onTouchStart={on}

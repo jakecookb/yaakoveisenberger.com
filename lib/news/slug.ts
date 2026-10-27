@@ -2,15 +2,23 @@
 
 export type NewsTopic = 'cars' | 'tech' | 'weapons';
 
-/** A short, stable id for a story, worked out from its original link (two small hashes, so a collision is very unlikely). */
+/**
+ * A story's address carries its original link (base64url), so a story page can go straight to the publisher without first
+ * searching every feed for it. The page only ever fetches links on its own topic's publishers (see loadStory).
+ */
 export function slugOf(url: string): string {
-  let a = 0x811c9dc5, b = 5381;
-  for (let i = 0; i < url.length; i++) {
-    const c = url.charCodeAt(i);
-    a = Math.imul(a ^ c, 16777619);
-    b = Math.imul(b, 33) ^ c;
+  return btoa(url).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+/** The original link inside a story address, or undefined if it isn't one. */
+export function urlOf(slug: string): string | undefined {
+  try {
+    if (!/^[A-Za-z0-9_-]{8,1500}$/.test(slug)) return undefined;
+    const url = new URL(atob(slug.replace(/-/g, '+').replace(/_/g, '/')));
+    return url.protocol === 'https:' && !url.username && !url.password ? url.toString() : undefined;
+  } catch {
+    return undefined;
   }
-  return (a >>> 0).toString(36) + (b >>> 0).toString(36);
 }
 
 /** Google News links are only a redirect to the publisher (no text to summarise), so those stay as outbound links. */
