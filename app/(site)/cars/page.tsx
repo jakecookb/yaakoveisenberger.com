@@ -25,8 +25,8 @@ export default async function CarsPage() {
           <>
             <h2 className="mt-12 text-sm font-semibold uppercase tracking-[0.3em] text-[#818cf8]">Latest</h2>
             <div className={`mt-5 ${NEWS_GRID}`}>
-              <CarCard car={first} featured />
-              {rest.map((c, i) => <CarCard key={c.id} car={c} className={phoneOrphan(i + 1, rest.length + 1, true)} />)}
+              <CarCard topic="cars" car={first} featured />
+              {rest.map((c, i) => <CarCard topic="cars" key={c.id} car={c} className={phoneOrphan(i + 1, rest.length + 1, true)} />)}
             </div>
           </>
         ) : (
@@ -34,7 +34,7 @@ export default async function CarsPage() {
         )}
 
         <p className="mt-12 text-xs leading-relaxed text-neutral-500">
-          Headlines and images link to the original stories at {SOURCES.map((s) => s.name).join(', ')}. Updated automatically every 30 minutes{feed.stale ? ' (showing the last saved list right now)' : ''}.
+          Each story opens a short summary here, with a link to the original at {SOURCES.map((s) => s.name).join(', ')}. Updated automatically every 30 minutes{feed.stale ? ' (showing the last saved list right now)' : ''}.
         </p>
       </div>
     </section>

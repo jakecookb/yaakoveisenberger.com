@@ -58,3 +58,50 @@ export function parseFeed(xml: string, source: CarSource): (Omit<CarItem, 'tags'
   }
   return out;
 }
+
+export interface Article {
+  url: string;
+  title: string;
+  source: string;
+  home: string;
+  publishedAt: string;
+  image?: string;
+  images: string[];
+  /** The opening of the story as plain paragraphs, never HTML. */
+  paragraphs: string[];
+}
+
+const PARA_SPLIT = /<\/(?:p|h[1-6]|li|div|blockquote)>|<br\s*\/?>/i;
+const BOILERPLATE = /appeared first on|^read (?:more|the full)|^source:|^(?:via|credit|image|photo)\b|^(?:subscribe|sign up|follow us|advertisement)|\bnewsletter\b/i;
+
+/** Like parseFeed, but keeps each story's paragraphs and pictures so a summary page can be built. Plain text and validated URLs only. */
+export function parseArticles(xml: string, source: CarSource): Article[] {
+  let doc: Node;
+  try {
+    doc = parser.parse(xml) as Node;
+  } catch {
+    return [];
+  }
+  const channel = ((doc.rss as Node | undefined)?.channel ?? (doc.feed as Node | undefined)) as Node | undefined;
+  const raw = arr<Node>((channel?.item ?? channel?.entry) as Node | Node[] | undefined);
+  const out: Article[] = [];
+  for (const it of raw) {
+    const title = stripHtml(text(it.title));
+    const url = safeUrl(text(it.link) || attr(arr(it.link as Node | Node[])[0], 'href') || text(it.guid));
+    const when = new Date(text(it.pubDate) || text(it['dc:date']) || text(it.published) || text(it.updated));
+    if (!title || !url || Number.isNaN(when.getTime())) continue;
+    const descHtml = decodeEntities(text(it.description) || text(it.summary));
+    const bodyHtml = decodeEntities(text(it['content:encoded']) || text(it.content));
+    const html = bodyHtml.length > descHtml.length ? bodyHtml : descHtml;
+    const paragraphs = html
+      .replace(/<(script|style|figure|figcaption|aside|iframe|noscript|table)[\s\S]*?<\/\1>/gi, ' ')
+      .split(PARA_SPLIT)
+      .map(stripHtml)
+      .filter((p) => p.length > 40 && !BOILERPLATE.test(p) && p.toLowerCase() !== title.toLowerCase());
+    const image = pickImage(it, html);
+    const images = [image, ...[...html.matchAll(/<img[^>]+src=["']([^"']+)["']/gi)].map((m) => safeUrl(m[1]))]
+      .filter((u): u is string => Boolean(u) && !/pixel|tracker|spacer|1x1|logo|avatar|icon|emoji|gravatar|badge/i.test(u!));
+    out.push({ url, title, source: source.name, home: source.home, publishedAt: when.toISOString(), image, images: [...new Set(images)].slice(0, 4), paragraphs });
+  }
+  return out;
+}

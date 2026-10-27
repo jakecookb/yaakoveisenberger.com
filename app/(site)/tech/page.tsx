@@ -23,7 +23,7 @@ function Section({ title, hint, items: all }: { title: string; hint: string; ite
         <p className="text-sm text-neutral-500">{hint}</p>
       </div>
       <div className={`mt-5 ${NEWS_GRID}`}>
-        {items.map((c, i) => <CarCard key={c.id} car={c} accent={ACCENT} featured={i === 0 && items.length > 2} className={phoneOrphan(i, items.length, items.length > 2)} />)}
+        {items.map((c, i) => <CarCard topic="tech" key={c.id} car={c} accent={ACCENT} featured={i === 0 && items.length > 2} className={phoneOrphan(i, items.length, items.length > 2)} />)}
       </div>
     </>
   );
@@ -54,7 +54,7 @@ export default async function TechPage() {
         )}
 
         <p className="mt-12 text-xs leading-relaxed text-neutral-500">
-          Headlines and images link to the original stories at {SOURCES.map((s) => s.name).join(', ')}. Rumours and leaks are tagged as such and aren&apos;t confirmed. Updated automatically every 30 minutes{feed.stale ? ' (showing the last saved list right now)' : ''}.
+          Each story opens a short summary here, with a link to the original at {SOURCES.map((s) => s.name).join(', ')}. Rumours and leaks are tagged as such and aren&apos;t confirmed. Updated automatically every 30 minutes{feed.stale ? ' (showing the last saved list right now)' : ''}.
         </p>
       </div>
     </section>

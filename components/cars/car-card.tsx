@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import Link from 'next/link';
 import { ArrowUpRight } from 'lucide-react';
 import type { CarItem } from '@/lib/cars/types';
+import { articleHref, isRedirect, type NewsTopic } from '@/lib/news/slug';
 
 const ago = (iso: string, now: number) => {
   const d = Math.max(0, Math.floor((now - new Date(iso).getTime()) / 3_600_000));
@@ -16,7 +18,7 @@ const useNow = () => useSyncExternalStore(noop, () => Math.floor(Date.now() / 60
 const dateLabel = (iso: string) => new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 
 /** A news story card; the featured one spans the whole row on larger screens. */
-export function CarCard({ car, featured, accent = '#818cf8', className = '' }: { car: CarItem; featured?: boolean; accent?: string; className?: string }) {
+export function CarCard({ car, topic, featured, accent = '#818cf8', className = '' }: { car: CarItem; topic: NewsTopic; featured?: boolean; accent?: string; className?: string }) {
   const now = useNow();
   // Same touch-glow as the hub cards: lights up on touch, even while the finger scrolls.
   const [touched, setTouched] = useState(false);
@@ -25,11 +27,13 @@ export function CarCard({ car, featured, accent = '#818cf8', className = '' }: {
   const on = () => { clearTimeout(fade.current); setTouched(true); };
   const off = () => { clearTimeout(fade.current); fade.current = setTimeout(() => setTouched(false), 450); };
 
+  // The summary page on this site; only a story with nothing to summarise (a bare Google News link) goes straight out.
+  const external = isRedirect(car.url);
+  const Tag = external ? 'a' : Link;
   return (
-    <a
-      href={car.url}
-      target="_blank"
-      rel="noopener noreferrer"
+    <Tag
+      href={articleHref(topic, car.url)}
+      {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
       data-active={touched}
       onTouchStart={on}
       onTouchEnd={off}
@@ -66,10 +70,10 @@ export function CarCard({ car, featured, accent = '#818cf8', className = '' }: {
           </ul>
         )}
         <span className={`items-center gap-1 text-sm font-medium text-[var(--accent)] inline-flex`}>
-          Read the full story <ArrowUpRight className="size-4 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" aria-hidden />
+          {external ? 'Read the full story' : 'Read the summary'} <ArrowUpRight className="size-4 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" aria-hidden />
         </span>
       </div>
-    </a>
+    </Tag>
   );
 }
 
