@@ -19,3 +19,4 @@ AGENTS.md
 /.wrangler
 .dev.vars
 /.cf-large
+.news-out/

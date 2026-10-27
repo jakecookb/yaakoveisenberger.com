@@ -1,0 +1,25 @@
+# Refreshes the news on Cars, Tech and Weapons every 30 minutes, for free.
+# Fetching and parsing publishers' feeds and pages is far more work than a Cloudflare Workers free-plan request is allowed
+# (10 ms of CPU), so it is done here instead (GitHub Actions is free for public repos) and saved to the site's R2 storage.
+# The website only reads those small saved files. Uses the same CLOUDFLARE_API_TOKEN secret as the deploy.
+# Note: GitHub pauses scheduled workflows after 60 days with no repository activity; run it by hand (Actions tab) to restart.
+name: Refresh news
+on:
+  schedule:
+    - cron: '7,37 * * * *'
+  workflow_dispatch:
+concurrency: news-refresh
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: bash scripts/ci-step.sh install npm ci --ignore-scripts
+      - name: Build and upload the news files
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: 76a00e3c24e864fe9f357aeeb865ab57
+        run: bash scripts/ci-step.sh build-news npx tsx scripts/build-news.ts
