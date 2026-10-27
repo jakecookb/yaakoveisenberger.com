@@ -4,6 +4,10 @@ import { SOURCES as CAR_SOURCES } from '@/lib/cars/sources';
 import { SOURCES as TECH_SOURCES } from '@/lib/tech/sources';
 import { SOURCES as WEAPON_SOURCES } from '@/lib/weapons/sources';
 import type { CarSource } from '@/lib/cars/types';
+import { extractSpecs } from '@/lib/cars/specs';
+import { extractWeaponSpecs } from '@/lib/weapons/pick';
+import type { CarSpec } from '@/lib/cars/types';
+import { condense, type Condensed } from './condense';
 import { slugOf, type NewsTopic } from './slug';
 
 export const TOPICS: Record<NewsTopic, { name: string; path: string; accent: string; sources: CarSource[] }> = {
@@ -25,9 +29,11 @@ async function pull(url: string): Promise<string | null> {
   }
 }
 
-export interface Story extends Article {
-  /** True when the feed only gave a line or two, so the page points readers to the original for the rest. */
+export interface Story extends Omit<Article, 'blocks'>, Condensed {
+  /** True when the publisher only shares the opening, so the page points readers to the original for the rest. */
   partial: boolean;
+  /** Headline numbers found in the story (power, price, calibre ...), for the "at a glance" box. */
+  facts: CarSpec[];
 }
 
 const words = (blocks: Block[]) => blocks.reduce((n, b) => n + (b.t === 'p' ? b.v.split(/\s+/).length : 0), 0);
@@ -76,7 +82,12 @@ export async function loadStory(topic: NewsTopic, slug: string): Promise<Story |
         const page = tidy(await fromPage(hit.url, hit.title));
         if (words(page) > words(blocks) * 1.5) blocks = page;
       }
-      return { ...hit, blocks, partial: words(blocks) < 150 };
+      const text = blocks.map((b) => (b.t === 'img' ? '' : b.v)).join(' ');
+      let facts = topic === 'cars' ? extractSpecs(text) : topic === 'weapons' ? extractWeaponSpecs(text, /\b(knife|blade|folder)\b/i.test(hit.title)) : [];
+      if (facts.length < 2) facts = [];
+      const { blocks: _raw, ...rest } = hit;
+      void _raw;
+      return { ...rest, ...condense(blocks, hit.title, hit.image), facts: facts.slice(0, 6), partial: words(blocks) < 150 };
     }
   }
   return null;
