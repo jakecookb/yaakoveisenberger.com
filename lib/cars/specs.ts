@@ -6,7 +6,7 @@ import type { CarSpec } from './types';
 const num = (s: string) => Number(s.replace(/,/g, ''));
 const nums = (re: RegExp, text: string) => [...text.matchAll(re)].map((m) => m);
 
-export function extractSpecs(text: string): CarSpec[] {
+export function extractSpecs(text: string, max = 4): CarSpec[] {
   const t = ` ${text} `;
   const out: CarSpec[] = [];
 
@@ -20,6 +20,10 @@ export function extractSpecs(text: string): CarSpec[] {
     const max = Math.max(...kw);
     out.push({ kind: 'power', label: `${kw.some((n) => n !== max) ? 'Up to ' : ''}${max} kW` });
   }
+
+  // Torque.
+  const tq = t.match(/(\d{3,4}(?:,\d{3})?)\s?(?:lb[-. ]?ft|pound-feet|lb-ft)\b/i);
+  if (tq && num(tq[1]) >= 80 && num(tq[1]) <= 3000) out.push({ kind: 'torque', label: `${num(tq[1]).toLocaleString('en-US')} lb-ft` });
 
   // Acceleration.
   const sixty =
@@ -57,5 +61,5 @@ export function extractSpecs(text: string): CarSpec[] {
   const engineLabel = engine ? engine[1].replace(/^./, (c) => c.toUpperCase()).replace(/phev/i, 'Plug-in hybrid').replace(/all-electric|fully electric/i, 'Electric') : '';
   if (engineLabel || driveLabel) out.push({ kind: 'drive', label: [engineLabel, driveLabel].filter(Boolean).join(' · ') });
 
-  return out.slice(0, 4);
+  return out.slice(0, max);
 }

@@ -12,6 +12,11 @@ export async function storyMetadata(topic: NewsTopic, slug: string): Promise<Met
   return { title: story?.title ?? 'Story', description: story?.lede?.slice(0, 200) };
 }
 
+const CAPTION: Record<string, string> = {
+  power: 'Power', torque: 'Torque', speed: 'Acceleration', range: 'Range', battery: 'Battery', price: 'Price', drive: 'Powertrain', topspeed: 'Top speed',
+  caliber: 'Caliber', capacity: 'Capacity', barrel: 'Barrel', blade: 'Blade', steel: 'Steel', weight: 'Weight',
+};
+
 const fmt = (iso: string) => new Date(iso).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 
 export async function Story({ topic, slug }: { topic: NewsTopic; slug: string }) {
@@ -50,10 +55,15 @@ export async function Story({ topic, slug }: { topic: NewsTopic; slug: string })
         )}
 
         {story.facts.length > 0 && (
-          <section aria-label="At a glance" className="mt-8 rounded-2xl bg-neutral-900/70 p-5 ring-1 ring-white/10">
+          <section aria-label="At a glance" className="mt-8">
             <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">At a glance</h2>
-            <ul className="mt-3 flex flex-wrap gap-2">
-              {story.facts.map((f) => <li key={f.label} className="rounded-lg bg-white/5 px-3 py-1.5 text-sm font-medium text-neutral-100 ring-1 ring-white/10">{f.label}</li>)}
+            <ul className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+              {story.facts.map((f) => (
+                <li key={f.kind + f.label} className="rounded-2xl bg-neutral-900/80 p-4 ring-1 ring-white/10">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-500">{CAPTION[f.kind] ?? 'Detail'}</p>
+                  <p className="mt-1.5 text-lg font-semibold leading-snug text-white">{f.label}</p>
+                </li>
+              ))}
             </ul>
           </section>
         )}
