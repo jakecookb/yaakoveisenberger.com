@@ -7,23 +7,26 @@ export const SETTINGS_PATH = 'site/settings.json';
 /** The version before the last save: one click to bring it back from the editor. */
 export const PREVIOUS_PATH = 'site/settings.prev.json';
 
-/** Current site settings (defaults when nothing is saved yet or storage isn't configured). */
-export const loadSettings = cache(async (): Promise<SiteSettings> => {
+let memo: { at: number; value: SiteSettings } | undefined;
+
+async function readSettings(): Promise<SiteSettings> {
   const raw = await readJson<unknown>(SETTINGS_PATH);
   if (!raw) return defaultSettings();
   const parsed = settingsSchema.safeParse(raw);
   return parsed.success ? sanitizeSettings(parsed.data) : defaultSettings();
-});
-
-let memo: { at: number; value: SiteSettings } | undefined;
+}
 
 /**
- * For routes hit many times in a row (every photo on a page asks for the settings to check its lock). Reuses the last read
- * for a few seconds instead of fetching storage again each time. Pages themselves use the uncached `loadSettings`.
+ * Current site settings (defaults when nothing is saved yet or storage isn't configured). The parsed result is reused
+ * for a few seconds per server instance, so a page view doesn't re-read and re-validate the whole file; a save shows up
+ * within seconds (and at once on the instance that saved it). `cache` also shares one read within a single render.
  */
+export const loadSettings = cache(async (): Promise<SiteSettings> => loadSettingsFast());
+
+/** The same, with a custom reuse window. */
 export async function loadSettingsFast(ttlMs = 10_000): Promise<SiteSettings> {
   if (memo && Date.now() - memo.at < ttlMs) return memo.value;
-  const value = await loadSettings();
+  const value = await readSettings();
   memo = { at: Date.now(), value };
   return value;
 }
