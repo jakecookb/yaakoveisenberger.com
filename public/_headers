@@ -1,0 +1,11 @@
+# Cloudflare serves static files itself, so next.config.ts headers don't reach them.
+# The audio separator page is cross-origin isolated (COEP require-corp); its Web Worker script and the ONNX Runtime
+# files must carry the same isolation headers or the browser refuses to start the worker.
+/_next/static/*
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Resource-Policy: same-origin
+
+/ort/*
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Resource-Policy: same-origin
+  Cache-Control: public, max-age=31536000, immutable
