@@ -28,12 +28,17 @@ export const getPublicCampaign = cache(async (slug: string): Promise<PublicCampa
   }
 });
 
+// Reused for 30 seconds per server instance: the home page asks on every view, and a database round trip each time is wasted work.
+let publicList: { at: number; value: PublicCampaignListItem[] } | undefined;
 export async function listPublicCampaigns(): Promise<PublicCampaignListItem[]> {
   if (!isSupabaseConfigured) return [];
+  if (publicList && Date.now() - publicList.at < 30_000) return publicList.value;
   const { data, error } = await createFundAnonClient().rpc('fund_list_public_campaigns');
   if (error) {
     console.error('[fund] fund_list_public_campaigns', error.message);
-    return [];
+    return publicList?.value ?? [];
   }
-  return (data as PublicCampaignListItem[]) ?? [];
+  const value = (data as PublicCampaignListItem[]) ?? [];
+  publicList = { at: Date.now(), value };
+  return value;
 }
