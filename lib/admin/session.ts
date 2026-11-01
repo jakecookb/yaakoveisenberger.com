@@ -101,5 +101,6 @@ export function recordLogin(ip: string, ok: boolean) {
 }
 export async function clientIp() {
   const h = await headers();
-  return (h.get('x-forwarded-for') ?? 'unknown').split(',')[0].trim();
+  // Cloudflare sets cf-connecting-ip itself; the first x-forwarded-for entry is whatever the visitor sent, so it can't be trusted.
+  return (h.get('cf-connecting-ip') ?? h.get('x-real-ip') ?? h.get('x-forwarded-for')?.split(',').pop() ?? 'unknown').trim();
 }
