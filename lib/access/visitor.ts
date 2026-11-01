@@ -11,8 +11,15 @@ import { isAdmin } from '@/lib/admin/session';
 // email is theirs). The admin approves per category or for everything.
 
 /** Typing this code in the email field (case-insensitive, leading # optional) grants access immediately. Change it here. */
-const INSTANT_ACCESS_CODE = 'YaakovAccess';
-export const isInstantCode = (raw: string | undefined) => (raw ?? '').trim().replace(/^#/, '').toLowerCase() === INSTANT_ACCESS_CODE.toLowerCase();
+// The instant-access code is a secret (ACCESS_CODE, set from the GitHub secret of the same name), never written in this public
+// repo. Unset or shorter than 8 characters = the code is switched off.
+const INSTANT_ACCESS_CODE = (process.env.ACCESS_CODE ?? '').trim().replace(/^#/, '').toLowerCase();
+export const isInstantCode = (raw: string | undefined) => {
+  if (INSTANT_ACCESS_CODE.length < 8) return false;
+  const a = Buffer.from((raw ?? '').trim().replace(/^#/, '').toLowerCase());
+  const b = Buffer.from(INSTANT_ACCESS_CODE);
+  return a.length === b.length && timingSafeEqual(a, b);
+};
 
 export const VISITOR_COOKIE = 've_visitor';
 /** About 13 months: the longest a browser will keep a cookie (Chrome caps it at 400 days). Renewed on every visit. */
