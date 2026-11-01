@@ -41,9 +41,9 @@ export async function sendContact(input: Record<string, unknown>): Promise<{ ok:
   if (!ok) return { ok: false, error: 'Your message couldn’t be sent right now — please email or call instead.' };
   await sendEmail({
     to: email, replyTo: owner,
-    subject: `Got your message: ${subject}`,
-    html: layout({ preheader: 'Thanks — your message is in', heading: `Thanks, ${name.split(' ')[0]}!`, body: `<p style="margin:0 0 14px;">Your message (“${esc(subject)}”) is in, and I’ll get back to you soon.</p><p style="margin:0;">Anything to add? Just reply to this email.</p>` }),
-    text: `Thanks, ${name.split(' ')[0]}! Your message ("${subject}") is in — I'll get back to you soon. Reply to this email to add anything.`,
+    subject: 'Got your message',
+    html: layout({ preheader: 'Thanks — your message is in', heading: `Thanks, ${name.split(' ')[0]}!`, body: `<p style="margin:0 0 14px;">Your message is in, and I’ll get back to you soon.</p><p style="margin:0;">Anything to add? Just reply to this email.</p>` }),
+    text: `Thanks, ${name.split(' ')[0]}! Your message is in — I'll get back to you soon. Reply to this email to add anything.`,
   });
   return { ok: true };
 }

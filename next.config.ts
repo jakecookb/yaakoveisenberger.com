@@ -37,8 +37,7 @@ const siteCsp = [
   "img-src 'self' data: blob: https:",
   "media-src 'self' blob: data:",
   "font-src 'self' data:",
-  // Admin photo uploads go from the browser straight to Vercel Blob.
-  "connect-src 'self' blob: data: https://huggingface.co https://*.huggingface.co https://*.hf.co https://vercel.com https://*.vercel-storage.com",
+  "connect-src 'self' blob: data: https://huggingface.co https://*.huggingface.co https://*.hf.co",
   "frame-src 'self' https://www.youtube-nocookie.com https://www.youtube.com https://player.vimeo.com",
   "frame-ancestors 'self'",
   "object-src 'none'",
@@ -82,6 +81,9 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       // Cookbook: hashed bundles cache for a year; the app shell and service worker are always re-checked.
+      // The Cookbook gets the basic protections too (its own app sets what it loads, so no CSP here).
+      { source: '/cookbook/:path*', headers: [...securityHeaders, { key: 'X-Frame-Options', value: 'SAMEORIGIN' }] },
+      { source: '/cookbook', headers: [...securityHeaders, { key: 'X-Frame-Options', value: 'SAMEORIGIN' }] },
       { source: '/cookbook/assets/:path*', headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }] },
       { source: '/cookbook/:file(sw.js|index.html)', headers: [{ key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' }] },
       { source: '/cookbook/downloads/cookbook.apk', headers: [{ key: 'Content-Type', value: 'application/vnd.android.package-archive' }, { key: 'Content-Disposition', value: 'attachment; filename="Cookbook.apk"' }] },
