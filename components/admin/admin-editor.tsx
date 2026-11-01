@@ -166,6 +166,7 @@ export function AdminEditor({ initial, state, hasPrevious, blobReady, pending, e
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Link href="/admin/access" className={chip(pending > 0)}><Users className="size-3.5" /> Access requests{pending > 0 && ` (${pending})`}</Link>
+          <Link href="/admin/codes" className={chip(false)}>Access codes</Link>
           <Link href="/admin/analytics" className={chip(false)}>Analytics</Link>
           <Link href="/admin/broadcast" className={chip(false)}>Subscribers & email</Link>
           {status && <span role="status" className={`text-xs ${status.ok ? 'text-emerald-300' : 'text-red-400'}`}>{status.msg}</span>}

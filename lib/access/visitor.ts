@@ -1,5 +1,6 @@
 import 'server-only';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
+import { logUse, matchCode, type AccessCode } from './codes';
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { jwtVerify, SignJWT } from 'jose';
 import { isBlobConfigured, listPaths, readJson, removePath, writeJson } from '@/lib/admin/store';
@@ -11,15 +12,6 @@ import { isAdmin } from '@/lib/admin/session';
 // email is theirs). The admin approves per category or for everything.
 
 /** Typing this code in the email field (case-insensitive, leading # optional) grants access immediately. Change it here. */
-// The instant-access code is a secret (ACCESS_CODE, set from the GitHub secret of the same name), never written in this public
-// repo. Unset or shorter than 8 characters = the code is switched off.
-const INSTANT_ACCESS_CODE = (process.env.ACCESS_CODE ?? '').trim().replace(/^#/, '').toLowerCase();
-export const isInstantCode = (raw: string | undefined) => {
-  if (INSTANT_ACCESS_CODE.length < 8) return false;
-  const a = Buffer.from((raw ?? '').trim().replace(/^#/, '').toLowerCase());
-  const b = Buffer.from(INSTANT_ACCESS_CODE);
-  return a.length === b.length && timingSafeEqual(a, b);
-};
 
 export const VISITOR_COOKIE = 've_visitor';
 /** About 13 months: the longest a browser will keep a cookie (Chrome caps it at 400 days). Renewed on every visit. */
@@ -192,10 +184,17 @@ async function signInBrowser(rec: AccessRequest) {
  *  - a new person: a record is created and this browser is signed in to it.
  */
 export async function createOrUpdateRequest(contact: Partial<Contact>, categoryId: string): Promise<RequestResult> {
+  const res = await createOrUpdate(contact, categoryId);
+  if (res.ok && res.code) await logUse(res.code, res.record, categoryId, (await headers()).get('cf-ipcountry') ?? undefined);
+  return res;
+}
+
+async function createOrUpdate(contact: Partial<Contact>, categoryId: string): Promise<RequestResult & { code?: AccessCode }> {
   if (!isBlobConfigured) return { ok: false, error: 'Access requests are not set up yet.' };
   const now = new Date().toISOString();
   const current = await visitorRecord();
-  const instant = isInstantCode(contact.email);
+  const code = await matchCode(contact.email, categoryId);
+  const instant = Boolean(code);
   const email = !instant && contact.email ? cleanEmail(contact.email) : null;
   const phone = contact.phone?.trim() ? cleanPhone(contact.phone) : null;
   if (contact.phone?.trim() && !phone) return { ok: false, error: 'Please enter a valid phone number, or leave it blank.' };
@@ -214,7 +213,7 @@ export async function createOrUpdateRequest(contact: Partial<Contact>, categoryI
     }
     current.updatedAt = now;
     await writeJson(recordPath(current.id), current);
-    return { ok: true, signedIn: true, record: current, emailTo: current.email };
+    return { ok: true, signedIn: true, record: current, emailTo: instant ? undefined : current.email, ...(code ? { code } : {}) };
   }
 
   const name = cleanName(contact.name ?? '');
@@ -237,7 +236,7 @@ export async function createOrUpdateRequest(contact: Partial<Contact>, categoryI
   await writeJson(recordPath(id), rec);
   if (email) await writeJson(emailPath(email), { id });
   (await cookies()).set(VISITOR_COOKIE, `${id}.${secret}`, visitorCookieOptions());
-  return { ok: true, signedIn: true, record: rec, emailTo: email ?? undefined };
+  return { ok: true, signedIn: true, record: rec, emailTo: email ?? undefined, ...(code ? { code } : {}) };
 }
 
 /** "Sign in" with just an email: finds the record (if any) so a link can be sent. Never says whether it exists. */

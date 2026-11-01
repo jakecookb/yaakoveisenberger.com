@@ -52,7 +52,8 @@ export default async function AccessPage() {
   const ok = 'bg-emerald-400/15 text-emerald-300 ring-1 ring-emerald-400/30 hover:bg-emerald-400/25';
   const neutral = 'bg-white/5 text-neutral-300 ring-1 ring-white/10 hover:bg-white/10';
   const pending = requests.filter((r) => r.requested.length > 0);
-  const others = requests.filter((r) => r.requested.length === 0);
+  // People who came in only with an access code (no email) are on the Access codes page instead.
+  const others = requests.filter((r) => r.requested.length === 0 && !(!r.email && r.codeGranted?.length));
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
@@ -60,7 +61,7 @@ export default async function AccessPage() {
       <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-white">Access requests</h1>
-          <p className="mt-1 max-w-md text-sm text-neutral-400">Everyone who asked to see a locked or greyed-out box. Approve one box or everything — it unlocks right away, and they get an email.</p>
+          <p className="mt-1 max-w-md text-sm text-neutral-400">Everyone who asked to see a locked or greyed-out box. Approve one box or everything — it unlocks right away, and they get an email. Code sign-ins are under <Link href="/admin/codes" className="text-[#c8a96a]">Access codes</Link>.</p>
         </div>
         <a href="/api/admin/access-csv" download className="inline-flex h-11 items-center gap-2 rounded-full bg-[#c8a96a] px-5 text-sm font-semibold text-neutral-950 transition hover:bg-[#d8bc82]">
           <Download className="size-4" /> Download CSV <span className="rounded-full bg-neutral-950/15 px-2 py-0.5 text-xs">{requests.length}</span>
