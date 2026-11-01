@@ -207,4 +207,5 @@ export async function removeVisitorAction(formData: FormData) {
   await requireAdmin();
   await deleteRequest(String(formData.get('id')));
   revalidatePath('/admin/access');
+  revalidatePath('/admin/codes');
 }
