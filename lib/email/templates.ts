@@ -104,3 +104,24 @@ export function broadcastEmail(subject: string, body: string, unsubscribe: strin
     text: `${body}\n\n${link ? `${link}\n\n` : ''}Unsubscribe: ${unsubscribe}`,
   };
 }
+
+/** A board someone designed in the Fish Board builder: the picture (inline, cid:board) with the order details under it. */
+export interface BoardInfo { name: string; email: string; phone: string; date: string; message: string; rows: [string, string][]; price: number }
+const boardImg = `<img src="cid:board" alt="The board design" width="560" style="display:block;width:100%;max-width:560px;height:auto;border-radius:12px;margin:0 0 18px;" />`;
+
+export function boardToOwner(b: BoardInfo) {
+  const contact: [string, string][] = [['Name', b.name], ['Email', b.email], ['Phone', b.phone], ['Needed by', b.date || '—'], ['Note', b.message || '—']];
+  return {
+    subject: `Custom fish board — ${b.name} ($${b.price})`,
+    html: layout({ preheader: `${b.name} designed a fish board ($${b.price})`, heading: 'New custom fish board', body: `${boardImg}<table role="presentation" cellpadding="0" cellspacing="0" border="0">${[...b.rows, ...contact].map(([k, v]) => row(k, v)).join('')}</table><p style="margin:16px 0 0;">The picture is also attached. Just hit reply to answer ${esc(b.name.split(' ')[0])} directly.</p>` }),
+    text: [...b.rows, ...contact].map(([k, v]) => `${k}: ${v}`).join('\n') + '\n\nThe board picture is attached. Reply to this email to answer the customer directly.',
+  };
+}
+
+export function boardToCustomer(b: BoardInfo) {
+  return {
+    subject: 'Your custom fish board design is in',
+    html: layout({ preheader: 'Here’s the board you designed', heading: `Looks delicious, ${b.name.split(' ')[0]}!`, body: `${boardImg}<p style="margin:0 0 14px;">Here’s the board you designed. I’ll get back to you shortly to confirm the details, the date and the final price (estimated at <b style="color:#e5e5e5;">$${b.price}</b>).</p><table role="presentation" cellpadding="0" cellspacing="0" border="0">${b.rows.map(([k, v]) => row(k, v)).join('')}</table><p style="margin:16px 0 0;">Want to change something? Just reply to this email.</p>`, footnote: 'You’re receiving this because you sent a board design on yaakoveisenberger.com.' }),
+    text: `Thanks, ${b.name.split(' ')[0]}! Here's the board you designed (picture attached):\n\n${b.rows.map(([k, v]) => `${k}: ${v}`).join('\n')}\n\nI'll get back to you shortly to confirm. Reply to this email to change anything.`,
+  };
+}

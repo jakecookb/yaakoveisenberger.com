@@ -1,0 +1,14 @@
+Fish Board builder images
+- fish-*.jpg, top-onion/redonion/yellow/jalapeno.jpg, w-plain/pepper/pastrami/tuna.jpg, g-jalapeno.png: cut from photos of
+  Yaakov Eisenberger's own boards. fish-beet.jpg / w-beet.jpg: the plain-cured photo with a beet-cure tint.
+- top-red.jpg, top-mango.jpg: recoloured from the yellow-pepper strip above.
+- top-pomegranate.jpg, g-heart.png: "Free close pomegranate seed background", rawpixel.com, CC0.
+- top-herbs.jpg, w-herbs.jpg: "Finely chopped parsley", Jodiepedia (Flickr), CC0.
+Whole ingredients (Flickr, via Openverse):
+- w-onion.jpg: "White Onions", GraveUndertakings (flickr), CC0 — https://www.flickr.com/photos/80091348@N04/23031297540
+- w-redonion.jpg: "Purple Onions", joncutrer (flickr), CC0 — https://www.flickr.com/photos/47121680@N00/44355510981
+- w-jalapeno.jpg: "Green Jalapeno Peppers", joncutrer (flickr), CC0 — https://www.flickr.com/photos/47121680@N00/43446088275
+- w-red.jpg: "Red Peppers", cogdogblog (flickr), CC0 — https://www.flickr.com/photos/37996646802@N01/35998766254
+- w-yellow.jpg: "Yellow Bell Peppers", joncutrer (flickr), CC0 — https://www.flickr.com/photos/47121680@N00/30484701928
+- w-mango.jpg: "Mango - Mangue", Philippe Vieux-Jeanton (flickr), CC0 — https://www.flickr.com/photos/11234074@N05/11051115555
+- w-pomegranate.jpg: "Pomegranate: Fruit lesions", Plant pests and diseases (flickr), CC0 — https://www.flickr.com/photos/62295966@N07/15346339615

@@ -24,7 +24,7 @@ const minutesLeft = (iso: string | undefined, now: number) => (iso ? Math.max(0,
  * It asks the server whether this browser was approved. Nothing private is in the page itself.
  * Visitors see Pending → Approved (then they're let in) or Declined (then they can ask again after a wait).
  */
-export function LockedGate({ categoryId, accent, continueHref, className = 'mt-10' }: { categoryId: string; accent: string; continueHref?: string; className?: string }) {
+export function LockedGate({ categoryId, accent, continueHref, className = 'mt-10', children }: { categoryId: string; accent: string; continueHref?: string; className?: string; children?: React.ReactNode }) {
   const [status, setStatus] = useState<{ state: State; name?: string; retryAt?: string; hasEmail?: boolean }>({ state: 'loading' });
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -99,7 +99,8 @@ export function LockedGate({ categoryId, accent, continueHref, className = 'mt-1
     return (
       <div className="mt-10 text-left">
         {content?.body && <RichText text={content.body} className="mb-8" />}
-        {content ? content.photos.length ? <PhotoGallery photos={content.photos} /> : <p className="text-center text-neutral-500">Nothing here yet.</p> : <p className="text-center text-neutral-500">Loading…</p>}
+        {children}
+        {content ? content.photos.length ? <div className={children ? 'mt-12' : ''}><PhotoGallery photos={content.photos} /></div> : !children && <p className="text-center text-neutral-500">Nothing here yet.</p> : <p className="text-center text-neutral-500">Loading…</p>}
       </div>
     );
   }

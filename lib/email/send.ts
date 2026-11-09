@@ -19,6 +19,8 @@ export interface Email {
   replyTo?: string;
   /** Extra headers, e.g. List-Unsubscribe for announcements. */
   headers?: Record<string, string>;
+  /** Files sent with the email. With `contentId`, the HTML can show it inline as <img src="cid:…">. */
+  attachments?: { filename: string; content: string /* base64 */; contentId?: string }[];
 }
 
 export async function sendEmail(mail: Email): Promise<boolean> {
@@ -28,6 +30,7 @@ export async function sendEmail(mail: Email): Promise<boolean> {
     const name = `${Date.now()}-${mail.to.replace(/[^a-z0-9@.]+/gi, '_')}`;
     await writeFile(path.join(outbox, `${name}.json`), JSON.stringify({ from: FROM, ...mail }, null, 2));
     await writeFile(path.join(outbox, `${name}.html`), mail.html);
+    for (const a of mail.attachments ?? []) await writeFile(path.join(outbox, `${name}-${a.filename}`), Buffer.from(a.content, 'base64'));
     return true;
   }
   if (!process.env.RESEND_API_KEY) return false;
@@ -35,7 +38,7 @@ export async function sendEmail(mail: Email): Promise<boolean> {
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: FROM, to: [mail.to], subject: mail.subject, html: mail.html, text: mail.text, ...(mail.replyTo ? { reply_to: mail.replyTo } : {}), ...(mail.headers ? { headers: mail.headers } : {}) }),
+      body: JSON.stringify({ from: FROM, to: [mail.to], subject: mail.subject, html: mail.html, text: mail.text, ...(mail.replyTo ? { reply_to: mail.replyTo } : {}), ...(mail.headers ? { headers: mail.headers } : {}), ...(mail.attachments?.length ? { attachments: mail.attachments.map((a) => ({ filename: a.filename, content: a.content, ...(a.contentId ? { content_id: a.contentId } : {}) })) } : {}) }),
       signal: AbortSignal.timeout(10_000),
     });
     if (!res.ok) console.error('Email failed', res.status, (await res.text()).slice(0, 300));
