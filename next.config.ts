@@ -65,6 +65,8 @@ const ortVersion = (() => {
 const nextConfig: NextConfig = {
   env: { NEXT_PUBLIC_ORT_VERSION: ortVersion },
   poweredByHeader: false,
+  // The Fish Board builder sends its picture (a JPEG under ~1 MB) with the request.
+  experimental: { serverActions: { bodySizeLimit: '2mb' } },
   async rewrites() {
     return [
       // The Cookbook (its own repo, a single-page app built with base '/cookbook/') ships inside this site's static files
