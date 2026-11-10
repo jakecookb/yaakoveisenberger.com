@@ -67,28 +67,20 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // The Fish Board builder sends its picture (a JPEG under ~1 MB) with the request.
   experimental: { serverActions: { bodySizeLimit: '2mb' } },
-  async rewrites() {
-    return [
-      // The Cookbook (its own repo, a single-page app built with base '/cookbook/') ships inside this site's static files
-      // (public/cookbook, built by scripts/build-cookbook.mjs). Deeper app routes: app/cookbook/[...path]/route.ts.
-      { source: '/cookbook', destination: '/cookbook/index.html' },
-    ];
-  },
   async redirects() {
     return [
       { source: '/fish-boards', destination: '/fishboards', permanent: true },
       { source: '/meat-boards', destination: '/meatboards', permanent: true },
+      // The Cookbook is now On350 at its own address. Every old link (pages, shared recipes, emails) goes there.
+      // /cookbook/sw.js stays: it clears the old app saved in browsers and sends them on (see public/cookbook/sw.js).
+      { source: '/cookbook', destination: 'https://on350.com/', permanent: true },
+      { source: '/cookbook/:path((?!sw\\.js$).*)', destination: 'https://on350.com/:path', permanent: true },
     ];
   },
   async headers() {
     return [
-      // Cookbook: hashed bundles cache for a year; the app shell and service worker are always re-checked.
-      // The Cookbook gets the basic protections too (its own app sets what it loads, so no CSP here).
-      { source: '/cookbook/:path*', headers: [...securityHeaders, { key: 'X-Frame-Options', value: 'SAMEORIGIN' }] },
-      { source: '/cookbook', headers: [...securityHeaders, { key: 'X-Frame-Options', value: 'SAMEORIGIN' }] },
-      { source: '/cookbook/assets/:path*', headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }] },
-      { source: '/cookbook/:file(sw.js|index.html)', headers: [{ key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' }] },
-      { source: '/cookbook/downloads/cookbook.apk', headers: [{ key: 'Content-Type', value: 'application/vnd.android.package-archive' }, { key: 'Content-Disposition', value: 'attachment; filename="Cookbook.apk"' }] },
+      // The old Cookbook's clean-up service worker must always be re-checked.
+      { source: '/cookbook/sw.js', headers: [...securityHeaders, { key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' }] },
       {
         // Every page except /fund (its own policy above, for Stripe) and the separately-built /cookbook app.
         source: '/:path((?!fund|cookbook).*)',

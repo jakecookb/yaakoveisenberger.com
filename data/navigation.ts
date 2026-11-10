@@ -61,7 +61,7 @@ export const categories: NavCategory[] = [
   { id: 'photography', gallery: true, lockable: true, title: 'Photography', teaser: 'Events, portraits and the moments in between.', href: '/photography', icon: Camera, accent: '#38bdf8', status: 'soon' },
   { id: 'tech', group: 'news', news: true, lockable: true, title: 'Tech & Gadgets', teaser: 'Live news on Samsung Galaxy, iPhone and wearables — S27 Ultra leaks included.', href: '/tech', icon: CodeXml, accent: '#34d399', badge: 'new' },
   { id: 'speed', group: 'productivity', lockable: true, title: 'Speed Test', teaser: 'Check your download, upload and ping in seconds.', href: '/speed', icon: Gauge, accent: '#22d3ee', badge: 'new' },
-  { id: 'cookbook', lockable: true, title: 'Cookbook & Recipes', teaser: 'Family recipes — scanned, scaled, saved and shared.', href: '/cookbook', icon: ChefHat, accent: '#fb923c', external: true },
+  { id: 'cookbook', lockable: true, title: 'On350 Recipes', teaser: 'Family recipes — scanned, scaled, saved and shared.', href: 'https://on350.com', icon: ChefHat, accent: '#fb923c', external: true },
   { id: 'bookbinding', gallery: true, lockable: true, title: 'Book Binding', teaser: 'Hand-bound books, sewn and finished the slow way.', href: '/bookbinding', icon: BookOpen, accent: '#d6a27a', status: 'soon' },
   { id: 'fishboards', gallery: true, lockable: true, title: 'Fish Boards', teaser: 'Beautifully arranged boards for the Shabbos table.', href: '/fishboards', icon: Fish, accent: '#22d3ee', status: 'soon' },
   { id: 'meatboards', gallery: true, lockable: true, title: 'Meat Boards', teaser: 'Showstopping grazing boards, made to order.', href: '/meatboards', icon: Beef, accent: '#ef4444', status: 'soon' },
