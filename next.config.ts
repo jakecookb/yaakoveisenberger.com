@@ -73,8 +73,8 @@ const nextConfig: NextConfig = {
       { source: '/meat-boards', destination: '/meatboards', permanent: true },
       // The Cookbook is now On350 at its own address. Every old link (pages, shared recipes, emails) goes there.
       // /cookbook/sw.js stays: it clears the old app saved in browsers and sends them on (see public/cookbook/sw.js).
-      { source: '/cookbook', destination: 'https://on350.com/', permanent: true },
-      { source: '/cookbook/:path((?!sw\\.js$).*)', destination: 'https://on350.com/:path', permanent: true },
+      { source: '/cookbook', destination: 'https://app.on350.com/', permanent: true },
+      { source: '/cookbook/:path((?!sw\\.js$).*)', destination: 'https://app.on350.com/:path', permanent: true },
     ];
   },
   async headers() {
