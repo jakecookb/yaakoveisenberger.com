@@ -138,12 +138,12 @@ details[open] summary::after { content: "–"; }
 details p { margin-top: 12px; color: var(--ink-2); }
 
 /* Contact */
-.contact-grid { margin-top: 40px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+.contact-grid { margin-top: 40px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
 .contact-card { display: block; padding: 28px; border-radius: var(--radius); background: var(--card); box-shadow: 0 0 0 1px var(--line); text-decoration: none; color: var(--ink); }
 .contact-card:hover { color: var(--ink); box-shadow: 0 0 0 1px var(--accent); }
 .contact-card span { display: block; color: var(--ink-2); font-size: 15px; }
 .contact-card strong { display: block; margin-top: 6px; font-size: clamp(20px, 2.6vw, 26px); color: var(--accent); word-break: break-word; }
-@media (max-width: 700px) { .contact-grid { grid-template-columns: 1fr; } }
+@media (max-width: 960px) { .contact-grid { grid-template-columns: 1fr; } }
 
 /* Footer */
 .footer { border-top: 1px solid var(--line); padding: 40px 0 56px; }
