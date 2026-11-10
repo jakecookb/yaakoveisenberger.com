@@ -1,0 +1,21 @@
+# Publishes the On350 app (the built files in on350-app/dist) to its own Cloudflare Worker, "on350" (app.on350.com).
+# Runs when those files change on main, or by hand. Uses the same CLOUDFLARE_API_TOKEN secret as the main site.
+name: Deploy On350 app
+on:
+  push:
+    branches: [main]
+    paths: ['on350-app/**']
+  workflow_dispatch:
+concurrency: deploy-on350
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: 76a00e3c24e864fe9f357aeeb865ab57
+        run: npx --yes wrangler@4 deploy --config on350-app/wrangler.jsonc

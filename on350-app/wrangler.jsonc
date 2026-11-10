@@ -1,0 +1,9 @@
+{
+	// On350 app (built from the private jakecookb/Cookbook repo) served at app.on350.com.
+	// Deployed by .github/workflows/deploy-on350.yml; the custom domain is attached separately.
+	"name": "on350",
+	"account_id": "76a00e3c24e864fe9f357aeeb865ab57",
+	"compatibility_date": "2026-10-01",
+	"assets": { "directory": "./dist", "not_found_handling": "single-page-application" },
+	"workers_dev": true
+}
