@@ -1,0 +1,8 @@
+{
+	// on350.com landing page: plain static files in ./site. Deployed by .github/workflows/deploy-on350.yml.
+	"name": "on350-landing",
+	"account_id": "76a00e3c24e864fe9f357aeeb865ab57",
+	"compatibility_date": "2026-10-01",
+	"assets": { "directory": "./site", "not_found_handling": "404-page" },
+	"workers_dev": true
+}
