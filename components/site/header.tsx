@@ -9,7 +9,7 @@ const DRAWER: DrawerItem[] = categories.map((c) => ({ id: c.id, title: c.title, 
 import wordmark from '@/public/images/home/wordmark-white.png';
 
 const NAV = [
-  { href: '/cookbook', label: 'Cookbook', external: true, desktopOnly: true },
+  { href: 'https://on350.com', label: 'On350', external: true, desktopOnly: true },
   { href: '/contact', label: 'Contact' },
 ];
 
@@ -26,7 +26,7 @@ export function SiteHeader() {
         <nav className="flex items-center text-[13px] sm:gap-2 sm:text-sm" aria-label="Main">
           {NAV.map((item) => {
             const className = `rounded-lg px-1.5 py-1.5 text-neutral-300 transition hover:bg-white/5 hover:text-white sm:px-3 ${item.desktopOnly ? 'hidden sm:block' : ''}`;
-            // Cookbook is a separate app served under /cookbook, so it needs a full page load.
+            // On350 is a separate site, so it needs a full page load.
             return item.external ? (
               <a key={item.href} href={item.href} className={className}>{item.label}</a>
             ) : (
