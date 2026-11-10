@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://on350.com/sitemap.xml
