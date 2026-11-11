@@ -96,12 +96,19 @@ export function welcomeSubscriber(topics: string, unsubscribe: string) {
 }
 
 /** An announcement: the owner's plain text, paragraphs kept, links clickable. */
-export function broadcastEmail(subject: string, body: string, unsubscribe: string, link?: string) {
+/**
+ * An announcement. Subscribers get their own unsubscribe link; for anyone else (people who asked for access, or an address typed in)
+ * there is no subscription to cancel, so the footer says why they're getting it and that replying will stop it.
+ */
+export function broadcastEmail(subject: string, body: string, unsubscribe: string | null, link?: string, why = 'asked for access on yaakoveisenberger.com') {
   const html = body.split(/\n{2,}/).map((p) => `<p style="margin:0 0 14px;">${esc(p).replace(/\n/g, '<br>').replace(/(https:\/\/[^\s<]+)/g, '<a href="$1" style="color:#c8a96a;">$1</a>')}</p>`).join('');
+  const footer = unsubscribe
+    ? `<p style="margin:18px 0 0;font-size:12px;"><a href="${esc(unsubscribe)}" style="color:#737373;">Unsubscribe</a></p>`
+    : `<p style="margin:18px 0 0;font-size:12px;color:#737373;">${esc(why.charAt(0).toUpperCase() + why.slice(1))}. Just reply to this email if you’d rather not hear from me.</p>`;
   return {
     subject,
-    html: layout({ preheader: body.slice(0, 90), heading: subject, body: `${html}<p style="margin:18px 0 0;font-size:12px;"><a href="${esc(unsubscribe)}" style="color:#737373;">Unsubscribe</a></p>`, button: link ? { label: 'Take a look', href: link } : undefined }),
-    text: `${body}\n\n${link ? `${link}\n\n` : ''}Unsubscribe: ${unsubscribe}`,
+    html: layout({ preheader: body.slice(0, 90), heading: subject, body: `${html}${footer}`, button: link ? { label: 'Take a look', href: link } : undefined }),
+    text: `${body}\n\n${link ? `${link}\n\n` : ''}${unsubscribe ? `Unsubscribe: ${unsubscribe}` : `${why.charAt(0).toUpperCase() + why.slice(1)}. Just reply to this email if you’d rather not hear from me.`}`,
   };
 }
 
