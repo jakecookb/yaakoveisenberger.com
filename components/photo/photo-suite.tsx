@@ -186,7 +186,7 @@ export function PhotoSuite() {
     window.addEventListener('paste', onPaste);
     return () => window.removeEventListener('paste', onPaste);
   }, [open]);
-  const sample = async () => { const r = await fetch('/images/home/memories-of-shmuel.jpg'); open(await r.blob(), 'sample'); };
+  const sample = async () => { const r = await fetch('/images/photo-sample.jpg'); open(await r.blob(), 'sample'); };
 
   // ---- AI
   const removeBg = () => {
