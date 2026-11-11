@@ -76,12 +76,12 @@ p { margin: 0; }
 .hero-phone { display: flex; justify-content: center; }
 .phone { width: 320px; max-width: 100%; aspect-ratio: 390 / 844; border-radius: 44px; overflow: hidden; box-shadow: 0 0 0 8px #2a2a2d, 0 0 0 9px rgba(255, 255, 255, 0.08), 0 40px 90px rgba(0, 0, 0, 0.6), 0 0 120px rgba(255, 143, 85, 0.18); }
 .phone img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
-.devices { display: block; flex: none; width: min(760px, 138%); margin: -90px -19% -90px -19%; }
-.devices img { display: block; width: 100%; height: auto; filter: drop-shadow(0 0 60px rgba(255, 143, 85, 0.10)); }
+.devices { display: block; flex: none; width: min(640px, 120%); margin: 0 0 0 -22%; }
+.devices img { display: block; width: 100%; height: auto; }
 @media (max-width: 900px) {
   .hero { grid-template-columns: minmax(0, 1fr); padding-top: 48px; }
   .phone { width: 270px; }
-  .devices { width: min(600px, 128%); margin: -50px -14% -60px; }
+  .devices { width: min(560px, 100%); margin: 8px auto 0; }
 }
 
 /* Steps */
