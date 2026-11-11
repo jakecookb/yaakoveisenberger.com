@@ -65,8 +65,8 @@ function Row({ items, dir, lightboxOpen, onOpen }: { items: Item[]; dir: 1 | -1;
       className="flex cursor-grab select-none overflow-x-auto py-2 [mask-image:linear-gradient(90deg,transparent,#000_8%,#000_92%,transparent)] [scrollbar-width:none] active:cursor-grabbing"
     >
       {doubled.map(({ photo: p, index }, k) => (
-        <figure key={`${p.id}-${k}`} aria-hidden={k >= items.length} className="photo-float mr-3 w-40 shrink-0 sm:w-56" style={{ animationDelay: `${(k % 5) * -0.9}s` }}>
-          <button type="button" tabIndex={k >= items.length ? -1 : 0} onClick={(e) => { if (drag.current?.moved) { e.preventDefault(); return; } onOpen(index); }} draggable={false} className="group block w-full overflow-hidden rounded-[1.3rem] bg-neutral-900 shadow-[0_14px_30px_-14px_rgba(0,0,0,0.9)] ring-1 ring-white/15 transition duration-300 hover:scale-[1.04] hover:ring-white/40 focus-visible:ring-2 focus-visible:ring-[#c8a96a]">
+        <figure key={`${p.id}-${k}`} aria-hidden={k >= items.length} className="photo-float mr-2.5 w-28 shrink-0 sm:w-40" style={{ animationDelay: `${(k % 5) * -0.9}s` }}>
+          <button type="button" tabIndex={k >= items.length ? -1 : 0} onClick={(e) => { if (drag.current?.moved) { e.preventDefault(); return; } onOpen(index); }} draggable={false} className="group block w-full overflow-hidden rounded-[1.1rem] bg-neutral-900 shadow-[0_14px_30px_-14px_rgba(0,0,0,0.9)] ring-1 ring-white/15 transition duration-300 hover:scale-[1.04] hover:ring-white/40 focus-visible:ring-2 focus-visible:ring-[#c8a96a]">
             <Image src={p.src} alt={p.caption} width={500} height={500} unoptimized loading="lazy" draggable={false} className="aspect-square w-full object-cover" />
           </button>
           {p.caption && <figcaption className="mt-1.5 truncate px-1 text-center text-xs text-neutral-500">{p.caption}</figcaption>}
