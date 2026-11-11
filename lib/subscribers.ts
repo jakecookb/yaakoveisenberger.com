@@ -22,6 +22,7 @@ export const topicLabel = (t: string) => TOPICS.find((x) => x.id === t)?.label ?
 export interface Subscriber { email: string; topics: Topic[]; token: string; createdAt: string; updatedAt: string }
 
 const PREFIX = 'site/subscribers/';
+export const subscriberKey = (email: string) => key(email);
 const key = (email: string) => createHash('sha256').update(email).digest('hex').slice(0, 32);
 const path = (k: string) => `${PREFIX}${k}.json`;
 
