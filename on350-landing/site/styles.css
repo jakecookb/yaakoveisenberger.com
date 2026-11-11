@@ -76,9 +76,8 @@ p { margin: 0; }
 .hero-phone { display: flex; justify-content: center; }
 .phone { width: 320px; max-width: 100%; aspect-ratio: 390 / 844; border-radius: 44px; overflow: hidden; box-shadow: 0 0 0 8px #2a2a2d, 0 0 0 9px rgba(255, 255, 255, 0.08), 0 40px 90px rgba(0, 0, 0, 0.6), 0 0 120px rgba(255, 143, 85, 0.18); }
 .phone img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
-.devices { display: block; flex: none; width: min(720px, 120%); margin: 0 -6% 0 -11%; }
-@media (min-width: 901px) { .hero { grid-template-columns: 0.95fr 1.05fr; gap: 32px; } .hero h1 { font-size: clamp(42px, 5vw, 64px); } }
-@media (min-width: 901px) and (max-width: 1150px) { .devices { width: 112%; margin: 0 -2% 0 -10%; } }
+.devices { display: block; flex: none; width: min(680px, 126%); margin: 0 -6% 0 -20%; }
+@media (max-width: 1150px) { .devices { width: 120%; margin: 0 -2% 0 -22%; } }
 .devices img { display: block; width: 100%; height: auto; filter: drop-shadow(0 0 60px rgba(255, 143, 85, 0.10)); }
 @media (max-width: 900px) {
   .hero { grid-template-columns: minmax(0, 1fr); padding-top: 48px; }
