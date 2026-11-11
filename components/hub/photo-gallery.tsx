@@ -62,12 +62,12 @@ function Row({ items, dir, lightboxOpen, onOpen }: { items: Item[]; dir: 1 | -1;
       onPointerEnter={() => (paused.current = true)} onPointerLeave={() => { paused.current = false; onUp(); }}
       onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp}
       onTouchStart={() => (paused.current = true)} onTouchEnd={() => setTimeout(() => (paused.current = false), 2000)}
-      className="flex cursor-grab select-none overflow-x-auto py-3 [mask-image:linear-gradient(90deg,transparent,#000_8%,#000_92%,transparent)] [scrollbar-width:none] active:cursor-grabbing"
+      className="flex cursor-grab select-none overflow-x-auto py-2 [mask-image:linear-gradient(90deg,transparent,#000_8%,#000_92%,transparent)] [scrollbar-width:none] active:cursor-grabbing"
     >
       {doubled.map(({ photo: p, index }, k) => (
-        <figure key={`${p.id}-${k}`} aria-hidden={k >= items.length} className="photo-float mr-4 w-52 shrink-0 sm:w-72" style={{ animationDelay: `${(k % 5) * -0.9}s` }}>
-          <button type="button" tabIndex={k >= items.length ? -1 : 0} onClick={(e) => { if (drag.current?.moved) { e.preventDefault(); return; } onOpen(index); }} draggable={false} className="group block w-full overflow-hidden rounded-[1.6rem] bg-neutral-900 shadow-[0_14px_30px_-14px_rgba(0,0,0,0.9)] ring-1 ring-white/15 transition duration-300 hover:scale-[1.04] hover:ring-white/40 focus-visible:ring-2 focus-visible:ring-[#c8a96a]">
-            <Image src={p.src} alt={p.caption} width={600} height={600} unoptimized loading="lazy" draggable={false} className="aspect-square w-full object-cover" />
+        <figure key={`${p.id}-${k}`} aria-hidden={k >= items.length} className="photo-float mr-3 w-40 shrink-0 sm:w-56" style={{ animationDelay: `${(k % 5) * -0.9}s` }}>
+          <button type="button" tabIndex={k >= items.length ? -1 : 0} onClick={(e) => { if (drag.current?.moved) { e.preventDefault(); return; } onOpen(index); }} draggable={false} className="group block w-full overflow-hidden rounded-[1.3rem] bg-neutral-900 shadow-[0_14px_30px_-14px_rgba(0,0,0,0.9)] ring-1 ring-white/15 transition duration-300 hover:scale-[1.04] hover:ring-white/40 focus-visible:ring-2 focus-visible:ring-[#c8a96a]">
+            <Image src={p.src} alt={p.caption} width={500} height={500} unoptimized loading="lazy" draggable={false} className="aspect-square w-full object-cover" />
           </button>
           {p.caption && <figcaption className="mt-1.5 truncate px-1 text-center text-xs text-neutral-500">{p.caption}</figcaption>}
         </figure>
@@ -76,7 +76,7 @@ function Row({ items, dir, lightboxOpen, onOpen }: { items: Item[]; dir: 1 | -1;
   );
 }
 
-/** Two rows of larger photos drifting in opposite directions, so more of the gallery is on screen at once; click one to open the viewer. */
+/** Three rows of photos drifting in alternating directions, so a lot of the gallery is on screen at once; click one to open the viewer. */
 export function PhotoGallery({ photos }: { photos: GalleryPhoto[] }) {
   const [open, setOpen] = useState<number | null>(null);
   const close = useCallback(() => setOpen(null), []);
@@ -93,19 +93,18 @@ export function PhotoGallery({ photos }: { photos: GalleryPhoto[] }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [open, close, step]);
 
-  // Alternate photos between the two rows; each row is topped up to at least six so it is wider than the screen.
+  // Deal the photos out across three rows; each row is topped up to at least six so it is wider than the screen. With only a few
+  // photos every row shows them all, each row starting from a different one so the rows don't look identical.
   const fill = (list: Item[]) => (list.length === 0 ? list : Array.from({ length: Math.max(list.length, 6) }, (_, k) => list[k % list.length]));
   const all: Item[] = photos.map((photo, index) => ({ photo, index }));
-  const top = fill(photos.length > 3 ? all.filter((_, i) => i % 2 === 0) : all);
-  const bottom = fill(photos.length > 3 ? all.filter((_, i) => i % 2 === 1) : [...all].reverse());
+  const rows = [0, 1, 2].map((r) => fill(photos.length > 5 ? all.filter((_, i) => i % 3 === r) : [...all.slice(r % all.length), ...all.slice(0, r % all.length)]));
   if (!photos.length) return null;
   const current = open === null ? null : photos[open];
 
   return (
     <>
       <div className="space-y-1">
-        <Row items={top} dir={1} lightboxOpen={open !== null} onOpen={setOpen} />
-        <Row items={bottom} dir={-1} lightboxOpen={open !== null} onOpen={setOpen} />
+        {rows.map((items, r) => <Row key={r} items={items} dir={r % 2 === 0 ? 1 : -1} lightboxOpen={open !== null} onOpen={setOpen} />)}
       </div>
       <AnimatePresence>
         {current && (
