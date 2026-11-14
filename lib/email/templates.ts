@@ -96,6 +96,15 @@ export function welcomeSubscriber(topics: string, unsubscribe: string) {
 }
 
 /** An announcement: the owner's plain text, paragraphs kept, links clickable. */
+/** The 6-digit code for resetting the admin password. */
+export function adminCodeEmail(code: string) {
+  return {
+    subject: `Your admin code: ${code}`,
+    html: layout({ preheader: `Your code is ${code}`, heading: 'Reset your admin password', body: `<p style="margin:0 0 14px;">Enter this code on the reset page. It works for 10 minutes.</p><p style="margin:0 0 14px;font-size:34px;font-weight:700;letter-spacing:8px;color:#c8a96a;">${esc(code)}</p><p style="margin:0;font-size:12px;color:#737373;">If you didn’t ask for this, ignore this email: nothing changes unless the code is used.</p>` }),
+    text: `Your admin password reset code is ${code}. It works for 10 minutes. If you didn't ask for it, ignore this email.`,
+  };
+}
+
 /**
  * An announcement. Subscribers get their own unsubscribe link; for anyone else (people who asked for access, or an address typed in)
  * there is no subscription to cancel, so the footer says why they're getting it and that replying will stop it.
