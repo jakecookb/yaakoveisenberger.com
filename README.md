@@ -183,7 +183,7 @@ A private editor for the owner: change box titles, descriptions, icons, icon siz
 - **Log in** with the small *Log in* tab at the top right of the site. Sessions are a signed, HttpOnly cookie (7 days). The password is stored only as a scrypt hash.
 - **Storage:** Vercel Blob, all **private**. Settings, photos, access requests and the saved password hash are never public URLs; photos are served through `/media/…`, which checks the admin session or an approved visitor first.
 - **Env vars** (Vercel → Settings → Environment Variables): `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH` (create with `npm run admin:hash`), `ADMIN_SESSION_SECRET` (32+ random chars) and `BLOB_READ_WRITE_TOKEN` (added automatically when a Blob store is connected to the project). Changing the password inside the editor overrides `ADMIN_PASSWORD_HASH`.
-- **Two-step verification (WhatsApp):** set `ADMIN_2FA_PHONE` (e.g. `+17325697959`) plus the `TWILIO_*` variables and every sign-in also needs a 6-digit code sent to that WhatsApp number. The same number powers **Forgot password** on the login page. Codes last 10 minutes, allow 5 guesses, and are single-use. `ADMIN_EMAIL` may list several emails, comma-separated.
+- **Forgot password:** the login page's *Forgot password?* emails a 6-digit code to the admin address (needs the email key, `RESEND_API_KEY`). Codes last 10 minutes, allow 5 guesses, and are single-use; entering one lets you set a new password. `ADMIN_EMAIL` may list several emails, comma-separated.
 - **Locking:** any box can be locked (locking **Funding** hides every fundraising page — donor pages and the big-screen display — from people you haven't approved; the payment API and Stripe webhooks keep working), including boxes that open a separate site like the Cookbook. Clicking a locked box on the home page opens a pop-up asking for the visitor's name; they stay out until you approve them at `/admin/access`. The gate in `proxy.ts` also stops direct visits to a locked page or its files. Note: it protects the address on this domain — a separately hosted app (e.g. the Cookbook's own `*.vercel.app` address) stays reachable there unless that project is protected too.
 - **Your own boxes:** *Add a box* creates either a **page** (`/p/<id>`: text and photos) or a **link** to another website. A locked link never exposes its real address: it goes through `/go/<id>`, which only redirects approved visitors.
 - **Sizes:** each box has a width (normal / wide / full row), a height (compact → extra tall) and an icon size, with a phone / tablet / desktop preview.
@@ -211,7 +211,7 @@ Free, private vocal / instrumental splitter. Visitors upload an MP3 or WAV and d
 |---|---|---|
 | `__Host-ve_admin` | The owner's signed-in session (signed token; changing the password signs everyone out). | 7 days |
 | `ve_visitor` | Remembers a visitor the owner **approved** for locked tiles, so they don't have to ask again. Holds a random id and secret; the approval itself is stored on the server and never expires (the owner can revoke it). | About 13 months (400 days, the most a browser keeps), **renewed every time the visitor returns** |
-| `ve_challenge` | Ties a WhatsApp sign-in / password-reset code to the browser that asked for it. | 10 minutes |
+| `ve_challenge` | Ties a password-reset code to the browser that asked for it. | 10 minutes |
 
 Because these are strictly necessary for features the visitor asked for, no consent banner is needed.
 
