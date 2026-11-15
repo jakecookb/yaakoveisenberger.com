@@ -291,3 +291,17 @@ details, details:first-of-type { border-color: var(--rule); }
 
 .yearly { margin-top: 10px; color: var(--ink-2); font-size: 17px; }
 .yearly strong { color: var(--ink); font-weight: 600; }
+
+/* Phones: more breathing room and brighter text so nothing feels squashed. Layout only. */
+@media (max-width: 620px) {
+  body { font-size: 17px; line-height: 1.65; }
+  :root { --ink-2: #c4bfb8; }
+  .hero h1 { line-height: 1.06; }
+  h2 { line-height: 1.14; letter-spacing: -0.015em; }
+  h3 { line-height: 1.2; }
+  .lede { font-size: 18px; line-height: 1.6; }
+  .chips { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
+  .chips li { font-size: 15px; line-height: 1.3; }
+  .chips li::before, .chips li + li::before { margin: 0; content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex: none; }
+  .steps p, .card p, details p { font-size: 17px; }
+}
