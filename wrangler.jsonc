@@ -1,6 +1,7 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"main": ".open-next/worker.js",
+	"main": "cf-worker.js",
+	"version_metadata": { "binding": "CF_VERSION_METADATA" },
 	"name": "yaakoveisenberger",
 	"account_id": "76a00e3c24e864fe9f357aeeb865ab57",
 	"compatibility_date": "2026-10-01",

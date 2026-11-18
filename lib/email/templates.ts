@@ -137,7 +137,7 @@ export function boardToOwner(b: BoardInfo) {
 export function boardToCustomer(b: BoardInfo) {
   return {
     subject: 'Your custom fish board design is in',
-    html: layout({ preheader: 'Here’s the board you designed', heading: `Looks delicious, ${b.name.split(' ')[0]}!`, body: `${boardImg}<p style="margin:0 0 14px;">Here’s the board you designed. I’ll get back to you shortly to confirm the details, the date and the final price (estimated at <b style="color:#e5e5e5;">$${b.price}</b>).</p><table role="presentation" cellpadding="0" cellspacing="0" border="0">${b.rows.map(([k, v]) => row(k, v)).join('')}</table><p style="margin:16px 0 0;">Want to change something? Just reply to this email.</p>`, footnote: 'You’re receiving this because you sent a board design on yaakoveisenberger.com.' }),
-    text: `Thanks, ${b.name.split(' ')[0]}! Here's the board you designed (picture attached):\n\n${b.rows.map(([k, v]) => `${k}: ${v}`).join('\n')}\n\nI'll get back to you shortly to confirm. Reply to this email to change anything.`,
+    html: layout({ preheader: 'Here’s the board you designed', heading: `Looks delicious, ${b.name.split(' ')[0]}!`, body: `<p style="margin:0 0 14px;">Here’s the board you designed. I’ll get back to you shortly to confirm the details, the date and the final price (estimated at <b style="color:#e5e5e5;">$${b.price}</b>).</p><table role="presentation" cellpadding="0" cellspacing="0" border="0">${b.rows.map(([k, v]) => row(k, v)).join('')}</table><p style="margin:16px 0 0;">Want to change something? Just reply to this email.</p>`, footnote: 'You’re receiving this because you sent a board design on yaakoveisenberger.com.' }),
+    text: `Thanks, ${b.name.split(' ')[0]}! Here's the board you designed:\n\n${b.rows.map(([k, v]) => `${k}: ${v}`).join('\n')}\n\nI'll get back to you shortly to confirm. Reply to this email to change anything.`,
   };
 }

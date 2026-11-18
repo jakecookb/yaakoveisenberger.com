@@ -48,7 +48,8 @@ export async function requestBoard(input: Record<string, unknown>, image: string
   const owner = adminEmails[0];
   const [toOwner] = await Promise.all([
     owner ? sendEmail({ to: owner, replyTo: email, attachments, ...boardToOwner(info) }) : Promise.resolve(false),
-    sendEmail({ to: email, replyTo: owner, attachments, ...boardToCustomer(info) }),
+    // No picture in the customer's copy: anyone can type any address, so it must not carry an image they uploaded.
+    sendEmail({ to: email, replyTo: owner, ...boardToCustomer(info) }),
   ]);
   if (!toOwner) return { ok: false, error: 'Your design was saved, but the email didn’t go through — please also call or email directly.' };
   return { ok: true };

@@ -10,10 +10,10 @@ const notFound = () => new Response('Not found', { status: 404 });
 
 // How long copies may be kept. File names are unique per upload (a replaced photo gets a new name), so the file itself never
 // goes stale: the only reason to re-check is access (a box being locked or someone's approval being withdrawn).
-//  - public photos: a day in the visitor's browser, five minutes in the shared CDN (so a box you lock stops being served quickly)
+//  - public photos: 30 days (the edge copy in cf-worker.js is dropped as soon as settings change, e.g. a box is locked)
 //  - locked photos: only the approved visitor's own browser may keep them, for ten minutes; never a shared cache
 const PUBLIC_CACHE = 'public, max-age=2592000, s-maxage=2592000, stale-while-revalidate=604800';
-const LOCKED_CACHE = 'private, max-age=86400, stale-while-revalidate=604800';
+const LOCKED_CACHE = 'private, max-age=600';
 
 /**
  * Serves private blobs after checking permission: photos in a locked category need the admin or an approved visitor;
