@@ -1,6 +1,6 @@
 import { Sparkles } from 'lucide-react';
 import { CategoryPage } from '@/components/hub/category-page';
-import { BoardBuilder } from '@/components/fishboard/board-builder';
+import { BoardLauncher } from '@/components/fishboard/board-launcher';
 
 export const revalidate = 60;
 
@@ -13,7 +13,7 @@ export default function Page() {
     <CategoryPage
       id="fishboards"
       extraCta={<a href="#builder" className="inline-flex h-12 items-center gap-2 rounded-full px-6 font-mono text-xs font-semibold uppercase tracking-[0.22em] text-neutral-950 shadow-[0_0_28px_-6px_#f4895f] transition active:scale-[0.98]" style={{ background: ACCENT }}><Sparkles className="size-4" /> Design your own</a>}
-      extra={<BoardBuilder accent={ACCENT} />}
+      extra={<BoardLauncher accent={ACCENT} />}
     />
   );
 }

@@ -115,7 +115,8 @@ function loadStart(): Design {
   return DEFAULT_DESIGN;
 }
 
-export function BoardBuilder({ accent }: { accent: string }) {
+/** `inSheet`: shown inside the phone's full-screen "Customize" sheet (no section heading; the sheet has its own). */
+export function BoardBuilder({ accent, inSheet = false }: { accent: string; inSheet?: boolean }) {
   const [design, setDesign] = useState<Design>(DEFAULT_DESIGN);
   const [history, setHistory] = useState<Design[]>([]);
   const [step, setStep] = useState<Step>('Size');
@@ -219,14 +220,14 @@ export function BoardBuilder({ accent }: { accent: string }) {
   const removeSlot = (key: 'fish' | 'toppings', i: number) => update((d) => ({ [key]: (d[key] as string[]).filter((_, k) => k !== i) }));
 
   return (
-    <section id="builder" style={{ '--accent': accent } as React.CSSProperties} className="relative mt-14 scroll-mt-20 text-left">
-      <div className="text-center">
+    <section id={inSheet ? undefined : 'builder'} style={{ '--accent': accent } as React.CSSProperties} className={`relative text-left ${inSheet ? '' : 'mt-14 scroll-mt-20'}`}>
+      {!inSheet && <div className="text-center">
         <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.3em]" style={{ color: accent }}>Board builder</p>
         <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">Design your own fish board</h2>
         <p className="mx-auto mt-2 max-w-lg text-sm text-neutral-400">Pick a size, line up your fish and toppings, drop on a few fun extras — the board redraws as you go. Send it, and I’ll get a picture of exactly what you want.</p>
-      </div>
+      </div>}
 
-      <div className="mt-8 grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] lg:items-start">
+      <div className={`${inSheet ? 'mt-1' : 'mt-8'} grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] lg:items-start`}>
         {/* preview */}
         <div className="sticky top-[57px] z-20 -mx-4 bg-neutral-950/85 px-4 pb-2 pt-2 backdrop-blur-md sm:-mx-6 sm:px-6 lg:top-20 lg:mx-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
           <div className="relative overflow-hidden rounded-3xl bg-[radial-gradient(120%_90%_at_50%_30%,#26221f,#0d0c0b)] ring-1 ring-white/10 shadow-2xl">
