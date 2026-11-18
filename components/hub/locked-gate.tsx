@@ -99,8 +99,9 @@ export function LockedGate({ categoryId, accent, continueHref, className = 'mt-1
     return (
       <div className="mt-10 text-left">
         {content?.body && <RichText text={content.body} className="mb-8" />}
+        {/* Photos first, then anything extra the page adds (e.g. the Fish Board builder). */}
+        {content ? content.photos.length ? <PhotoGallery photos={content.photos} /> : !children && <p className="text-center text-neutral-500">Nothing here yet.</p> : <p className="text-center text-neutral-500">Loading…</p>}
         {children}
-        {content ? content.photos.length ? <div className={children ? 'mt-12' : ''}><PhotoGallery photos={content.photos} /></div> : !children && <p className="text-center text-neutral-500">Nothing here yet.</p> : <p className="text-center text-neutral-500">Loading…</p>}
       </div>
     );
   }

@@ -41,8 +41,8 @@ export async function CategoryPage({ id, extra, extraCta }: { id: string; extra?
         {!card.locked && page?.body && <RichText text={page.body} className="mx-auto mt-8 max-w-2xl" />}
         {showSoon && <p className="mx-auto mt-6 w-fit rounded-full bg-white/5 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-neutral-300 ring-1 ring-white/10">Coming soon</p>}
 
-        {!card.locked && extra}
         {card.locked ? <LockedGate categoryId={id} accent={card.accent}>{extra}</LockedGate> : photos.length > 0 && <div className="mt-10 text-left"><PhotoGallery photos={photos} /></div>}
+        {!card.locked && extra}
 
         <Link href="/" className="mx-auto mt-12 inline-flex h-11 items-center gap-2 rounded-full border border-white/20 px-6 text-sm font-semibold text-white transition hover:bg-white/5">
           <ArrowLeft className="size-4" /> Back to all
