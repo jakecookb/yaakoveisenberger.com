@@ -41,7 +41,7 @@ const customBox = z.object({
 });
 export type CustomBox = z.infer<typeof customBox>;
 
-export const isSafeUrl = (u: string | undefined): u is string => Boolean(u && (/^https?:\/\/[^\s<>"']+$/i.test(u) || /^\/[A-Za-z0-9/_\-.]*$/.test(u)));
+export const isSafeUrl = (u: string | undefined): u is string => Boolean(u && (/^https?:\/\/[^\s<>"']+$/i.test(u) || /^\/(?!\/)[A-Za-z0-9/_\-.]*$/.test(u)));
 
 export const PHOTO_PATH = /^photos\/[a-z0-9-]{1,40}\/[A-Za-z0-9._-]{1,120}$/;
 export const HERO_PATH = /^hero\/[A-Za-z0-9._-]{1,120}$/;

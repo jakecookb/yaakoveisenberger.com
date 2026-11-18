@@ -16,11 +16,11 @@ const isDev = process.env.NODE_ENV !== 'production';
 const csp = (frameAncestors: string) =>
   [
     "default-src 'self'",
-    `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''} https://*.stripe.com https://challenges.cloudflare.com`,
+    `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''} https://*.stripe.com https://challenges.cloudflare.com https://static.cloudflareinsights.com`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
-    `connect-src 'self' https://*.stripe.com https://*.stripe.network https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com ${supabaseOrigin} ${supabaseWs}`.trim(),
+    `connect-src 'self' https://*.stripe.com https://*.stripe.network https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com https://cloudflareinsights.com ${supabaseOrigin} ${supabaseWs}`.trim(),
     'frame-src https://*.stripe.com https://*.stripe.network https://challenges.cloudflare.com https://www.youtube-nocookie.com https://player.vimeo.com',
     `frame-ancestors ${frameAncestors}`,
     "base-uri 'self'",
@@ -31,13 +31,13 @@ const csp = (frameAncestors: string) =>
 // (models download from Hugging Face), YouTube/Vimeo embeds, no framing by other sites, no plugins.
 const siteCsp = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'${isDev ? " 'unsafe-eval'" : ''}`,
+  `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://static.cloudflareinsights.com${isDev ? " 'unsafe-eval'" : ''}`,
   "worker-src 'self' blob:",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "media-src 'self' blob: data:",
   "font-src 'self' data:",
-  "connect-src 'self' blob: data: https://huggingface.co https://*.huggingface.co https://*.hf.co",
+  "connect-src 'self' blob: data: https://cloudflareinsights.com https://huggingface.co https://*.huggingface.co https://*.hf.co",
   "frame-src 'self' https://www.youtube-nocookie.com https://www.youtube.com https://player.vimeo.com",
   "frame-ancestors 'self'",
   "object-src 'none'",
