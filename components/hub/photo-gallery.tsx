@@ -95,7 +95,8 @@ export function PhotoGallery({ photos }: { photos: GalleryPhoto[] }) {
 
   // Deal the photos out across three rows; each row is topped up to at least six so it is wider than the screen. With only a few
   // photos every row shows them all, each row starting from a different one so the rows don't look identical.
-  const fill = (list: Item[]) => (list.length === 0 ? list : Array.from({ length: Math.max(list.length, 6) }, (_, k) => list[k % list.length]));
+  // A short row repeats its whole set (a b c a b c), never just its first photo, so the same photo never sits next to itself.
+  const fill = (list: Item[]) => (list.length === 0 ? list : Array.from({ length: Math.ceil(6 / list.length) }, () => list).flat());
   const all: Item[] = photos.map((photo, index) => ({ photo, index }));
   const rows = [0, 1, 2].map((r) => fill(photos.length > 5 ? all.filter((_, i) => i % 3 === r) : [...all.slice(r % all.length), ...all.slice(0, r % all.length)]));
   if (!photos.length) return null;
