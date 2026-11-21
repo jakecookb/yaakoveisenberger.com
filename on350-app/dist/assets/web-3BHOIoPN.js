@@ -1,1 +1,0 @@
-import{Bn as e}from"./index-CrelgH1d.js";var t=class extends e{async enable(){throw this.unimplemented(`Not implemented on web.`)}async disable(){throw this.unimplemented(`Not implemented on web.`)}};export{t as PrivacyScreenWeb};
