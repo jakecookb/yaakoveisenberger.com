@@ -1,0 +1,1 @@
+import{Bn as e}from"./index-CoL2g02P.js";var t=class extends e{async enable(){throw this.unimplemented(`Not implemented on web.`)}async disable(){throw this.unimplemented(`Not implemented on web.`)}};export{t as PrivacyScreenWeb};
