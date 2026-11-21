@@ -1,0 +1,1 @@
+import{Bn as e}from"./index-CLID6hg5.js";var t=class extends e{async show(e){}async hide(e){}};export{t as SplashScreenWeb};
