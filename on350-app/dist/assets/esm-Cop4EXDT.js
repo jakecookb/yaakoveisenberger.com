@@ -1,2 +1,0 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/web-LvkSJMJh.js","assets/index-MZmeyzcd.js","assets/index-fSpgz15-.css"])))=>i.map(i=>d[i]);
-import{$n as e,tr as t}from"./index-MZmeyzcd.js";var n=e(`PrivacyScreen`,{web:()=>t(()=>import(`./web-LvkSJMJh.js`).then(e=>new e.PrivacyScreenWeb),__vite__mapDeps([0,1,2]))});export{n as PrivacyScreen};
