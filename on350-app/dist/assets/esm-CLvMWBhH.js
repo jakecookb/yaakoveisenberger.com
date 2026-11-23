@@ -1,0 +1,1 @@
+import{sr as e}from"./index-06e0fCH2.js";var t;(function(e){e.Dark=`DARK`,e.Light=`LIGHT`,e.Default=`DEFAULT`})(t||={});var n;(function(e){e.None=`NONE`,e.Slide=`SLIDE`,e.Fade=`FADE`})(n||={});var r=n,i=t,a=e(`StatusBar`);export{n as Animation,a as StatusBar,r as StatusBarAnimation,i as StatusBarStyle,t as Style};
