@@ -1,0 +1,2 @@
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/web-RFSCFml4.js","assets/index-5tL7mruF.js","assets/index-Bl885cFg.css"])))=>i.map(i=>d[i]);
+import{sr as e,ur as t}from"./index-5tL7mruF.js";var n=e(`Browser`,{web:()=>t(()=>import(`./web-RFSCFml4.js`).then(e=>new e.BrowserWeb),__vite__mapDeps([0,1,2]))});export{n as Browser};
