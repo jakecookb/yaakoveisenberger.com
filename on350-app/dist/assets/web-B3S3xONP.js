@@ -1,1 +1,0 @@
-import{or as e}from"./index-DSDP7AYo.js";var t=class extends e{async enable(){throw this.unimplemented(`Not implemented on web.`)}async disable(){throw this.unimplemented(`Not implemented on web.`)}};export{t as PrivacyScreenWeb};
