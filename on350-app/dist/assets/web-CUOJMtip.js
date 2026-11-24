@@ -1,1 +1,0 @@
-import{pr as e}from"./index-BfVZhO3-.js";var t=class extends e{async enable(){throw this.unimplemented(`Not implemented on web.`)}async disable(){throw this.unimplemented(`Not implemented on web.`)}};export{t as PrivacyScreenWeb};
