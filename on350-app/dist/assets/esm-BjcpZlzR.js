@@ -1,0 +1,2 @@
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/web-CUP-i82P.js","assets/dist-BD91r3g6.js"])))=>i.map(i=>d[i]);
+import{t as e}from"./preload-helper-BLdHbfdN.js";import{r as t}from"./dist-BD91r3g6.js";var n=t(`KeepAwake`,{web:()=>e(()=>import(`./web-CUP-i82P.js`).then(e=>new e.KeepAwakeWeb),__vite__mapDeps([0,1]))});export{n as KeepAwake};
