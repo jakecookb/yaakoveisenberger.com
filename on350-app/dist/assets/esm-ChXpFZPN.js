@@ -1,0 +1,2 @@
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/web-DMJM95EH.js","assets/dist-BD91r3g6.js"])))=>i.map(i=>d[i]);
+import{t as e}from"./preload-helper-BLdHbfdN.js";import{r as t}from"./dist-BD91r3g6.js";var n=t(`AppLauncher`,{web:()=>e(()=>import(`./web-DMJM95EH.js`).then(e=>new e.AppLauncherWeb),__vite__mapDeps([0,1]))});export{n as AppLauncher};
