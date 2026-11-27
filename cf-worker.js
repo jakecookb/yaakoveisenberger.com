@@ -9,7 +9,9 @@
 // keyed by the deploy version and the saved settings file's ETag, so a deploy or any save in the editor (including
 // locking a box) switches to new copies at once. Copies also expire after an hour (the live-campaign count, news).
 
+import { jwtVerify } from 'jose';
 import worker from './.open-next/worker.js';
+import { cleanMaintenance, isOpenWhileClosed, MAINTENANCE_PATH, renderMaintenance } from './lib/maintenance/page.ts';
 
 export { DOQueueHandler, DOShardedTagCache, BucketCachePurge } from './.open-next/worker.js';
 
@@ -36,9 +38,56 @@ async function cacheKey(request, url, env) {
   return new Request(k.toString(), { method: 'GET' });
 }
 
+// ---- "Closed for now" (maintenance) mode, switched on in /admin/maintenance ----
+// While it's on, visitors get the closed page; the owner (a valid admin session) still sees the whole site.
+
+let maint = { m: null, at: 0 };
+async function maintenance(env) {
+  if (Date.now() - maint.at < 10_000) return maint.m;
+  const obj = await env.STORE.get(MAINTENANCE_PATH).catch(() => null);
+  const m = obj ? cleanMaintenance(await obj.json().catch(() => null)) : null;
+  maint = { m: m?.enabled ? m : null, at: Date.now() };
+  return maint.m;
+}
+
+const admins = new Map();
+async function isAdmin(request, env) {
+  const token = /(?:^|;\s*)(?:__Host-ve_admin|ve_admin)=([^;]+)/.exec(request.headers.get('cookie') ?? '')?.[1];
+  const secret = env.ADMIN_SESSION_SECRET ?? '';
+  if (!token || secret.length < 32) return false;
+  const hit = admins.get(token);
+  if (hit && hit.exp > Date.now()) return hit.ok;
+  let ok = false;
+  try {
+    const { payload } = await jwtVerify(token, new TextEncoder().encode(secret), { algorithms: ['HS256'], subject: 'admin' });
+    // Same rule as the app: changing the password signs every session out.
+    const saved = await env.STORE.get('site/admin.json').then((o) => o?.json()).catch(() => null);
+    const hash = saved?.hash || env.ADMIN_PASSWORD_HASH || '';
+    const fp = [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(hash)))].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 12);
+    ok = payload.pv === fp;
+  } catch { ok = false; }
+  if (admins.size > 200) admins.clear();
+  admins.set(token, { ok, exp: Date.now() + 30_000 });
+  return ok;
+}
+
 const edgeCache = {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    const closed = await maintenance(env).catch(() => null);
+    if (closed && !isOpenWhileClosed(url.pathname, closed) && !(await isAdmin(request, env))) {
+      return new Response(request.method === 'HEAD' ? null : renderMaintenance(closed), {
+        status: 503,
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'no-store',
+          'Retry-After': '3600',
+          'X-Robots-Tag': 'noindex',
+          'Content-Security-Policy': "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'unsafe-inline' https://static.cloudflareinsights.com; connect-src 'self' https://cloudflareinsights.com; form-action 'self'; frame-ancestors 'self'; base-uri 'none'",
+          'X-Content-Type-Options': 'nosniff',
+        },
+      });
+    }
     const cacheable = (request.method === 'GET' || request.method === 'HEAD') && !SKIP.test(url.pathname) && !SIGNED_IN.test(request.headers.get('cookie') ?? '') && !request.headers.get('next-action');
     if (!cacheable) return worker.fetch(request, env, ctx);
 
