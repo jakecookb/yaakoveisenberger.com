@@ -12,6 +12,8 @@ export const isEmailConfigured = () => Boolean(process.env.RESEND_API_KEY || pro
 
 export interface Email {
   to: string;
+  /** Send as a different address on the domain (e.g. replying from the inbox as info@…). */
+  from?: string;
   subject: string;
   html: string;
   text: string;
@@ -38,7 +40,7 @@ export async function sendEmail(mail: Email): Promise<boolean> {
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: FROM, to: [mail.to], subject: mail.subject, html: mail.html, text: mail.text, ...(mail.replyTo ? { reply_to: mail.replyTo } : {}), ...(mail.headers ? { headers: mail.headers } : {}), ...(mail.attachments?.length ? { attachments: mail.attachments.map((a) => ({ filename: a.filename, content: a.content, ...(a.contentId ? { content_id: a.contentId } : {}) })) } : {}) }),
+      body: JSON.stringify({ from: mail.from || FROM, to: [mail.to], subject: mail.subject, html: mail.html, text: mail.text, ...(mail.replyTo ? { reply_to: mail.replyTo } : {}), ...(mail.headers ? { headers: mail.headers } : {}), ...(mail.attachments?.length ? { attachments: mail.attachments.map((a) => ({ filename: a.filename, content: a.content, ...(a.contentId ? { content_id: a.contentId } : {}) })) } : {}) }),
       signal: AbortSignal.timeout(10_000),
     });
     if (!res.ok) console.error('Email failed', res.status, (await res.text()).slice(0, 300));
