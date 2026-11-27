@@ -124,4 +124,29 @@ const edgeCache = {
   },
 };
 
+// ---- Inbox: mail to the domain (Cloudflare Email Routing → "Send to a Worker") ----
+// Saved privately for the admin inbox (/admin/inbox) and still forwarded to the owner's mailbox (MAIL_FORWARD_TO). Kept
+// deliberately light (no parsing here) so even a big email stays within the free plan's CPU limit.
+edgeCache.email = async function email(message, env) {
+  const now = new Date();
+  const id = `${String(9_999_999_999_999 - now.getTime()).padStart(13, '0')}-${crypto.randomUUID().replace(/-/g, '').slice(0, 8)}`;
+  let saved = true;
+  try {
+    const raw = await new Response(message.raw).arrayBuffer();
+    await env.STORE.put(`site/mail/raw/${id}.eml`, raw, { httpMetadata: { contentType: 'message/rfc822' } });
+  } catch { saved = false; }
+  const forwarded = [];
+  let forwardError = '';
+  for (const to of (env.MAIL_FORWARD_TO ?? '').split(',').map((s) => s.trim()).filter(Boolean)) {
+    try { await message.forward(to); forwarded.push(to); } catch (e) { forwardError = String(e?.message ?? e).slice(0, 200); }
+  }
+  if (!saved) {
+    if (!forwarded.length) message.setReject('Mailbox temporarily unavailable'); // nothing kept anywhere: let the sender know
+    return;
+  }
+  const h = (k) => (message.headers.get(k) ?? '').slice(0, 500);
+  const meta = { id, from: message.from, fromHeader: h('from'), to: message.to, subject: h('subject'), date: h('date') || now.toUTCString(), messageId: h('message-id'), size: message.rawSize, read: false, at: now.toISOString(), forwarded, ...(forwardError ? { forwardError } : {}) };
+  await env.STORE.put(`site/mail/inbox/${id}.json`, JSON.stringify(meta), { httpMetadata: { contentType: 'application/json' } });
+};
+
 export default edgeCache;
